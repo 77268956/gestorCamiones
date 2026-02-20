@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Gestor de Camiones</title>
+    <th:block th:replace="fragments/assets :: globalStyles"></th:block>
+</head>
+<body>
+<div th:replace="fragments/navbar :: navbar"></div>
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-success" role="alert">
+                <h4 class="alert-heading">Inicio de sesion exitoso</h4>
+                <p>Has accedido correctamente al dashboard.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h2>Dashboard</h2>
+                    <p>Bienvenido al sistema de gestion de camiones.</p>
+
+                    <hr>
+
+                    <h5>Enlaces:</h5>
+                    <ul>
+                        <li><a th:href="@{/usuarios}">Ver usuarios</a></li>
+                        <li><a th:href="@{/admin}">Panel admin</a></li>
+                    </ul>
+
+                    <p class="mb-0 mt-3">
+                        Usuario autenticado:
+                        <strong th:text="${nombreUsuario}">usuario</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block th:replace="fragments/assets :: globalScripts"></th:block>
+</body>
+</html>

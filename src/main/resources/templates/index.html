@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demo Gestor de Camiones - Login</title>
+    <th:block th:replace="fragments/assets :: globalStyles"></th:block>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row min-vh-100">
+
+        <!-- LADO IZQUIERDO - BRANDING -->
+        <div class="col-lg-6 d-none d-lg-flex flex-column justify-content-center align-items-center text-white login-hero">
+
+            <h1 class="fw-bold display-5">Gestor de Camiones</h1>
+            <p class="lead text-center px-5 mt-3">
+                Plataforma de administración y control de flota empresarial.
+            </p>
+
+            <div class="mt-4 text-center">
+                <p class="mb-1">✔ Gestión de flota</p>
+                <p class="mb-1">✔ Control de mantenimiento</p>
+                <p class="mb-1">✔ Monitoreo de estado</p>
+            </div>
+
+        </div>
+
+        <!-- LADO DERECHO - LOGIN -->
+        <div class="col-lg-6 d-flex align-items-center justify-content-center bg-light">
+
+            <div class="w-100 login-form-wrap">
+
+                <h3 class="mb-4 fw-bold">Iniciar sesión</h3>
+
+                <div th:if="${error}" class="alert alert-danger">
+                    <span th:text="${error}"></span>
+                </div>
+
+                <div th:if="${message}" class="alert alert-success">
+                    <span th:text="${message}"></span>
+                </div>
+
+                <form method="post" th:action="@{/login}">
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Usuario</label>
+                        <input type="text"
+                               class="form-control form-control-lg"
+                               id="email"
+                               name="email"
+                               placeholder="Ingresa tu usuario"
+                               required autofocus>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <input type="password"
+                               class="form-control form-control-lg"
+                               id="password"
+                               name="password"
+                               placeholder="Ingresa tu contraseña"
+                               required>
+                    </div>
+
+                    <button type="submit" class="btn btn-dark btn-lg w-100">
+                        Acceder al sistema
+                    </button>
+
+                </form>
+
+                <div class="mt-4 text-muted small">
+                    <p class="mb-1"><strong>Admin:</strong> admin / Admin1234!</p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

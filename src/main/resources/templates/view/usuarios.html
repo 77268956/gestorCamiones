@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title>Usuarios</title>
+    <th:block th:replace="fragments/assets :: globalStyles"></th:block>
+</head>
+<body>
+<div th:replace="fragments/navbar :: navbar"></div>
+
+<div class="container mt-5">
+    <p class="mb-3">
+        Admin autenticado:
+        <strong th:text="${nombreUsuario}">admin</strong>
+    </p>
+
+    <h2 class="mb-4">Crear usuario</h2>
+
+    <div class="mb-3">
+        <input type="text" id="nombre" class="form-control" placeholder="Nombre de usuario">
+    </div>
+
+    <div class="mb-3">
+        <input type="email" id="email" class="form-control" placeholder="Email">
+    </div>
+
+    <div class="mb-3">
+        <input type="password" id="password" class="form-control" placeholder="Contrasena">
+    </div>
+
+    <div class="mb-3">
+        <select id="role" class="form-select">
+            <option value="ROLE_USER">Usuario</option>
+            <option value="ROLE_ADMIN">Admin</option>
+        </select>
+    </div>
+
+    <button class="btn btn-primary" onclick="crearUsuario()">Guardar</button>
+
+    <hr class="my-5">
+
+    <h2>Lista de usuarios</h2>
+    <button class="btn btn-success mb-3" onclick="listarUsuarios()">Cargar usuarios</button>
+
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Activo</th>
+        </tr>
+        </thead>
+        <tbody id="tablaUsuarios"></tbody>
+    </table>
+</div>
+
+<script th:inline="javascript">
+    function getCsrfHeaders() {
+        const token = document.querySelector('meta[name="_csrf"]').getAttribute("content");
+        const headerName = document.querySelector('meta[name="_csrf_header"]').getAttribute("content");
+        return { [headerName]: token };
+    }
+
+    function crearUsuario() {
+        const nombre = document.getElementById("nombre").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const role = document.getElementById("role").value;
+
+        if (!nombre || !email || !password) {
+            alert("Completa nombre, email y contrasena.");
+            return;
+        }
+
+        fetch("/api/usuarios", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...getCsrfHeaders()
+            },
+            body: JSON.stringify({ nombre, email, password, role })
+        })
+            .then(async response => {
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(payload?.message || "No se pudo crear el usuario");
+                }
+                return payload;
+            })
+            .then(data => {
+                alert("Usuario creado con ID: " + data.id);
+                document.getElementById("password").value = "";
+                listarUsuarios();
+            })
+            .catch(error => alert(error.message));
+    }
+
+    function listarUsuarios() {
+        fetch("/api/usuarios")
+            .then(response => response.json())
+            .then(data => {
+                const tabla = document.getElementById("tablaUsuarios");
+                tabla.innerHTML = "";
+
+                data.forEach(usuario => {
+                    tabla.innerHTML += `
+                        <tr>
+                            <td>${usuario.id}</td>
+                            <td>${usuario.nombre}</td>
+                            <td>${usuario.email}</td>
+                            <td>${usuario.role}</td>
+                            <td>${usuario.enabled ? "Si" : "No"}</td>
+                        </tr>
+                    `;
+                });
+            })
+            .catch(() => alert("No se pudo cargar la lista de usuarios"));
+    }
+</script>
+
+<th:block th:replace="fragments/assets :: globalScripts"></th:block>
+</body>
+</html>

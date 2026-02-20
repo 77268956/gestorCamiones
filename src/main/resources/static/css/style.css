@@ -1,0 +1,481 @@
+:root {
+    /* paleta principal */
+    --mp-blue:       #1a3a8f;
+    --mp-blue-dark:  #0f2460;
+    --mp-blue-light: #2a52c9;
+    --mp-orange:     #f07a18;
+    --mp-orange-dk:  #d4640a;
+    --mp-white:      #ffffff;
+    --mp-gray-bg:    #f4f6fb;
+    --mp-gray-text:  #4a5568;
+    --mp-border:     #dde3f0;
+
+    /* mapeamos la paleta antigua a las nuevas variables */
+    --color-deep:    var(--mp-blue-dark);   /* #0f2460 – azul muy oscuro */
+    --color-main:    var(--mp-blue);        /* #1a3a8f – azul principal  */
+    --color-soft:    var(--mp-orange);      /* #f07a18 – naranja acento  */
+    --color-light:   var(--mp-white);       /* #ffffff                   */
+    --app-border:    var(--mp-border);      /* #dde3f0                   */
+    --app-text:      var(--mp-gray-text);   /* #4a5568                   */
+}
+
+/* ═══════════════════════════════════════
+   BASE
+═══════════════════════════════════════ */
+body {
+    padding-top: 70px;
+    font-family: 'Barlow', sans-serif;
+    background: var(--mp-gray-bg);
+    color: var(--mp-gray-text);
+    min-height: 100vh;
+}
+
+a            { color: var(--mp-blue-light); }
+a:hover      { color: var(--mp-orange); }
+
+.bg-light    { background-color: var(--mp-gray-bg) !important; }
+
+/* ═══════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════ */
+.container,
+.page-surface {
+    border-radius: 0.8rem;
+}
+
+/* ═══════════════════════════════════════
+   CARD
+═══════════════════════════════════════ */
+.card {
+    background-color: var(--mp-white);
+    border: 1px solid var(--mp-border);
+    border-radius: 0.8rem;
+    box-shadow: 0 8px 22px rgba(15, 36, 96, 0.08);
+}
+
+.card-header,
+.bg-primary {
+    background-color: var(--mp-blue-dark) !important;
+    color: var(--mp-white) !important;
+}
+
+.card-footer {
+    background-color: var(--mp-white);
+    border-top-color: var(--mp-border);
+}
+
+/* ═══════════════════════════════════════
+   NAVBAR
+═══════════════════════════════════════ */
+.mp-navbar {
+    background: var(--mp-blue-dark) !important;
+    border-bottom: 3px solid var(--mp-orange) !important;
+    box-shadow: 0 2px 16px rgba(15, 36, 96, 0.35) !important;
+}
+
+.mp-navbar .navbar-brand {
+    color: var(--mp-white) !important;
+    letter-spacing: 0.3px;
+    font-weight: 700;
+}
+
+.mp-navbar .navbar-brand:hover {
+    color: var(--mp-orange) !important;
+}
+
+.mp-navbar .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.3);
+    padding: 0.3rem 0.5rem;
+}
+
+.mp-navbar .navbar-toggler-icon {
+    filter: invert(1);
+}
+
+.mp-navbar .navbar-toggler:focus {
+    box-shadow: 0 0 0 2px rgba(240, 122, 24, 0.5);
+}
+
+#offcanvasNavbar {
+    background: var(--mp-blue-dark);
+    border-right: 3px solid var(--mp-orange);
+    width: 270px !important;
+}
+
+#offcanvasNavbar .offcanvas-header {
+    background: var(--mp-blue-dark);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.2rem 1.4rem;
+}
+
+#offcanvasNavbar .offcanvas-title {
+    color: var(--mp-white);
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.3px;
+}
+
+#offcanvasNavbar .btn-close {
+    filter: invert(1) brightness(1.5);
+    opacity: 0.7;
+}
+
+#offcanvasNavbar .btn-close:hover {
+    opacity: 1;
+}
+
+#offcanvasNavbar .offcanvas-body {
+    background: var(--mp-blue-dark);
+    padding: 1rem;
+    gap: 1rem;
+}
+
+.mp-navbar .nav-link {
+    color: rgba(255, 255, 255, 0.72) !important;
+    font-weight: 500;
+    font-size: 0.93rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    transition: all 0.18s;
+}
+
+.mp-navbar .nav-link:hover {
+    color: var(--mp-white) !important;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.mp-navbar .nav-link.active {
+    color: var(--mp-white) !important;
+    background: var(--mp-blue-light);
+    font-weight: 600;
+}
+
+.mp-navbar .navbar-nav .nav-item + .nav-item {
+    margin-top: 0.15rem;
+}
+
+/* ═══════════════════════════════════════
+   BOTONES
+═══════════════════════════════════════ */
+.btn-primary {
+    background-color: var(--mp-blue-dark);
+    border-color: var(--mp-blue-dark);
+}
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--mp-blue);
+    border-color: var(--mp-blue);
+}
+
+.btn-secondary,
+.btn-success {
+    background-color: var(--mp-blue);
+    border-color: var(--mp-blue);
+    color: var(--mp-white);
+}
+.btn-secondary:hover,
+.btn-success:hover {
+    background-color: var(--mp-blue-dark);
+    border-color: var(--mp-blue-dark);
+}
+
+/* warning → naranja empresa */
+.btn-warning {
+    background-color: var(--mp-orange);
+    border-color: var(--mp-orange);
+    color: var(--mp-white);
+}
+.btn-warning:hover {
+    background-color: var(--mp-orange-dk);
+    border-color: var(--mp-orange-dk);
+    color: var(--mp-white);
+}
+
+.btn-danger {
+    background-color: var(--mp-blue-dark);
+    border-color: var(--mp-blue-dark);
+    color: var(--mp-white);
+}
+.btn-danger:hover {
+    background-color: #b91c1c;
+    border-color: #b91c1c;
+}
+
+.btn-outline-secondary {
+    color: var(--mp-blue);
+    border-color: var(--mp-blue);
+}
+.btn-outline-secondary:hover {
+    color: var(--mp-white);
+    background-color: var(--mp-blue);
+    border-color: var(--mp-blue);
+}
+
+/* ═══════════════════════════════════════
+   FORMULARIOS
+═══════════════════════════════════════ */
+.form-control,
+.form-select,
+.input-group-text {
+    border-color: var(--mp-border);
+}
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--mp-blue);
+    box-shadow: 0 0 0 0.2rem rgba(26, 58, 143, 0.18);
+}
+
+/* ═══════════════════════════════════════
+   TABLA BOOTSTRAP
+═══════════════════════════════════════ */
+.table {
+    --bs-table-bg:         var(--mp-white);
+    --bs-table-striped-bg: rgba(26, 58, 143, 0.05);
+    --bs-table-hover-bg:   rgba(26, 58, 143, 0.09);
+}
+
+.table-light {
+    --bs-table-bg: rgba(26, 58, 143, 0.07);
+    color: var(--mp-blue-dark);
+}
+
+.table-bordered { border-color: var(--mp-border); }
+
+/* ═══════════════════════════════════════
+   ALERTAS
+═══════════════════════════════════════ */
+.alert-success,
+.alert-danger,
+.alert-warning {
+    border: 1px solid var(--mp-orange);
+    background-color: rgba(240, 122, 24, 0.10);
+    color: var(--mp-blue-dark);
+}
+
+/* ═══════════════════════════════════════
+   BADGES BOOTSTRAP
+═══════════════════════════════════════ */
+.badge.bg-success  { background-color: #16a34a !important; color: var(--mp-white) !important; }
+.badge.bg-warning  { background-color: var(--mp-orange) !important; color: var(--mp-white) !important; }
+.badge.bg-danger   { background-color: #dc2626 !important; color: var(--mp-white) !important; }
+.badge.bg-primary  { background-color: var(--mp-blue) !important; color: var(--mp-white) !important; }
+
+/* ═══════════════════════════════════════
+   PAGE SURFACE (contenedor de páginas)
+═══════════════════════════════════════ */
+.page-surface {
+    background: var(--mp-white);
+    border-radius: 14px;
+    box-shadow: 0 4px 24px rgba(15, 36, 96, 0.10);
+    overflow: hidden;
+}
+
+/* ── Franja naranja superior ── */
+.mp-stripe {
+    height: 4px;
+    background: linear-gradient(90deg, var(--mp-orange), var(--mp-orange-dk));
+}
+
+/* ═══════════════════════════════════════
+   TOOLBAR
+═══════════════════════════════════════ */
+.mp-toolbar {
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--mp-border);
+    background: var(--mp-white);
+}
+
+.mp-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--mp-blue-dark);
+    margin: 0;
+    white-space: nowrap;
+}
+
+/* Buscador */
+.mp-search .input-group-text {
+    background: var(--mp-gray-bg);
+    border: 1.5px solid var(--mp-border);
+    border-right: none;
+    color: var(--mp-blue-dark);
+}
+.mp-search .form-control {
+    border: 1.5px solid var(--mp-border);
+    border-left: none;
+    background: var(--mp-gray-bg);
+    font-size: .9rem;
+}
+.mp-search .form-control:focus {
+    box-shadow: none;
+    border-color: var(--mp-blue);
+    background: var(--mp-white);
+}
+
+/* Select filtro */
+.mp-select {
+    border: 1.5px solid var(--mp-border);
+    background: var(--mp-gray-bg);
+    font-size: .9rem;
+    color: var(--mp-gray-text);
+}
+.mp-select:focus {
+    box-shadow: none;
+    border-color: var(--mp-blue);
+    background: var(--mp-white);
+}
+
+/* Botón agregar – naranja */
+.btn-add {
+    background: linear-gradient(135deg, var(--mp-orange), var(--mp-orange-dk));
+    border: none;
+    color: var(--mp-white);
+    font-weight: 600;
+    font-size: .92rem;
+    border-radius: 8px;
+    padding: .48rem 1.2rem;
+    transition: .2s;
+    box-shadow: 0 3px 10px rgba(240, 122, 24, 0.28);
+}
+.btn-add:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    color: var(--mp-white);
+}
+
+/* ═══════════════════════════════════════
+   TABLA MP (cabecera azul + filas)
+═══════════════════════════════════════ */
+.mp-table { margin: 0; }
+
+.mp-table thead th {
+    background: var(--mp-blue-dark);
+    color: var(--mp-white);
+    font-weight: 600;
+    font-size: .88rem;
+    letter-spacing: .4px;
+    border: none;
+    padding: .85rem 1.1rem;
+}
+
+.mp-table tbody tr {
+    border-bottom: 1px solid var(--mp-border);
+    transition: background .15s;
+}
+.mp-table tbody tr:last-child { border-bottom: none; }
+.mp-table tbody tr:hover      { background: rgba(26, 58, 143, 0.05); }
+
+.mp-table tbody td {
+    padding: .8rem 1.1rem;
+    vertical-align: middle;
+    font-size: .92rem;
+    color: #374151;
+}
+
+/* Número de fila */
+.row-num {
+    color: #9ca3af;
+    font-weight: 600;
+    font-size: .85rem;
+}
+
+/* Placa */
+.plate {
+    background: var(--mp-blue-dark);
+    color: var(--mp-white);
+    font-weight: 700;
+    font-size: .88rem;
+    padding: .22rem .65rem;
+    border-radius: 6px;
+    letter-spacing: 1px;
+    font-family: monospace;
+}
+
+/* ═══════════════════════════════════════
+   BADGES DE ESTADO (custom)
+═══════════════════════════════════════ */
+.st-activo   { background: #d1fae5; color: #065f46; border-radius: 20px; padding: .25rem .7rem; font-size: .8rem; font-weight: 600; }
+.st-mant     { background: #fef3c7; color: #92400e; border-radius: 20px; padding: .25rem .7rem; font-size: .8rem; font-weight: 600; }
+.st-inactivo { background: #fee2e2; color: #991b1b; border-radius: 20px; padding: .25rem .7rem; font-size: .8rem; font-weight: 600; }
+
+/* ═══════════════════════════════════════
+   BOTONES DE ACCIÓN EN TABLA
+═══════════════════════════════════════ */
+.btn-edit {
+    background: var(--mp-blue);
+    color: var(--mp-white);
+    border: none;
+    border-radius: 7px;
+    padding: .28rem .75rem;
+    font-size: .82rem;
+    font-weight: 600;
+    transition: .15s;
+}
+.btn-edit:hover { background: var(--mp-blue-light); color: var(--mp-white); }
+
+.btn-del {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: none;
+    border-radius: 7px;
+    padding: .28rem .75rem;
+    font-size: .82rem;
+    font-weight: 600;
+    transition: .15s;
+}
+.btn-del:hover { background: #fca5a5; color: #7f1d1d; }
+
+/* ═══════════════════════════════════════
+   FOOTER DE TABLA
+═══════════════════════════════════════ */
+.mp-table-footer {
+    background: var(--mp-gray-bg);
+    border-top: 1px solid var(--mp-border);
+    padding: .75rem 1.5rem;
+    font-size: .83rem;
+    color: #6b7280;
+}
+
+/* Modal agregar camion */
+.mp-modal-content {
+    border: 1px solid var(--mp-border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 14px 30px rgba(15, 36, 96, 0.18);
+}
+
+.mp-modal-header {
+    background: var(--mp-blue-dark);
+    color: var(--mp-white);
+    border-bottom: 3px solid var(--mp-orange);
+}
+
+.mp-modal-header .modal-title {
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.mp-modal-close {
+    filter: invert(1) brightness(1.4);
+    opacity: 0.9;
+}
+
+.mp-modal-close:hover {
+    opacity: 1;
+}
+
+.mp-modal-input {
+    border: 1.5px solid var(--mp-border);
+    background: var(--mp-gray-bg);
+}
+
+.mp-modal-input:focus {
+    border-color: var(--mp-blue);
+    background: var(--mp-white);
+    box-shadow: 0 0 0 0.2rem rgba(26, 58, 143, 0.18);
+}
+
+.mp-modal-footer {
+    border-top: 1px solid var(--mp-border);
+    background: var(--mp-white);
+}
