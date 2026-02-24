@@ -1,13 +1,12 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
-import com.gestorcamiones.gestorcamiones.entity.Usuario;
 import com.gestorcamiones.gestorcamiones.security.CustomUserDetails;
 import com.gestorcamiones.gestorcamiones.service.UsuarioService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -19,10 +18,9 @@ public class ViewController {
         this.usuarioService = usuarioService;
     }
 
-
     @GetMapping("/")
     public String home() {
-        return "redirect:/login";  // Redirige al login
+        return "redirect:/login";
     }
 
     @GetMapping("/login")
@@ -32,11 +30,11 @@ public class ViewController {
             Model model) {
 
         if (error != null) {
-            model.addAttribute("error", "Usuario o contraseña incorrectos");
+            model.addAttribute("error", "Correo o contrasena incorrectos");
         }
 
         if (logout != null) {
-            model.addAttribute("message", "Sesión cerrada correctamente");
+            model.addAttribute("message", "Sesion cerrada correctamente");
         }
 
         return "index";
@@ -50,7 +48,7 @@ public class ViewController {
             nombreUsuario = customUserDetails.getUsername();
         }
         model.addAttribute("nombreUsuario", nombreUsuario);
-        return "/view/dashboard";
+        return "view/dashboard";
     }
 
     @GetMapping("/usuarios")
@@ -70,7 +68,7 @@ public class ViewController {
     }
 
     @GetMapping("/practica")
-    public String practica(Authentication authentication, Model model){
+    public String practica(Authentication authentication, Model model) {
         String nombreUsuario = authentication.getName();
         Object principal = authentication.getPrincipal();
         if (principal instanceof CustomUserDetails customUserDetails) {
@@ -91,13 +89,8 @@ public class ViewController {
             @RequestParam String password,
             RedirectAttributes redirectAttributes) {
         try {
-            Usuario usuario = new Usuario();
             String nombre = email.contains("@") ? email.substring(0, email.indexOf('@')) : email;
-            usuario.setNombre(nombre);
-            usuario.setEmail(email);
-            usuario.setPassword(password);
-            usuario.setRole("ROLE_USER");
-            usuarioService.guardar(usuario);
+            usuarioService.crearConLogin(nombre, email, password, "ROLE_USER");
             redirectAttributes.addFlashAttribute("message", "Usuario creado correctamente.");
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());
@@ -105,4 +98,3 @@ public class ViewController {
         return "redirect:/usuarios";
     }
 }
-

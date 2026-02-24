@@ -30,13 +30,6 @@
         <input type="password" id="password" class="form-control" placeholder="Contrasena">
     </div>
 
-    <div class="mb-3">
-        <select id="role" class="form-select">
-            <option value="ROLE_USER">Usuario</option>
-            <option value="ROLE_ADMIN">Admin</option>
-        </select>
-    </div>
-
     <button class="btn btn-primary" onclick="crearUsuario()">Guardar</button>
 
     <hr class="my-5">
@@ -51,7 +44,7 @@
             <th>Nombre</th>
             <th>Email</th>
             <th>Rol</th>
-            <th>Activo</th>
+            <th>Estado cuenta</th>
         </tr>
         </thead>
         <tbody id="tablaUsuarios"></tbody>
@@ -69,7 +62,6 @@
         const nombre = document.getElementById("nombre").value.trim();
         const email = document.getElementById("email").value.trim();
         const password = document.getElementById("password").value;
-        const role = document.getElementById("role").value;
 
         if (!nombre || !email || !password) {
             alert("Completa nombre, email y contrasena.");
@@ -82,7 +74,7 @@
                 "Content-Type": "application/json",
                 ...getCsrfHeaders()
             },
-            body: JSON.stringify({ nombre, email, password, role })
+            body: JSON.stringify({ nombre, email, password })
         })
             .then(async response => {
                 const payload = await response.json().catch(() => ({}));
@@ -107,13 +99,15 @@
                 tabla.innerHTML = "";
 
                 data.forEach(usuario => {
+                    const rol = usuario.rol || "ROLE_USER";
+                    const estadoCuenta = usuario.estadoCuenta || "N/A";
                     tabla.innerHTML += `
                         <tr>
                             <td>${usuario.id}</td>
                             <td>${usuario.nombre}</td>
-                            <td>${usuario.email}</td>
-                            <td>${usuario.role}</td>
-                            <td>${usuario.enabled ? "Si" : "No"}</td>
+                            <td>${usuario.email || ""}</td>
+                            <td>${rol}</td>
+                            <td>${estadoCuenta}</td>
                         </tr>
                     `;
                 });

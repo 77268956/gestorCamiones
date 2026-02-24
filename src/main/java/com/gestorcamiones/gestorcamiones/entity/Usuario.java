@@ -1,87 +1,92 @@
 package com.gestorcamiones.gestorcamiones.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "usuarios")
-@Data
 public class Usuario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "id_usuarios")
+    private Long idUsuarios;
 
-    @NotBlank
-    @Column(nullable = false, unique = true)
     private String nombre;
+    private String apellido;
 
-    @NotBlank
-    @Email
-    @Column(nullable = false, unique = true)
-    private String email;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_empleado", nullable = false)
+    private EstadoEmpleado estadoEmpleado;
 
-    @NotBlank
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    @Column(nullable = false)
-    private String password;
+    private String telefono;
+    private String dui;
 
-    @NotBlank
-    @Column(nullable = false)
-    private String role; // "ROLE_USER", "ROLE_ADMIN"
+    @Column(name = "foto_url")
+    private String fotoUrl;
 
-    @Column(nullable = false)
-    private boolean enabled = true;
+    @Column(name = "id_camion")
+    private Long idCamion;
 
-    // Constructor vacío
-    public Usuario() {
-    }
+    // ===== RELACIONES =====
 
-    // Constructor con parámetros
-    public Usuario(String nombre, String email) {
-        this.nombre = nombre;
-        this.email = email;
-    }
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "rol_id")
+    private Rol rol;
 
-    // Getters y Setters
-    public Long getId() { return id; }
+    @OneToOne(mappedBy = "usuarioEntidad", fetch = FetchType.LAZY)
+    private Login login;
+
+    // ===== Auditoría =====
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    // ===== Getters y Setters =====
+
+    public Long getIdUsuarios() { return idUsuarios; }
+    public void setIdUsuarios(Long idUsuarios) { this.idUsuarios = idUsuarios; }
+    public Long getId() { return idUsuarios; }
 
     public String getNombre() { return nombre; }
-
     public void setNombre(String nombre) { this.nombre = nombre; }
 
-    public String getEmail() { return email; }
+    public String getApellido() { return apellido; }
+    public void setApellido(String apellido) { this.apellido = apellido; }
 
-    public void setEmail(String email) { this.email = email; }
+    public EstadoEmpleado getEstadoEmpleado() { return estadoEmpleado; }
+    public void setEstadoEmpleado(EstadoEmpleado estadoEmpleado) { this.estadoEmpleado = estadoEmpleado; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getTelefono() { return telefono; }
+    public void setTelefono(String telefono) { this.telefono = telefono; }
 
-    public String getPassword() {
-        return password;
-    }
+    public String getDui() { return dui; }
+    public void setDui(String dui) { this.dui = dui; }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
+    public String getFotoUrl() { return fotoUrl; }
+    public void setFotoUrl(String fotoUrl) { this.fotoUrl = fotoUrl; }
 
-    public String getRole() {
-        return role;
-    }
+    public Long getIdCamion() { return idCamion; }
+    public void setIdCamion(Long idCamion) { this.idCamion = idCamion; }
 
-    public void setRole(String role) {
-        this.role = role;
-    }
+    public Rol getRol() { return rol; }
+    public void setRol(Rol rol) { this.rol = rol; }
 
-    public boolean isEnabled() {
-        return enabled;
-    }
+    public Login getLogin() { return login; }
+    public void setLogin(Login login) { this.login = login; }
 
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 }

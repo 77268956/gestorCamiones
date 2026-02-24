@@ -1,73 +1,91 @@
 package com.gestorcamiones.gestorcamiones.service;
 
+import com.gestorcamiones.gestorcamiones.entity.EstadoCuenta;
+import com.gestorcamiones.gestorcamiones.entity.EstadoEmpleado;
+import com.gestorcamiones.gestorcamiones.entity.Login;
+import com.gestorcamiones.gestorcamiones.entity.Rol;
 import com.gestorcamiones.gestorcamiones.entity.Usuario;
+import com.gestorcamiones.gestorcamiones.repository.LoginRepository;
+import com.gestorcamiones.gestorcamiones.repository.RolRepository;
 import com.gestorcamiones.gestorcamiones.repository.UsuarioRepository;
-import com.gestorcamiones.gestorcamiones.security.CustomUserDetails;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-public class UsuarioService implements UserDetailsService {
+public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final LoginRepository loginRepository;
+    private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+    public UsuarioService(
+            UsuarioRepository usuarioRepository,
+            LoginRepository loginRepository,
+            RolRepository rolRepository,
+            PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
+        this.loginRepository = loginRepository;
+        this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
-    public Usuario guardar(Usuario usuario) {
-        if (usuarioRepository.existsByNombre(usuario.getNombre())) {
+    public Usuario crearConLogin(String nombre, String email, String password, String role) {
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("El nombre es obligatorio");
+        }
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("El correo es obligatorio");
+        }
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException("La contrasena es obligatoria");
+        }
+        String emailNormalizado = email.trim().toLowerCase();
+        if (usuarioRepository.existsByNombre(nombre)) {
             throw new IllegalArgumentException("Ya existe un usuario con ese nombre");
         }
-        if (usuarioRepository.existsByEmail(usuario.getEmail())) {
-            throw new IllegalArgumentException("Ya existe un usuario con ese email");
+        if (loginRepository.findByEmail(emailNormalizado).isPresent()) {
+            throw new IllegalArgumentException("Ya existe un login con ese correo");
         }
 
-        if (usuario.getRole() == null || usuario.getRole().isBlank()) {
-            usuario.setRole("ROLE_USER");
-        } else {
-            String normalizedRole = usuario.getRole().toUpperCase();
-            if (!normalizedRole.startsWith("ROLE_")) {
-                normalizedRole = "ROLE_" + normalizedRole;
-            }
-            if (!normalizedRole.equals("ROLE_USER") && !normalizedRole.equals("ROLE_ADMIN")) {
-                throw new IllegalArgumentException("Rol invalido. Usa ROLE_USER o ROLE_ADMIN");
-            }
-            usuario.setRole(normalizedRole);
-        }
+        String normalizedRole = normalizeRole(role);
+        Rol rolEntidad = rolRepository.findByRol(normalizedRole)
+                .orElseThrow(() -> new IllegalArgumentException("No existe el rol en base de datos: " + normalizedRole));
 
-        usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
-        usuario.setEnabled(true);
-        return usuarioRepository.save(usuario);
+        Usuario usuario = new Usuario();
+        usuario.setNombre(nombre);
+        usuario.setEstadoEmpleado(EstadoEmpleado.activo);
+        usuario.setRol(rolEntidad);
+        Usuario usuarioGuardado = usuarioRepository.save(usuario);
+
+        Login login = new Login();
+        login.setUsuario(nombre);
+        login.setEmail(emailNormalizado);
+        login.setPassword(passwordEncoder.encode(password));
+        login.setEstadoCuenta(EstadoCuenta.habilitado);
+        login.setUsuarioEntidad(usuarioGuardado);
+        loginRepository.save(login);
+
+        return usuarioGuardado;
     }
 
     public List<Usuario> listar() {
         return usuarioRepository.findAll();
     }
 
-    @Override
-    public UserDetails loadUserByUsername(String input) throws UsernameNotFoundException {
-
-        Usuario user;
-
-        if (input.contains("@")) {
-            // Es un email
-            user = usuarioRepository.findByEmail(input)
-                    .orElseThrow(() -> new UsernameNotFoundException("Email no encontrado: " + input));
-        } else {
-            // Es un username
-            user = usuarioRepository.findByNombre(input)
-                    .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + input));
+    private String normalizeRole(String role) {
+        if (role == null || role.isBlank()) {
+            return "ROLE_USER";
         }
-        return new CustomUserDetails(user);
+        String normalizedRole = role.trim().toUpperCase();
+        if (!normalizedRole.startsWith("ROLE_")) {
+            normalizedRole = "ROLE_" + normalizedRole;
+        }
+        if (!normalizedRole.equals("ROLE_USER") && !normalizedRole.equals("ROLE_ADMIN")) {
+            throw new IllegalArgumentException("Rol invalido. Usa ROLE_USER o ROLE_ADMIN");
+        }
+        return normalizedRole;
     }
-
 }
-

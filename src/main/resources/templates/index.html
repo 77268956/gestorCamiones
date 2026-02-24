@@ -11,28 +11,26 @@
 <div class="container-fluid">
     <div class="row min-vh-100">
 
-        <!-- LADO IZQUIERDO - BRANDING -->
         <div class="col-lg-6 d-none d-lg-flex flex-column justify-content-center align-items-center text-white login-hero">
 
             <h1 class="fw-bold display-5">Gestor de Camiones</h1>
             <p class="lead text-center px-5 mt-3">
-                Plataforma de administración y control de flota empresarial.
+                Plataforma de administracion y control de flota empresarial.
             </p>
 
             <div class="mt-4 text-center">
-                <p class="mb-1">✔ Gestión de flota</p>
-                <p class="mb-1">✔ Control de mantenimiento</p>
-                <p class="mb-1">✔ Monitoreo de estado</p>
+                <p class="mb-1">Gestion de flota</p>
+                <p class="mb-1">Control de mantenimiento</p>
+                <p class="mb-1">Monitoreo de estado</p>
             </div>
 
         </div>
 
-        <!-- LADO DERECHO - LOGIN -->
         <div class="col-lg-6 d-flex align-items-center justify-content-center bg-light">
 
             <div class="w-100 login-form-wrap">
 
-                <h3 class="mb-4 fw-bold">Iniciar sesión</h3>
+                <h3 class="mb-4 fw-bold">Iniciar sesion</h3>
 
                 <div th:if="${error}" class="alert alert-danger">
                     <span th:text="${error}"></span>
@@ -45,22 +43,22 @@
                 <form method="post" th:action="@{/login}">
 
                     <div class="mb-3">
-                        <label for="email" class="form-label">Usuario</label>
-                        <input type="text"
+                        <label for="email" class="form-label">Correo</label>
+                        <input type="email"
                                class="form-control form-control-lg"
                                id="email"
                                name="email"
-                               placeholder="Ingresa tu usuario"
+                               placeholder="Ingresa tu correo"
                                required autofocus>
                     </div>
 
                     <div class="mb-4">
-                        <label for="password" class="form-label">Contraseña</label>
+                        <label for="password" class="form-label">Contrasena</label>
                         <input type="password"
                                class="form-control form-control-lg"
                                id="password"
                                name="password"
-                               placeholder="Ingresa tu contraseña"
+                               placeholder="Ingresa tu contrasena"
                                required>
                     </div>
 
@@ -71,7 +69,7 @@
                 </form>
 
                 <div class="mt-4 text-muted small">
-                    <p class="mb-1"><strong>Admin:</strong> admin / Admin1234!</p>
+                    <p class="mb-1"><strong>Usuario de prueba:</strong> admin@demo.local / 123</p>
                 </div>
 
             </div>
