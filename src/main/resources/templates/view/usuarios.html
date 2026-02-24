@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8">
     <meta name="_csrf" th:content="${_csrf.token}">
@@ -11,111 +11,245 @@
 <div th:replace="fragments/navbar :: navbar"></div>
 
 <div class="container mt-5">
-    <p class="mb-3">
-        Admin autenticado:
-        <strong th:text="${nombreUsuario}">admin</strong>
-    </p>
+    <div class="container">
+        <div class="page-surface">
 
-    <h2 class="mb-4">Crear usuario</h2>
+            <!-- Franja naranja decorativa -->
+            <div class="mp-stripe"></div>
 
-    <div class="mb-3">
-        <input type="text" id="nombre" class="form-control" placeholder="Nombre de usuario">
+            <!-- Toolbar -->
+            <div class="mp-toolbar">
+                <div class="row align-items-center g-2">
+                    <div class="col-12 col-md-2">
+                        <h5 class="mp-title">Usuarios</h5>
+                    </div>
+
+                    <div class="col-12 col-md-4 mp-search">
+                        <div class="input-group">
+                            <span class="input-group-text">🔍</span>
+                            <input type="text" class="form-control" placeholder="Buscar…">
+                        </div>
+                    </div>
+
+                    <!-- Filtro por estado (select independiente) -->
+                    <div class="col-12 col-md-3">
+                        <select id="filtroEstadoSelect" class="form-select mp-select">
+                            <option selected>Filtrar por estado</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-3 d-grid">
+                        <button class="btn btn-add" data-bs-toggle="modal" data-bs-target="#modalAgregarUsuario">
+                            + Agregar usuario
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Agregar Usuario - VERSIÓN MÁS ANCHA -->
+            <div class="modal fade" id="modalAgregarUsuario" tabindex="-1" aria-labelledby="modalAgregarUsuarioLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-centered">  <!-- Cambiado de modal-lg a modal-xl -->
+                    <div class="modal-content mp-modal-content">
+                        <div class="modal-header mp-modal-header">
+                            <h5 class="modal-title" id="modalAgregarUsuarioLabel">Agregar Usuario</h5>
+                            <button type="button" class="btn-close mp-modal-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <form id="formAgregarUsuario" class="row g-4">
+                                <!-- ═════ DATOS PERSONALES Y ACCESO EN LA MISMA FILA ═════ -->
+                                <div class="col-md-8">
+                                    <div class="row g-3">
+                                        <!-- Título dentro de la columna -->
+                                        <div class="col-12">
+                                            <h6 class="mp-title-sm mb-2">Datos Personales</h6>
+                                            <hr class="mt-0">
+                                        </div>
+
+                                        <!-- Primera fila - 3 columnas -->
+                                        <div class="col-md-4">
+                                            <label for="nombre" class="form-label">Nombre *</label>
+                                            <input type="text" class="form-control mp-modal-input"
+                                                   id="nombre" name="nombre"
+                                                   placeholder="José" required>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label for="apellido" class="form-label">Apellido *</label>
+                                            <input type="text" class="form-control mp-modal-input"
+                                                   id="apellido" name="apellido"
+                                                   placeholder="Pérez" required>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label for="telefono" class="form-label">Teléfono *</label>
+                                            <input type="tel" class="form-control mp-modal-input"
+                                                   id="telefono" name="telefono"
+                                                   placeholder="7123-4567" required>
+                                        </div>
+
+                                        <!-- Segunda fila - 3 columnas -->
+                                        <div class="col-md-4">
+                                            <label for="dui" class="form-label">DUI *</label>
+                                            <input type="text" class="form-control mp-modal-input"
+                                                   id="dui" name="dui"
+                                                   placeholder="00000000-0" required>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label for="email" class="form-label">Correo *</label>
+                                            <input type="email" class="form-control mp-modal-input"
+                                                   id="email" name="email"
+                                                   placeholder="usuario@empresa.com" required>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label for="password" class="form-label">Contraseña *</label>
+                                            <input type="password" class="form-control mp-modal-input"
+                                                   id="password" name="password"
+                                                   placeholder="********" required>
+                                        </div>
+
+                                        <!-- Título Configuración -->
+                                        <div class="col-12 mt-2">
+                                            <h6 class="mp-title-sm mb-2">Configuración</h6>
+                                            <hr class="mt-0">
+                                        </div>
+
+                                        <!-- Tercera fila - 3 columnas -->
+                                        <div class="col-md-4">
+                                            <label for="estadoEmpleado" class="form-label">Estado *</label>
+                                            <select id="estadoEmpleado" name="estadoEmpleado"
+                                                    class="form-select mp-modal-input" required>
+                                                <option value="" disabled selected>Selecciona</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label for="rol" class="form-label">Rol *</label>
+                                            <select id="rol" name="rol"
+                                                    class="form-select mp-modal-input" required>
+                                                <option value="" disabled selected>Selecciona</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">Camión</label>
+                                            <div class="input-group">
+                                                <input type="text"
+                                                       id="camionSeleccionado"
+                                                       class="form-control mp-modal-input"
+                                                       placeholder="Seleccionar..."
+                                                       readonly>
+                                                <input type="hidden" id="camionId" name="camionId">
+                                                <button class="btn btn-outline-secondary"
+                                                        type="button"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalBuscarCamion">
+                                                    Buscar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ═════ COLUMNA DERECHA - FOTO ═════ -->
+                                <div class="col-md-4">
+                                    <div class="sticky-top" style="top: 20px;">
+                                        <label class="form-label">Foto del Usuario</label>
+                                        <div class="border rounded p-3 text-center">
+                                            <img id="usuarioImagen"
+                                                 src="https://via.placeholder.com/400x200?text=Sin+Imagen"
+                                                 alt="Foto del usuario"
+                                                 class="img-fluid rounded"
+                                                 style="max-height: 180px; width: 100%; object-fit: cover;">
+                                            <div class="mt-3">
+                                                <button type="button" class="btn btn-sm btn-primary w-100"
+                                                        onclick="document.getElementById('fileInput').click();">
+                                                    <i class="bi bi-upload"></i> Subir foto
+                                                </button>
+                                                <input type="file" id="fileInput" class="d-none" accept="image/*">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="modal-footer mp-modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" form="formAgregarUsuario" class="btn btn-add" sec:authorize="hasRole('ADMIN')">
+                                Guardar Usuario
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
+            <!-- Modal Buscar Camión -->
+            <div class="modal fade" id="modalBuscarCamion" tabindex="-1">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content mp-modal-content">
+                        <div class="modal-header mp-modal-header">
+                            <h5 class="modal-title">Seleccionar Camión</h5>
+                            <button type="button" class="btn-close mp-modal-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <table class="table mp-table">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Placa</th>
+                                    <th>Modelo</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tablaCamiones">
+                                <!-- Se llena con JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Usuarios -->
+            <div class="table-responsive">
+                <table class="table mp-table">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tablaUsuarios">
+                    <!-- Los datos se cargan dinámicamente -->
+                    <tr>
+                        <td colspan="6" class="text-center">Cargando usuarios...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer -->
+            <div class="mp-table-footer d-flex justify-content-between align-items-center">
+                <span id="totalUsuarios">Mostrando 0 usuarios</span>
+            </div>
+
+        </div>
     </div>
-
-    <div class="mb-3">
-        <input type="email" id="email" class="form-control" placeholder="Email">
-    </div>
-
-    <div class="mb-3">
-        <input type="password" id="password" class="form-control" placeholder="Contrasena">
-    </div>
-
-    <button class="btn btn-primary" onclick="crearUsuario()">Guardar</button>
-
-    <hr class="my-5">
-
-    <h2>Lista de usuarios</h2>
-    <button class="btn btn-success mb-3" onclick="listarUsuarios()">Cargar usuarios</button>
-
-    <table class="table table-bordered">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Email</th>
-            <th>Rol</th>
-            <th>Estado cuenta</th>
-        </tr>
-        </thead>
-        <tbody id="tablaUsuarios"></tbody>
-    </table>
 </div>
 
-<script th:inline="javascript">
-    function getCsrfHeaders() {
-        const token = document.querySelector('meta[name="_csrf"]').getAttribute("content");
-        const headerName = document.querySelector('meta[name="_csrf_header"]').getAttribute("content");
-        return { [headerName]: token };
-    }
-
-    function crearUsuario() {
-        const nombre = document.getElementById("nombre").value.trim();
-        const email = document.getElementById("email").value.trim();
-        const password = document.getElementById("password").value;
-
-        if (!nombre || !email || !password) {
-            alert("Completa nombre, email y contrasena.");
-            return;
-        }
-
-        fetch("/api/usuarios", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...getCsrfHeaders()
-            },
-            body: JSON.stringify({ nombre, email, password })
-        })
-            .then(async response => {
-                const payload = await response.json().catch(() => ({}));
-                if (!response.ok) {
-                    throw new Error(payload?.message || "No se pudo crear el usuario");
-                }
-                return payload;
-            })
-            .then(data => {
-                alert("Usuario creado con ID: " + data.id);
-                document.getElementById("password").value = "";
-                listarUsuarios();
-            })
-            .catch(error => alert(error.message));
-    }
-
-    function listarUsuarios() {
-        fetch("/api/usuarios")
-            .then(response => response.json())
-            .then(data => {
-                const tabla = document.getElementById("tablaUsuarios");
-                tabla.innerHTML = "";
-
-                data.forEach(usuario => {
-                    const rol = usuario.rol || "ROLE_USER";
-                    const estadoCuenta = usuario.estadoCuenta || "N/A";
-                    tabla.innerHTML += `
-                        <tr>
-                            <td>${usuario.id}</td>
-                            <td>${usuario.nombre}</td>
-                            <td>${usuario.email || ""}</td>
-                            <td>${rol}</td>
-                            <td>${estadoCuenta}</td>
-                        </tr>
-                    `;
-                });
-            })
-            .catch(() => alert("No se pudo cargar la lista de usuarios"));
-    }
-</script>
-
 <th:block th:replace="fragments/assets :: globalScripts"></th:block>
+<script src="/js/usuario.js"></script>
 </body>
 </html>

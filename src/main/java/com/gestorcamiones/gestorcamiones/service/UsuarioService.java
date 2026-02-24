@@ -1,5 +1,6 @@
 package com.gestorcamiones.gestorcamiones.service;
 
+import com.gestorcamiones.gestorcamiones.DTO.CrearUsuarioDTO;
 import com.gestorcamiones.gestorcamiones.entity.EstadoCuenta;
 import com.gestorcamiones.gestorcamiones.entity.EstadoEmpleado;
 import com.gestorcamiones.gestorcamiones.entity.Login;
@@ -8,6 +9,7 @@ import com.gestorcamiones.gestorcamiones.entity.Usuario;
 import com.gestorcamiones.gestorcamiones.repository.LoginRepository;
 import com.gestorcamiones.gestorcamiones.repository.RolRepository;
 import com.gestorcamiones.gestorcamiones.repository.UsuarioRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -87,5 +89,38 @@ public class UsuarioService {
             throw new IllegalArgumentException("Rol invalido. Usa ROLE_USER o ROLE_ADMIN");
         }
         return normalizedRole;
+    }
+
+    public EstadoEmpleado[] estados(){
+        return EstadoEmpleado.values();
+    }
+
+
+    @Transactional
+    public void crearUsuarioCompleto(CrearUsuarioDTO dto) {
+        // Buscar rol
+        Rol rol = rolRepository.findById(dto.getId_rol())
+                .orElseThrow(() -> new RuntimeException("Rol no encontrado: " + dto.getId_rol()));
+
+        // Crear usuario - TODOS los campos
+        Usuario usuario = new Usuario();
+        usuario.setNombre(dto.getNombre());
+        usuario.setApellido(dto.getApellido());
+        usuario.setTelefono(dto.getTelefono());
+        usuario.setDui(dto.getDui());
+        usuario.setEstadoEmpleado(EstadoEmpleado.activo);  // ← ¡NO OLVIDAR!
+        usuario.setRol(rol);  // ← ASIGNAR ROL
+
+        Usuario usuarioGuardado = usuarioRepository.save(usuario);
+
+        // Crear login
+        Login login = new Login();
+        login.setEmail(dto.getEmail());
+        login.setPassword(passwordEncoder.encode(dto.getPassword()));
+        login.setUsuario(dto.getNombre());
+        login.setEstadoCuenta(EstadoCuenta.habilitado);
+        login.setUsuarioEntidad(usuarioGuardado);
+
+        loginRepository.save(login);
     }
 }

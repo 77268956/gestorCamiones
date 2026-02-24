@@ -31,7 +31,7 @@ public class Usuario {
     // ===== RELACIONES =====
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "rol_id")
+    @JoinColumn(name = "id_rol", nullable = false)
     private Rol rol;
 
     @OneToOne(mappedBy = "usuarioEntidad", fetch = FetchType.LAZY)

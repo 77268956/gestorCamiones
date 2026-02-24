@@ -1,5 +1,7 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
+import com.gestorcamiones.gestorcamiones.DTO.CrearUsuarioDTO;
+import com.gestorcamiones.gestorcamiones.entity.EstadoEmpleado;
 import com.gestorcamiones.gestorcamiones.entity.Login;
 import com.gestorcamiones.gestorcamiones.entity.Usuario;
 import com.gestorcamiones.gestorcamiones.service.UsuarioService;
@@ -20,22 +22,27 @@ public class UsuarioController {
         this.usuarioService = usuarioService;
     }
 
+    // ✅ ÚNICO MÉTODO POST - Usa CrearUsuarioDTO que tiene más campos
     @PostMapping
-    public ResponseEntity<?> crear(@Valid @RequestBody CrearUsuarioRequest request) {
+    public ResponseEntity<?> crear(@Valid @RequestBody CrearUsuarioDTO dto) {
         try {
-            Usuario creado = usuarioService.crearConLogin(request.nombre(), request.email(), request.password(), "ROLE_USER");
-            return ResponseEntity.ok(Map.of(
-                    "id", creado.getId(),
-                    "nombre", creado.getNombre()
-            ));
+            usuarioService.crearUsuarioCompleto(dto);
+            return ResponseEntity.ok(Map.of("message", "Usuario creado exitosamente"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", "Error al crear usuario: " + e.getMessage()));
         }
     }
 
     @GetMapping
     public List<UsuarioItemResponse> listar() {
         return usuarioService.listar().stream().map(this::toResponse).toList();
+    }
+
+    @GetMapping("/estados")
+    public EstadoEmpleado[] estadoEmpleado(){
+        return usuarioService.estados();
     }
 
     private UsuarioItemResponse toResponse(Usuario usuario) {
@@ -46,9 +53,7 @@ public class UsuarioController {
         return new UsuarioItemResponse(usuario.getId(), usuario.getNombre(), email, rol, estadoCuenta);
     }
 
-    public record CrearUsuarioRequest(String nombre, String email, String password) {
-    }
-
+    // DTOs al final
     public record UsuarioItemResponse(Long id, String nombre, String email, String rol, String estadoCuenta) {
     }
 }

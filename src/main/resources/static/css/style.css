@@ -479,3 +479,11 @@ a:hover      { color: var(--mp-orange); }
     border-top: 1px solid var(--mp-border);
     background: var(--mp-white);
 }
+
+
+.mp-title-sm {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--mp-blue-dark);
+    letter-spacing: .4px;
+}
