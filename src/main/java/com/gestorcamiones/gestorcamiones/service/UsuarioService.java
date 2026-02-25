@@ -1,6 +1,7 @@
 package com.gestorcamiones.gestorcamiones.service;
 
 import com.gestorcamiones.gestorcamiones.DTO.CrearUsuarioDTO;
+import com.gestorcamiones.gestorcamiones.DTO.PerfilUsuarioDTO;
 import com.gestorcamiones.gestorcamiones.entity.EstadoCuenta;
 import com.gestorcamiones.gestorcamiones.entity.EstadoEmpleado;
 import com.gestorcamiones.gestorcamiones.entity.Login;
@@ -77,6 +78,7 @@ public class UsuarioService {
         return usuarioRepository.findAll();
     }
 
+
     private String normalizeRole(String role) {
         if (role == null || role.isBlank()) {
             return "ROLE_USER";
@@ -123,4 +125,5 @@ public class UsuarioService {
 
         loginRepository.save(login);
     }
+
 }

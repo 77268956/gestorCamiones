@@ -219,8 +219,6 @@ function seleccionarCamion(id, placa, modelo) {
     modal.hide();
 }
 
-// metos para agragr usuarios en la tabla
-
 // Función para cargar usuarios en la tabla
 function cargarUsuarios() {
     const tbody = document.getElementById("tablaUsuarios");
