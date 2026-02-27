@@ -77,19 +77,4 @@ public class ViewController {
     public String camiones() {
         return "/view/view_camiones";
     }
-
-    @PostMapping("/usuarios/guardar")
-    public String guardarUsuarioDesdePractica(
-            @RequestParam String email,
-            @RequestParam String password,
-            RedirectAttributes redirectAttributes) {
-        try {
-            String nombre = email.contains("@") ? email.substring(0, email.indexOf('@')) : email;
-            usuarioService.crearConLogin(nombre, email, password, "ROLE_USER");
-            redirectAttributes.addFlashAttribute("message", "Usuario creado correctamente.");
-        } catch (IllegalArgumentException ex) {
-            redirectAttributes.addFlashAttribute("error", ex.getMessage());
-        }
-        return "redirect:/usuarios";
-    }
 }

@@ -39,7 +39,7 @@ public class GastoViaje {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_admin")
-    private Usuario admin;
+    private Usuario UsuarioAdmin;
 
     // 🔹 Datos del gasto
 

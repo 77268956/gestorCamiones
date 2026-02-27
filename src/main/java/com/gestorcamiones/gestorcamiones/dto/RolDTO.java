@@ -1,4 +1,4 @@
-package com.gestorcamiones.gestorcamiones.DTO;
+package com.gestorcamiones.gestorcamiones.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;

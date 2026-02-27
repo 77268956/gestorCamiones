@@ -37,7 +37,7 @@ public class Rol {
     @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
 
-    @Column(name = "deleted_at")
+        @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
     @OneToMany(mappedBy = "rol", fetch = FetchType.LAZY)

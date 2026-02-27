@@ -46,13 +46,13 @@ public class ViajeDetalle {
     @Column(name = "estado", nullable = false)
     private EstadoViaje estado;
 
-    // 🔹 Flags
+    //Flags
 
     private Boolean pagado = false;
 
     private Boolean iva = false;
 
-    // 🔹 Fechas
+    // Fechas
 
     @Column(name = "fecha_salida")
     private LocalDateTime fechaSalida;
@@ -60,7 +60,7 @@ public class ViajeDetalle {
     @Column(name = "fecha_llegada")
     private LocalDateTime fechaLlegada;
 
-    // 🔹 Relaciones opcionales
+    // Relaciones
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_camion")
