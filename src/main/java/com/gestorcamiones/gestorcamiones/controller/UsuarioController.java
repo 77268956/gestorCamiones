@@ -1,7 +1,7 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
 import com.gestorcamiones.gestorcamiones.DTO.CrearUsuarioDTO;
-import com.gestorcamiones.gestorcamiones.entity.EstadoEmpleado;
+import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoEmpleado;
 import com.gestorcamiones.gestorcamiones.entity.Login;
 import com.gestorcamiones.gestorcamiones.entity.Usuario;
 import com.gestorcamiones.gestorcamiones.service.UsuarioService;
@@ -22,7 +22,6 @@ public class UsuarioController {
         this.usuarioService = usuarioService;
     }
 
-    // ✅ ÚNICO MÉTODO POST - Usa CrearUsuarioDTO que tiene más campos
     @PostMapping
     public ResponseEntity<?> crear(@Valid @RequestBody CrearUsuarioDTO dto) {
         try {
@@ -50,7 +49,7 @@ public class UsuarioController {
         String email = login != null ? login.getEmail() : null;
         String estadoCuenta = login != null && login.getEstadoCuenta() != null ? login.getEstadoCuenta().name() : null;
         String rol = usuario.getRol() != null ? usuario.getRol().getRol() : null;
-        return new UsuarioItemResponse(usuario.getId(), usuario.getNombre(), email, rol, estadoCuenta);
+        return new UsuarioItemResponse(usuario.getIdUsuarios(), usuario.getNombre(), email, rol, estadoCuenta);
     }
 
     // DTOs al final

@@ -1,6 +1,6 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
-import com.gestorcamiones.gestorcamiones.entity.EstadoCamion;
+import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCamion;
 import com.gestorcamiones.gestorcamiones.service.CamionServicio;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

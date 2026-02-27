@@ -1,6 +1,6 @@
 package com.gestorcamiones.gestorcamiones.service;
 
-import com.gestorcamiones.gestorcamiones.entity.EstadoCamion;
+import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCamion;
 import org.springframework.stereotype.Service;
 
 @Service

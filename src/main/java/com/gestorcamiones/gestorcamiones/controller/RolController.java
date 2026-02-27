@@ -1,8 +1,6 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
 import com.gestorcamiones.gestorcamiones.DTO.RolDTO;
-import com.gestorcamiones.gestorcamiones.entity.EstadoEmpleado;
-import com.gestorcamiones.gestorcamiones.entity.Rol;
 import com.gestorcamiones.gestorcamiones.service.RolService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

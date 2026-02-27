@@ -142,6 +142,7 @@ document.getElementById("formAgregarUsuario")
         const email = document.getElementById("email")?.value;
         const password = document.getElementById("password")?.value;
         const rolValue = document.getElementById("rol")?.value;
+        const estadoEmpleado = document.getElementById("estadoEmpleado")?.value;
         const camionId = document.getElementById("camionId")?.value;
 
         // Validar campos requeridos
@@ -150,7 +151,6 @@ document.getElementById("formAgregarUsuario")
             return;
         }
 
-        // ⚠️ IMPORTANTE: Convertir a número
         const rolId = parseInt(rolValue, 10);
 
         if (isNaN(rolId)) {
@@ -158,9 +158,8 @@ document.getElementById("formAgregarUsuario")
             return;
         }
 
-        alert("Rol ID válido: " + rolId);  // ← Esto debería mostrar un número
+        alert("Rol ID válido: " + rolId);
 
-        // ✅ CORREGIDO: El campo debe llamarse "id_rol" para que coincida con la BD
         const data = {
             nombre: nombre,
             apellido: apellido || null,
@@ -168,7 +167,8 @@ document.getElementById("formAgregarUsuario")
             dui: dui || null,
             email: email,
             password: password,
-            id_rol: rolId,  // ← ¡CAMBIO CRÍTICO! De "rolId" a "id_rol"
+            estadoEmpleado: estadoEmpleado,
+            id_rol: rolId,
             camionId: camionId ? parseInt(camionId, 10) : null
         };
 

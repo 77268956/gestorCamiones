@@ -9,27 +9,32 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
-@Table(name = "rol")
+@Table(name = "clientes")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@SQLDelete(sql = "UPDATE rol SET deleted_at = CURRENT_TIMESTAMP WHERE id_rol = ?")
+@SQLDelete(sql = "UPDATE clientes SET deleted_at = CURRENT_TIMESTAMP WHERE id_cliente = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class Rol {
+public class Cliente {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_rol")
-    private Long idRol;
+    @Column(name = "id_cliente")
+    private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String rol;
+    @Column(nullable = false)
+    private String nombre;
 
-    private String descripcion;
+    private String telefono;
+
+    @Column(name = "direccion")
+    private String direccion;
+
+    @Column(name = "dui_nit", unique = true)
+    private String duiNit;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -39,7 +44,4 @@ public class Rol {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
-
-    @OneToMany(mappedBy = "rol", fetch = FetchType.LAZY)
-    private List<Usuario> usuarios;
 }

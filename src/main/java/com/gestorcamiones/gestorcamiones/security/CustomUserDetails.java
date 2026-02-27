@@ -1,6 +1,6 @@
 package com.gestorcamiones.gestorcamiones.security;
 
-import com.gestorcamiones.gestorcamiones.entity.EstadoCuenta;
+import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCuenta;
 import com.gestorcamiones.gestorcamiones.entity.Login;
 import com.gestorcamiones.gestorcamiones.entity.Usuario;
 import org.springframework.security.core.GrantedAuthority;
@@ -20,7 +20,7 @@ public class CustomUserDetails implements UserDetails {
 
     public Long getIdUsuario() {
         Usuario usuario = login.getUsuarioEntidad();
-        return usuario != null ? usuario.getId() : null;
+        return usuario != null ? usuario.getIdUsuarios() : null;
     }
 
     public String getEmail() {

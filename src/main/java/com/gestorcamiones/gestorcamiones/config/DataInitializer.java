@@ -1,7 +1,7 @@
 package com.gestorcamiones.gestorcamiones.config;
 
-import com.gestorcamiones.gestorcamiones.entity.EstadoCuenta;
-import com.gestorcamiones.gestorcamiones.entity.EstadoEmpleado;
+import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCuenta;
+import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoEmpleado;
 import com.gestorcamiones.gestorcamiones.entity.Login;
 import com.gestorcamiones.gestorcamiones.entity.Rol;
 import com.gestorcamiones.gestorcamiones.entity.Usuario;

@@ -1,11 +1,24 @@
 package com.gestorcamiones.gestorcamiones.entity;
 
+import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCuenta;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "login")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@SQLDelete(sql = "UPDATE login SET deleted_at = CURRENT_TIMESTAMP WHERE id_login = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class Login {
 
     @Id
@@ -13,12 +26,13 @@ public class Login {
     @Column(name = "id_login")
     private Long idLogin;
 
-    @Column(name = "usuario", unique = true)
+    @Column(name = "usuario", unique = true, nullable = false)
     private String usuario;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(nullable = false, length = 255)
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -29,39 +43,13 @@ public class Login {
     @JoinColumn(name = "id_usuario", nullable = false, unique = true)
     private Usuario usuarioEntidad;
 
-    @Column(name = "created_at", updatable = false)
+
+    @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
-
-    public Long getIdLogin() { return idLogin; }
-    public void setIdLogin(Long idLogin) { this.idLogin = idLogin; }
-
-    public String getUsuario() { return usuario; }
-    public void setUsuario(String usuario) { this.usuario = usuario; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
-
-    public EstadoCuenta getEstadoCuenta() { return estadoCuenta; }
-    public void setEstadoCuenta(EstadoCuenta estadoCuenta) { this.estadoCuenta = estadoCuenta; }
-
-    public Usuario getUsuarioEntidad() { return usuarioEntidad; }
-    public void setUsuarioEntidad(Usuario usuarioEntidad) { this.usuarioEntidad = usuarioEntidad; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-
-    public LocalDateTime getDeletedAt() { return deletedAt; }
-    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 }

@@ -1,9 +1,8 @@
 package com.gestorcamiones.gestorcamiones.service;
 
 import com.gestorcamiones.gestorcamiones.DTO.CrearUsuarioDTO;
-import com.gestorcamiones.gestorcamiones.DTO.PerfilUsuarioDTO;
-import com.gestorcamiones.gestorcamiones.entity.EstadoCuenta;
-import com.gestorcamiones.gestorcamiones.entity.EstadoEmpleado;
+import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCuenta;
+import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoEmpleado;
 import com.gestorcamiones.gestorcamiones.entity.Login;
 import com.gestorcamiones.gestorcamiones.entity.Rol;
 import com.gestorcamiones.gestorcamiones.entity.Usuario;
@@ -104,14 +103,18 @@ public class UsuarioService {
         Rol rol = rolRepository.findById(dto.getId_rol())
                 .orElseThrow(() -> new RuntimeException("Rol no encontrado: " + dto.getId_rol()));
 
+        if (dto.getEstadoEmpleado() == null) {
+            throw new RuntimeException("El estado del usuario es null");
+        }
+
         // Crear usuario - TODOS los campos
         Usuario usuario = new Usuario();
         usuario.setNombre(dto.getNombre());
         usuario.setApellido(dto.getApellido());
         usuario.setTelefono(dto.getTelefono());
         usuario.setDui(dto.getDui());
-        usuario.setEstadoEmpleado(EstadoEmpleado.activo);  // ← ¡NO OLVIDAR!
-        usuario.setRol(rol);  // ← ASIGNAR ROL
+        usuario.setEstadoEmpleado(dto.getEstadoEmpleado());
+        usuario.setRol(rol);
 
         Usuario usuarioGuardado = usuarioRepository.save(usuario);
 

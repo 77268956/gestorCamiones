@@ -12,24 +12,37 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "rol")
+@Table(name = "viaje")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@SQLDelete(sql = "UPDATE rol SET deleted_at = CURRENT_TIMESTAMP WHERE id_rol = ?")
+@SQLDelete(sql = "UPDATE viaje SET deleted_at = CURRENT_TIMESTAMP WHERE id_viaje = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class Rol {
+public class Viaje {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_rol")
-    private Long idRol;
+    @Column(name = "id_viaje")
+    private Long idViaje;
 
-    @Column(nullable = false, unique = true)
-    private String rol;
+    @Column(name = "nombre_viaje")
+    private String nombreViaje;
 
-    private String descripcion;
+    // 🔹 Relaciones
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_admin", nullable = false)
+    private Usuario admin;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_cliente", nullable = false)
+    private Cliente cliente;
+
+    @OneToMany(mappedBy = "viaje", cascade = CascadeType.ALL)
+    private List<ViajeDetalle> detalles;
+
+    // 🔹 Auditoría
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -39,7 +52,4 @@ public class Rol {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
-
-    @OneToMany(mappedBy = "rol", fetch = FetchType.LAZY)
-    private List<Usuario> usuarios;
 }
