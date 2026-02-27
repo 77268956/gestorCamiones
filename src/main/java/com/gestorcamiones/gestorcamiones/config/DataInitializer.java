@@ -19,7 +19,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class DataInitializer {
 
     @Bean
-    CommandLineRunner initDefaultAdmin(
+    CommandLineRunner initDefaultUser(
             UsuarioRepository usuarioRepository,
             LoginRepository loginRepository,
             RolRepository rolRepository,
@@ -41,25 +41,25 @@ public class DataInitializer {
                 return rolRepository.save(rol);
             });
 
-            Usuario adminUsuario = loginRepository.findByEmail("admin@demo.local")
+            Usuario defaultUsuario = loginRepository.findByEmail("soporte@demo.local")
                     .map(Login::getUsuarioEntidad)
-                    .orElseGet(() -> usuarioRepository.findByNombre("admin").orElseGet(Usuario::new));
+                    .orElseGet(() -> usuarioRepository.findByNombre("soporte").orElseGet(Usuario::new));
 
-            adminUsuario.setNombre("admin");
-            adminUsuario.setEstadoEmpleado(EstadoEmpleado.activo);
-            adminUsuario.setRol(roleAdmin);
-            adminUsuario = usuarioRepository.save(adminUsuario);
+            defaultUsuario.setNombre("soporte");
+            defaultUsuario.setEstadoEmpleado(EstadoEmpleado.activo);
+            defaultUsuario.setRol(roleAdmin);
+            defaultUsuario = usuarioRepository.save(defaultUsuario);
 
-            Login adminLogin = loginRepository.findByEmail("admin@demo.local")
-                    .or(() -> loginRepository.findByUsuario("admin"))
+            Login defaultLogin = loginRepository.findByEmail("soporte@demo.local")
+                    .or(() -> loginRepository.findByUsuario("soporte"))
                     .orElseGet(Login::new);
 
-            adminLogin.setUsuario("admin");
-            adminLogin.setEmail("admin@demo.local");
-            adminLogin.setPassword(passwordEncoder.encode("123"));
-            adminLogin.setEstadoCuenta(EstadoCuenta.habilitado);
-            adminLogin.setUsuarioEntidad(adminUsuario);
-            loginRepository.save(adminLogin);
+            defaultLogin.setUsuario("soporte");
+            defaultLogin.setEmail("soporte@demo.local");
+            defaultLogin.setPassword(passwordEncoder.encode("123"));
+            defaultLogin.setEstadoCuenta(EstadoCuenta.habilitado);
+            defaultLogin.setUsuarioEntidad(defaultUsuario);
+            loginRepository.save(defaultLogin);
         });
     }
 }

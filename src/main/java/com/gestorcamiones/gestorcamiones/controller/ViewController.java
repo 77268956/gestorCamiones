@@ -62,11 +62,6 @@ public class ViewController {
         return "/view/usuarios";
     }
 
-    @GetMapping("/admin")
-    public String admin() {
-        return "/view/admin";
-    }
-
     @GetMapping("/practica")
     public String practica(Authentication authentication, Model model) {
         String nombreUsuario = authentication.getName();

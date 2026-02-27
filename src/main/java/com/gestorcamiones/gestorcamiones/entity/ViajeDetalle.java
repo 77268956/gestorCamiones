@@ -2,6 +2,8 @@ package com.gestorcamiones.gestorcamiones.entity;
 
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
 import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
+import com.gestorcamiones.gestorcamiones.entity.converter.EstadoViajeConverter;
+import com.gestorcamiones.gestorcamiones.entity.converter.TipoTramoConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -36,11 +38,11 @@ public class ViajeDetalle {
 
     // 🔹 Enums
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = TipoTramoConverter.class)
     @Column(name = "tipo_tramo", nullable = false)
     private TipoTramo tipoTramo;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EstadoViajeConverter.class)
     @Column(name = "estado", nullable = false)
     private EstadoViaje estado;
 
