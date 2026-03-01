@@ -2,13 +2,12 @@ package com.gestorcamiones.gestorcamiones.controller;
 
 import com.gestorcamiones.gestorcamiones.security.CustomUserDetails;
 import com.gestorcamiones.gestorcamiones.service.UsuarioService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class ViewController {
@@ -27,10 +26,15 @@ public class ViewController {
     public String login(
             @RequestParam(value = "error", required = false) String error,
             @RequestParam(value = "logout", required = false) String logout,
+            HttpSession session,
             Model model) {
 
-        if (error != null) {
-            model.addAttribute("error", "Correo o contrasena incorrectos");
+        String sessionError = (String) session.getAttribute("error");
+        if (sessionError != null && !sessionError.isBlank()) {
+            model.addAttribute("error", sessionError);
+            session.removeAttribute("error");
+        } else if (error != null) {
+            model.addAttribute("error", "Usuario o contrasena incorrectos");
         }
 
         if (logout != null) {

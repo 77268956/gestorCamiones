@@ -7,6 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -50,6 +51,13 @@ public class CustomUserDetails implements UserDetails {
         return List.of(new SimpleGrantedAuthority(rol));
     }
 
+
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return !login.estaBloqueado();
+    }
+
     @Override
     public String getPassword() {
         return login.getPassword();
@@ -60,20 +68,15 @@ public class CustomUserDetails implements UserDetails {
         return login.getEmail();
     }
 
-    @Override
-    public boolean isEnabled() {
-        return login.getEstadoCuenta() == EstadoCuenta.habilitado;
-    }
 
-    @Override
-    public boolean isAccountNonExpired() { return true; }
 
-    @Override
-    public boolean isAccountNonLocked() {
-        return login.getEstadoCuenta() != EstadoCuenta.bloqueado;
-    }
 
-    @Override
-    public boolean isCredentialsNonExpired() { return true; }
+
+
+
+
+    @Override public boolean isAccountNonExpired() { return true; }
+    @Override public boolean isCredentialsNonExpired() { return true; }
+    @Override public boolean isEnabled() { return true; }
 
 }

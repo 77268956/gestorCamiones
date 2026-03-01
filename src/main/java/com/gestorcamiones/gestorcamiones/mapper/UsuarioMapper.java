@@ -7,7 +7,6 @@ import com.gestorcamiones.gestorcamiones.entity.Usuario;
 public class UsuarioMapper {
 
     public static UsuarioPerfilDTO mapToPerfilDTO(Usuario usuario) {
-
         Login login = usuario.getLogin();
 
         return new UsuarioPerfilDTO(

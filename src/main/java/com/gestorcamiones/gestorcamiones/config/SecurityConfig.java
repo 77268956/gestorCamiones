@@ -1,6 +1,9 @@
 package com.gestorcamiones.gestorcamiones.config;
 
+import com.gestorcamiones.gestorcamiones.security.CustomAuthenticationFailureHandler;
+import com.gestorcamiones.gestorcamiones.security.CustomAuthenticationSuccessHandler;
 import com.gestorcamiones.gestorcamiones.service.LoginUserDetailsService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -14,8 +17,18 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final CustomAuthenticationFailureHandler failureHandler;
+    private final CustomAuthenticationSuccessHandler successHandler;
+
+    public SecurityConfig(CustomAuthenticationFailureHandler failureHandler,
+                          CustomAuthenticationSuccessHandler successHandler) {
+        this.failureHandler = failureHandler;
+        this.successHandler = successHandler;
+    }
+
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, DaoAuthenticationProvider authenticationProvider) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http,
+                                           DaoAuthenticationProvider authenticationProvider) throws Exception {
         http
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
@@ -29,8 +42,8 @@ public class SecurityConfig {
                         .loginProcessingUrl("/login")
                         .usernameParameter("email")
                         .passwordParameter("password")
-                        .defaultSuccessUrl("/dashboard", true)
-                        .failureUrl("/login?error=true")
+                        .successHandler(successHandler)
+                        .failureHandler(failureHandler)
                         .permitAll()
                 )
                 .logout(logout -> logout
@@ -48,10 +61,15 @@ public class SecurityConfig {
     }
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider(LoginUserDetailsService loginUserDetailsService,
-                                                            PasswordEncoder passwordEncoder) {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(loginUserDetailsService);
+    public DaoAuthenticationProvider authenticationProvider(
+            LoginUserDetailsService userDetailsService,
+            PasswordEncoder passwordEncoder) {
+
+        DaoAuthenticationProvider provider =
+                new DaoAuthenticationProvider(userDetailsService);
+
         provider.setPasswordEncoder(passwordEncoder);
+
         return provider;
     }
 }

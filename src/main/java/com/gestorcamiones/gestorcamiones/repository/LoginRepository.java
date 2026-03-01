@@ -19,5 +19,4 @@ public interface LoginRepository extends JpaRepository<Login, Long> {
             where lower(l.email) = lower(:email)
             """)
     Optional<Login> findAuthByEmail(@Param("email") String email);
-
 }
