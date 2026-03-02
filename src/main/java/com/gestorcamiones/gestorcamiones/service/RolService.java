@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Servicio para consulta de roles disponibles.
+ */
 @Service
 public class RolService {
     private final RolRepository rolRepository;

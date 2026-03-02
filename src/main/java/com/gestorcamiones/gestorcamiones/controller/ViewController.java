@@ -9,6 +9,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+/**
+ * Controlador MVC para vistas web (login, dashboard y modulos).
+ */
 @Controller
 public class ViewController {
     private final UsuarioService usuarioService;

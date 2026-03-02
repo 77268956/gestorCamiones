@@ -19,6 +19,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Implementa la logica de negocio para administracion de usuarios y credenciales.
+ */
 @Service
 public class UsuarioService implements IUsuarioService {
 

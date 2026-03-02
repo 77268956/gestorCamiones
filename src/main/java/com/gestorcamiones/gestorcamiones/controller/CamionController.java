@@ -1,17 +1,22 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
 import com.gestorcamiones.gestorcamiones.dto.CrearCamionDTO;
-import com.gestorcamiones.gestorcamiones.entity.Camion;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCamion;
 import com.gestorcamiones.gestorcamiones.service.CamionServicio;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Expone los endpoints REST para consulta y creacion de camiones.
+ */
 @RestController
 @RequestMapping("/api/camiones")
+@Tag(name = "Camiones", description = "Operaciones relacionadas con el catalogo de camiones.")
 public class CamionController {
 
     private final CamionServicio camionService;
@@ -21,16 +26,19 @@ public class CamionController {
     }
 
     @GetMapping("/estados")
+    @Operation(summary = "Listar estados de camion", description = "Devuelve todos los estados posibles para registrar un camion.")
     public EstadoCamion[] listarEstados() {
         return camionService.estadosCamion();
     }
 
     @GetMapping
+    @Operation(summary = "Listar camiones", description = "Retorna el listado de camiones registrados.")
     public List<CrearCamionDTO> listarCamiones() {
         return camionService.listarCamiones();
     }
 
     @PostMapping
+    @Operation(summary = "Crear camion", description = "Registra un nuevo camion con los datos enviados en el body.")
     public ResponseEntity<CrearCamionDTO> crearCamion(
             @Valid @RequestBody CrearCamionDTO dto) {
 

@@ -15,6 +15,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+/**
+ * Inicializa datos base (roles y usuario administrador) al levantar la aplicacion.
+ */
 @Configuration
 public class DataInitializer {
 

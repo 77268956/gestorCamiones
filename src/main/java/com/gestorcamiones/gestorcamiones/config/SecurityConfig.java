@@ -3,7 +3,6 @@ package com.gestorcamiones.gestorcamiones.config;
 import com.gestorcamiones.gestorcamiones.security.CustomAuthenticationFailureHandler;
 import com.gestorcamiones.gestorcamiones.security.CustomAuthenticationSuccessHandler;
 import com.gestorcamiones.gestorcamiones.service.LoginUserDetailsService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -13,6 +12,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+/**
+ * Define las reglas de autenticacion y autorizacion de la aplicacion.
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -33,6 +35,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/login", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/usuarios/**", "/api/usuarios/**").hasRole("ADMIN")
                         .requestMatchers("/camiones").hasRole( "ADMIN")
                         .requestMatchers("/dashboard", "/practica").hasAnyRole("USER", "ADMIN")

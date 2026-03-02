@@ -3,6 +3,9 @@ package com.gestorcamiones.gestorcamiones;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+/**
+ * Punto de entrada principal de la aplicacion Gestor de Camiones.
+ */
 @SpringBootApplication
 public class GestorCamionesApplication {
 
