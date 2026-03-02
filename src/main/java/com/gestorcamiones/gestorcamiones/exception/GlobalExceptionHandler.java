@@ -22,5 +22,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.badRequest().body(errores);
     }
+
+
 }
 

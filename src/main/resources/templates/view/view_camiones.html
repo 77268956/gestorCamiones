@@ -1,54 +1,44 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>camiones</title>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title>Camiones</title>
     <th:block th:replace="fragments/assets :: globalStyles"></th:block>
-
-
-
-    </head>
+</head>
 <body>
 <div th:replace="fragments/navbar :: navbar"></div>
 
 <div class="container">
     <div class="page-surface">
-
-        <!-- Franja naranja decorativa -->
         <div class="mp-stripe"></div>
 
-        <!-- Toolbar -->
         <div class="mp-toolbar">
             <div class="row align-items-center g-2">
-
                 <div class="col-12 col-md-2">
                     <h5 class="mp-title">Camiones</h5>
                 </div>
 
                 <div class="col-12 col-md-4 mp-search">
                     <div class="input-group">
-                        <span class="input-group-text">🔍</span>
-                        <input type="text" class="form-control" placeholder="Buscar placa, modelo…">
+                        <span class="input-group-text">Buscar</span>
+                        <input type="text" class="form-control" placeholder="Buscar placa, modelo..." disabled>
                     </div>
                 </div>
 
                 <div class="col-12 col-md-3">
-                    <select class="form-select mp-select">
-                        <option selected>Categoría</option>
-                        <option value="1">En taller</option>
-                        <option value="2">Activos</option>
-                        <option value="3">Inactivo</option>
+                    <select class="form-select mp-select" disabled>
+                        <option selected>Filtro pendiente</option>
                     </select>
                 </div>
 
                 <div class="col-12 col-md-3 d-grid">
-                    <button class="btn btn-add" data-bs-toggle="modal" data-bs-target="#modalAgregarCamion">+ Agregar Camión</button>
+                    <button class="btn btn-add" data-bs-toggle="modal" data-bs-target="#modalAgregarCamion">+ Agregar Camion</button>
                 </div>
-
             </div>
         </div>
 
-        <!-- Tabla -->
         <div class="table-responsive">
             <table class="table mp-table">
                 <thead>
@@ -56,111 +46,111 @@
                     <th>#</th>
                     <th>Placa</th>
                     <th>Modelo</th>
-                    <th>Categoría</th>
+                    <th>Nombre</th>
                     <th>Estado</th>
                     <th class="text-center">Acciones</th>
                 </tr>
                 </thead>
-                <tbody>
+                <tbody id="tablaCamiones">
                 <tr>
-                    <td class="row-num">01</td>
-                    <td><span class="plate">P123-456</span></td>
-                    <td><strong>Freightliner 2020</strong></td>
-                    <td>Carga Pesada</td>
-                    <td><span class="st-activo">● Activo</span></td>
-                    <td class="text-center">
-                        <div class="d-flex gap-2 justify-content-center">
-                            <button class="btn-edit">✏ Editar</button>
-                            <button class="btn-del">🗑 Eliminar</button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="row-num">02</td>
-                    <td><span class="plate">P789-654</span></td>
-                    <td><strong>Volvo FH</strong></td>
-                    <td>En taller</td>
-                    <td><span class="st-mant">🔧 Mantenimiento</span></td>
-                    <td class="text-center">
-                        <div class="d-flex gap-2 justify-content-center">
-                            <button class="btn-edit">✏ Editar</button>
-                            <button class="btn-del">🗑 Eliminar</button>
-                        </div>
-                    </td>
+                    <td colspan="6" class="text-center">Cargando camiones...</td>
                 </tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- Footer -->
         <div class="mp-table-footer d-flex justify-content-between align-items-center">
-            <span>Mostrando 2 camiones</span>
+            <span id="totalCamiones">Mostrando 0 camiones</span>
         </div>
-
     </div>
 </div>
 
-
 <div class="modal fade" id="modalAgregarCamion" tabindex="-1" aria-labelledby="modalAgregarCamionLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content mp-modal-content">
             <div class="modal-header mp-modal-header">
-                <h5 class="modal-title" id="modalAgregarCamionLabel">Agregar Camion</h5>
+                <h5 class="modal-title" id="modalAgregarCamionLabel">Agregar Nuevo Camion</h5>
                 <button type="button" class="btn-close mp-modal-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+
             <div class="modal-body">
-                <form id="formAgregarCamion" class="row g-3">
-                    <div class="col-12 col-md-6">
-                        <label for="camionPlaca" class="form-label">Placa</label>
-                        <input type="text" class="form-control mp-modal-input" id="camionPlaca" placeholder="P123-456">
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <label for="camionModelo" class="form-label">Modelo</label>
-                        <input type="text" class="form-control mp-modal-input" id="camionModelo" placeholder="Freightliner 2020">
+                <form id="formAgregarCamion" class="row g-4" enctype="multipart/form-data">
+                    <div class="col-md-8">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <h6 class="mp-title-sm mb-2">Informacion del Vehiculo</h6>
+                                <hr class="mt-0">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="camionPlaca" class="form-label">Placa *</label>
+                                <input type="text" class="form-control mp-modal-input" id="camionPlaca" name="placa" placeholder="P123-456" required>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="camionCodigo" class="form-label">Codigo *</label>
+                                <input type="text" class="form-control mp-modal-input" id="camionCodigo" name="codigo" placeholder="COD-101" required>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="camionNombre" class="form-label">Nombre / Alias *</label>
+                                <input type="text" class="form-control mp-modal-input" id="camionNombre" name="nombre" placeholder="Unidad 01" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="camionModelo" class="form-label">Modelo *</label>
+                                <input type="text" class="form-control mp-modal-input" id="camionModelo" name="modelo" placeholder="Volvo FH16 - 2024" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="camionEstado" class="form-label">Estado Operativo *</label>
+                                <select id="camionEstado" name="estado" class="form-select mp-modal-input" required>
+                                    <option selected disabled value="">Seleccionar...</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="camionComentario" class="form-label">Comentarios / Observaciones</label>
+                                <textarea id="camionComentario" name="comentario" class="form-control mp-modal-input" rows="4" placeholder="Detalles tecnicos o notas adicionales..."></textarea>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="col-12 col-md-6">
-                        <label for="camionCategoria" class="form-label">Categoria</label>
-                        <select id="camionCategoria" class="form-select mp-modal-input">
-                            <option selected disabled value="">Selecciona una categoria</option>
-                            <option value="carga_pesada">Carga pesada</option>
-                            <option value="liviana">Carga liviana</option>
-                            <option value="en_taller">En taller</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <label for="camionEstado" class="form-label">Estado</label>
-                        <select id="camionEstado" class="form-select mp-modal-input">
-                            <option value="activo">Activo</option>
-                            <option value="mantenimiento">Mantenimiento</option>
-                            <option value="inactivo">Inactivo</option>
-                        </select>
-                    </div>
+                    <div class="col-md-4">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <h6 class="mp-title-sm mb-2">Fotografia de la Unidad</h6>
+                                <hr class="mt-0">
+                            </div>
 
-                    <div class="col-12 col-md-6">
-                        <label for="camionCapacidad" class="form-label">Capacidad (ton)</label>
-                        <input type="number" min="0" step="0.1" class="form-control mp-modal-input" id="camionCapacidad" placeholder="18">
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <label for="camionAnio" class="form-label">Anio</label>
-                        <input type="number" min="1990" max="2100" class="form-control mp-modal-input" id="camionAnio" placeholder="2024">
-                    </div>
-
-                    <div class="col-12">
-                        <label for="camionObservaciones" class="form-label">Observaciones</label>
-                        <textarea id="camionObservaciones" class="form-control mp-modal-input" rows="3" placeholder="Notas adicionales del camion"></textarea>
+                            <div class="col-md-12">
+                                <div class="sticky-top" style="top: 20px;">
+                                    <label class="form-label">Foto del camion</label>
+                                    <div class="border rounded p-3 text-center">
+                                        <img id="camionImagen" src="https://via.placeholder.com/400x200?text=Sin+Imagen" alt="Foto del camion" class="img-fluid rounded" style="max-height: 180px; width: 100%; object-fit: cover;">
+                                        <div class="mt-3">
+                                            <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('fileInputCamion').click();">
+                                                Subir foto
+                                            </button>
+                                            <input type="file" id="fileInputCamion" class="d-none" accept="image/*">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
+
             <div class="modal-footer mp-modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="submit" form="formAgregarCamion" class="btn btn-add">Guardar Camion</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="formAgregarCamion" class="btn btn-add">Registrar Camion</button>
             </div>
         </div>
     </div>
 </div>
 
 <th:block th:replace="fragments/assets :: globalScripts"></th:block>
+<script src="/js/camion.js"></script>
 </body>
 </html>
-
