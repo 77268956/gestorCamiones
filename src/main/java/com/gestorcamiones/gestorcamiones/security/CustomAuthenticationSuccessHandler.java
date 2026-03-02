@@ -34,6 +34,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
             loginRepository.save(login);
         }
 
-        response.sendRedirect("/dashboard");
+      // response.sendRedirect("/dashboard");
+        response.sendRedirect("/usuarios");
     }
 }

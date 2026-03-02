@@ -20,3 +20,4 @@ public interface LoginRepository extends JpaRepository<Login, Long> {
             """)
     Optional<Login> findAuthByEmail(@Param("email") String email);
 }
+

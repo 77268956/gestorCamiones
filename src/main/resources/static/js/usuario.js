@@ -1,53 +1,29 @@
-document.addEventListener("DOMContentLoaded", function () {
-
-    fetch("/api/usuarios/estados")
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Error al obtener estados");
-            }
-            return response.json();
-        })
-        .then(data => {
-            const select = document.getElementById("filtroEstadoSelect");
-
-            data.forEach(estado => {
-                const option = document.createElement("option");
-                option.value = estado;
-                option.textContent = estado.replace("_", " ");
-                select.appendChild(option);
-            });
-        })
-        .catch(error => {
-            console.error("Error:", error);
-        });
-
+document.addEventListener("DOMContentLoaded", () => {
+    cargarSelect("/api/usuarios/estados", "filtroEstadoSelect");
+    cargarSelect("/api/usuarios/estados", "estadoEmpleado");
 });
 
+async function cargarSelect(url, selectId) {
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Error al obtener datos");
 
-document.addEventListener("DOMContentLoaded", function () {
+        const data = await res.json();
+        const select = document.getElementById(selectId);
 
-    fetch("/api/usuarios/estados")
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Error al obtener estados");
-            }
-            return response.json();
-        })
-        .then(data => {
-            const select = document.getElementById("estadoEmpleado");
+        if (!select) return;
 
-            data.forEach(estado => {
-                const option = document.createElement("option");
-                option.value = estado;
-                option.textContent = estado.replace("_", " ");
-                select.appendChild(option);
-            });
-        })
-        .catch(error => {
-            console.error("Error:", error);
+        data.forEach(valor => {
+            const option = document.createElement("option");
+            option.value = valor;
+            option.textContent = valor.replace("_", " ");
+            select.appendChild(option);
         });
 
-});
+    } catch (error) {
+        console.error(`Error en ${selectId}:`, error);
+    }
+}
 
 document.addEventListener("DOMContentLoaded", function () {
     console.log("🔍 Cargando roles...");
@@ -129,83 +105,55 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-
+// enviar datos al controller
 document.getElementById("formAgregarUsuario")
-    .addEventListener("submit", function (e) {
+    ?.addEventListener("submit", async e => {
         e.preventDefault();
 
-        // Obtener valores
-        const nombre = document.getElementById("nombre")?.value;
-        const apellido = document.getElementById("apellido")?.value;
-        const telefono = document.getElementById("telefono")?.value;
-        const dui = document.getElementById("dui")?.value;
-        const email = document.getElementById("email")?.value;
-        const password = document.getElementById("password")?.value;
-        const rolValue = document.getElementById("rol")?.value;
-        const estadoEmpleado = document.getElementById("estadoEmpleado")?.value;
-        const camionId = document.getElementById("camionId")?.value;
+        const get = id => document.getElementById(id)?.value?.trim();
 
-        // Validar campos requeridos
-        if (!nombre || !email || !password || !rolValue) {
-            alert("Completa los campos requeridos");
-            return;
+        const nombre = get("nombre");
+        const email = get("email");
+        const password = get("password");
+        const rolId = parseInt(get("rol"), 10);
+
+        if (!nombre || !email || !password || isNaN(rolId)) {
+            return alert("Completa los campos requeridos correctamente");
         }
-
-        const rolId = parseInt(rolValue, 10);
-
-        if (isNaN(rolId)) {
-            alert("El rol seleccionado no es válido: " + rolValue);
-            return;
-        }
-
-        alert("Rol ID válido: " + rolId);
 
         const data = {
-            nombre: nombre,
-            apellido: apellido || null,
-            telefono: telefono || null,
-            dui: dui || null,
-            email: email,
-            password: password,
-            estadoEmpleado: estadoEmpleado,
+            nombre,
+            apellido: get("apellido") || null,
+            telefono: get("telefono") || null,
+            dui: get("dui") || null,
+            email,
+            password,
+            estadoEmpleado: get("estadoEmpleado"),
             id_rol: rolId,
-            camionId: camionId ? parseInt(camionId, 10) : null
+            camionId: get("camionId") ? parseInt(get("camionId"), 10) : null
         };
 
-        console.log("Enviando datos:", data);
-
-        // CSRF tokens
         const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
         const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
 
-        const headers = {
-            "Content-Type": "application/json"
-        };
-        if (csrfHeader && csrfToken) {
-            headers[csrfHeader] = csrfToken;
-        }
+        const headers = { "Content-Type": "application/json" };
+        if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
 
-        fetch("/api/usuarios", {
-            method: "POST",
-            headers: headers,
-            body: JSON.stringify(data)
-        })
-            .then(async res => {
-                if (!res.ok) {
-                    const errorText = await res.text();
-                    console.error("Error response:", errorText);
-                    throw new Error(errorText);
-                }
-                return res.json();
-            })
-            .then(data => {
-                alert("✅ Usuario creado exitosamente");
-                location.reload();
-            })
-            .catch(error => {
-                console.error("Error completo:", error);
-                alert("❌ Error: " + error.message);
+        try {
+            const res = await fetch("/api/usuarios", {
+                method: "POST",
+                headers,
+                body: JSON.stringify(data)
             });
+
+            if (!res.ok) throw new Error(await res.text());
+
+            alert("✅ Usuario creado exitosamente");
+            location.reload();
+        } catch (error) {
+            console.error(error);
+            alert("❌ Error: " + error.message);
+        }
     });
 
 
@@ -218,6 +166,8 @@ function seleccionarCamion(id, placa, modelo) {
     );
     modal.hide();
 }
+
+
 
 // Función para cargar usuarios en la tabla
 function cargarUsuarios() {
@@ -249,8 +199,8 @@ function cargarUsuarios() {
                         <td>${usuario.email || 'N/A'}</td>
                         <td>${formatearRol(usuario.rol) || 'N/A'}</td>
                         <td>
-                            <span class="${getEstadoClass(usuario.estadoCuenta)}">
-                                ${formatearEstado(usuario.estadoCuenta) || 'N/A'}
+                            <span class="${getEstadoClass(usuario.estado)}">
+                                ${formatearEstado(usuario.estado) || 'N/A'}
                             </span>
                         </td>
                         <td class="text-center">
@@ -285,30 +235,26 @@ function formatearRol(rol) {
 
 function formatearEstado(estado) {
     if (!estado) return 'N/A';
-    return estado.replace(/_/g, " ");
+    return estado.replace(/_/g, " ").toUpperCase();
 }
 
-function getEstadoClass(estado) {
-    switch(estado) {
-        case 'habilitado':
-            return 'st-activo';
-        case 'deshabilitado':
-            return 'st-mant';
-        default:
-            return 'st-activo';
-    }
-}
+const getEstadoClass = estado =>
+    ({
+        activo: 'badge bg-success',
+        suspendido: 'badge bg-warning',
+        baja: 'badge bg-danger',
+        inactivo: 'badge bg-danger'
+    }[estado?.toLowerCase()] || 'badge bg-secondary');
+
 
 // Funciones para acciones (implementar después)
 function editarUsuario(id) {
     console.log("Editar usuario:", id);
-    // TODO: Implementar edición
     alert("Función de editar en desarrollo");
 }
 
 function eliminarUsuario(id) {
     console.log("Eliminar usuario:", id);
-    // TODO: Implementar eliminación
     if (confirm("¿Estás seguro de eliminar este usuario?")) {
         alert("Función de eliminar en desarrollo");
     }

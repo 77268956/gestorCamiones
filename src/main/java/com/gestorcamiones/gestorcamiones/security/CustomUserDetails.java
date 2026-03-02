@@ -3,6 +3,8 @@ package com.gestorcamiones.gestorcamiones.security;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCuenta;
 import com.gestorcamiones.gestorcamiones.entity.Login;
 import com.gestorcamiones.gestorcamiones.entity.Usuario;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
+@Getter @Setter
 public class CustomUserDetails implements UserDetails {
 
     private final Login login;
@@ -23,6 +26,7 @@ public class CustomUserDetails implements UserDetails {
         Usuario usuario = login.getUsuarioEntidad();
         return usuario != null ? usuario.getIdUsuarios() : null;
     }
+
 
     public String getEmail() {
         return login.getEmail();
@@ -67,13 +71,6 @@ public class CustomUserDetails implements UserDetails {
     public String getUsername() {
         return login.getEmail();
     }
-
-
-
-
-
-
-
 
     @Override public boolean isAccountNonExpired() { return true; }
     @Override public boolean isCredentialsNonExpired() { return true; }

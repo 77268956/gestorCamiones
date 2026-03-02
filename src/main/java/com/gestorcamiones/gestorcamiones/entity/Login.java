@@ -43,6 +43,7 @@ public class Login {
     @JoinColumn(name = "id_usuario", nullable = false, unique = true)
     private Usuario usuarioEntidad;
 
+    @Column(nullable = false)
     private int intentosFallidos = 0;
 
     private LocalDateTime bloqueoHasta;

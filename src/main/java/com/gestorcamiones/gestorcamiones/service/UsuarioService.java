@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class UsuarioService  implements IUsuarioService {
+public class UsuarioService implements IUsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final LoginRepository loginRepository;
@@ -48,7 +48,9 @@ public class UsuarioService  implements IUsuarioService {
     }
 
     @Override
-    public EstadoEmpleado[] estados(){ return EstadoEmpleado.values(); }
+    public EstadoEmpleado[] estados() {
+        return EstadoEmpleado.values();
+    }
 
 
     @Override
@@ -128,12 +130,6 @@ public UsuarioPerfilDTO editarUsuario(Long id, EditarUsuarioDTO dto) {
     return mapToPerfilDTO(actualizado);
 }
      */
-
-
-
-
-
-
 
 
 }

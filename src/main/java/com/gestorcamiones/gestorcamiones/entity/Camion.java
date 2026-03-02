@@ -35,6 +35,8 @@ public class Camion {
 
     private String modelo;
 
+    private String comentario;
+
     @Column(name = "foto_url")
     private String fotoUrl;
 

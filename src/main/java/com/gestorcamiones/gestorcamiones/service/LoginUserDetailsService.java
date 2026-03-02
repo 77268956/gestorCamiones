@@ -19,6 +19,7 @@ public class LoginUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+
         Login login = loginRepository.findAuthByEmail(email.trim().toLowerCase())
                 .orElseThrow(() -> new UsernameNotFoundException("Email no encontrado: " + email));
         return new CustomUserDetails(login);
