@@ -1,6 +1,6 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
-import com.gestorcamiones.gestorcamiones.dto.CrearCamionDTO;
+import com.gestorcamiones.gestorcamiones.dto.CamionDTO;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCamion;
 import com.gestorcamiones.gestorcamiones.service.CamionServicio;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,15 +33,25 @@ public class CamionController {
 
     @GetMapping
     @Operation(summary = "Listar camiones", description = "Retorna el listado de camiones registrados.")
-    public List<CrearCamionDTO> listarCamiones() {
+    public List<CamionDTO> listarCamiones() {
         return camionService.listarCamiones();
     }
 
     @PostMapping
     @Operation(summary = "Crear camion", description = "Registra un nuevo camion con los datos enviados en el body.")
-    public ResponseEntity<CrearCamionDTO> crearCamion(
-            @Valid @RequestBody CrearCamionDTO dto) {
+    public ResponseEntity<CamionDTO> crearCamion(
+            @Valid @RequestBody CamionDTO dto) {
 
         return ResponseEntity.ok(camionService.crearCamion(dto));
     }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update camion", description = "Update un camion")
+    public ResponseEntity<CamionDTO> updateCamion(
+            @PathVariable Long id,
+            @Valid @RequestBody CamionDTO dto
+    ){
+        return ResponseEntity.ok(camionService.editarCamion(id, dto));
+    }
+
 }

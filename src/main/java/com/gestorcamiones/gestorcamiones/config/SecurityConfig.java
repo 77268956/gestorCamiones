@@ -3,8 +3,11 @@ package com.gestorcamiones.gestorcamiones.config;
 import com.gestorcamiones.gestorcamiones.security.CustomAuthenticationFailureHandler;
 import com.gestorcamiones.gestorcamiones.security.CustomAuthenticationSuccessHandler;
 import com.gestorcamiones.gestorcamiones.service.LoginUserDetailsService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationEventPublisher;
+import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -75,5 +78,11 @@ public class SecurityConfig {
         provider.setPasswordEncoder(passwordEncoder);
 
         return provider;
+    }
+
+    @Bean
+    public AuthenticationEventPublisher authenticationEventPublisher(
+            ApplicationEventPublisher applicationEventPublisher) {
+        return new DefaultAuthenticationEventPublisher(applicationEventPublisher);
     }
 }

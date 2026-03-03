@@ -1,10 +1,24 @@
-﻿document.addEventListener("DOMContentLoaded", () => {
+﻿let camionesCache = [];
+let camionEditandoId = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("formAgregarCamion");
+    const btnAgregar = document.getElementById("btnAbrirModalAgregarCamion");
+    const tabla = document.getElementById("tablaCamiones");
+
     cargarEstadosCamion();
     cargarCamiones();
 
-    const form = document.getElementById("formAgregarCamion");
     if (form) {
         form.addEventListener("submit", guardarCamion);
+    }
+
+    if (btnAgregar) {
+        btnAgregar.addEventListener("click", prepararModalAgregar);
+    }
+
+    if (tabla) {
+        tabla.addEventListener("click", manejarAccionesTabla);
     }
 });
 
@@ -17,7 +31,6 @@ async function cargarEstadosCamion() {
         if (!res.ok) throw new Error("No se pudieron cargar los estados");
 
         const estados = await res.json();
-
         estados.forEach(estado => {
             const option = document.createElement("option");
             option.value = estado;
@@ -41,9 +54,11 @@ async function cargarCamiones() {
         if (!res.ok) throw new Error("No se pudieron cargar los camiones");
 
         const camiones = await res.json();
-        renderCamiones(camiones);
+        camionesCache = Array.isArray(camiones) ? camiones : [];
+        renderCamiones(camionesCache);
     } catch (error) {
         console.error(error);
+        camionesCache = [];
         tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al cargar camiones</td></tr>';
     }
 }
@@ -69,7 +84,7 @@ function renderCamiones(camiones) {
                 <td><span class="badge bg-secondary">${escapeHtml(formatearTextoEnum(camion.estadoCamion) || "-")}</span></td>
                 <td class="text-center">
                     <div class="d-flex gap-2 justify-content-center">
-                        <button class="btn-edit" type="button" disabled>Editar</button>
+                        <button class="btn-edit" type="button" data-camion-id="${camion.id}">Editar</button>
                         <button class="btn-del" type="button" disabled>Eliminar</button>
                     </div>
                 </td>
@@ -85,6 +100,28 @@ function renderCamiones(camiones) {
     }
 }
 
+function manejarAccionesTabla(event) {
+    const botonEditar = event.target.closest(".btn-edit");
+    if (!botonEditar) return;
+
+    const id = Number(botonEditar.dataset.camionId);
+    if (!Number.isInteger(id)) return;
+
+    const camion = camionesCache.find(c => c.id === id);
+    if (!camion) {
+        alert("No se pudo cargar la informacion del camion");
+        return;
+    }
+
+    prepararModalEdicion(camion);
+
+    const modalEl = document.getElementById("modalAgregarCamion");
+    if (!modalEl) return;
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+}
+
 async function guardarCamion(event) {
     event.preventDefault();
 
@@ -95,13 +132,9 @@ async function guardarCamion(event) {
     const comentario = obtenerValor("camionComentario");
     const estadoCamion = document.getElementById("camionEstado")?.value;
 
-    if (!placa || !codigo || !nombre || !estadoCamion) {
+    if (!placa || !codigo || !nombre || !modelo || !estadoCamion) {
         alert("Completa los campos obligatorios");
         return;
-    }
-
-    if (!modelo){
-        modelo.replaceAll("N/V");
     }
 
     const payload = {
@@ -122,9 +155,13 @@ async function guardarCamion(event) {
         headers[csrfHeader] = csrfToken;
     }
 
+    const enEdicion = Number.isInteger(camionEditandoId);
+    const url = enEdicion ? `/api/camiones/${camionEditandoId}` : "/api/camiones";
+    const method = enEdicion ? "PUT" : "POST";
+
     try {
-        const res = await fetch("/api/camiones", {
-            method: "POST",
+        const res = await fetch(url, {
+            method,
             headers,
             body: JSON.stringify(payload)
         });
@@ -134,18 +171,57 @@ async function guardarCamion(event) {
             throw new Error(error || "No se pudo guardar el camion");
         }
 
-        const form = document.getElementById("formAgregarCamion");
-        form?.reset();
+        limpiarFormularioCamion();
+        prepararModalAgregar();
 
         const modalEl = document.getElementById("modalAgregarCamion");
         const modal = modalEl ? bootstrap.Modal.getInstance(modalEl) : null;
         modal?.hide();
 
         await cargarCamiones();
-        alert("Camion registrado correctamente");
+        alert(enEdicion ? "Camion actualizado correctamente" : "Camion registrado correctamente");
     } catch (error) {
         console.error(error);
-        alert("Error al registrar camion: " + error.message);
+        alert(`Error al ${enEdicion ? "actualizar" : "registrar"} camion: ` + error.message);
+    }
+}
+
+function prepararModalAgregar() {
+    camionEditandoId = null;
+    actualizarTextosModal("Agregar Nuevo Camion", "Registrar Camion");
+    limpiarFormularioCamion();
+}
+
+function prepararModalEdicion(camion) {
+    camionEditandoId = Number(camion.id);
+    actualizarTextosModal("Editar Camion", "Guardar Cambios");
+
+    setValor("camionId", camion.id);
+    setValor("camionPlaca", camion.placa);
+    setValor("camionCodigo", camion.codigo);
+    setValor("camionNombre", camion.nombre);
+    setValor("camionModelo", camion.modelo);
+    setValor("camionComentario", camion.comentario || "");
+    setValor("camionEstado", camion.estadoCamion || "");
+}
+
+function actualizarTextosModal(titulo, textoBoton) {
+    const tituloModal = document.getElementById("modalAgregarCamionLabel");
+    const botonSubmit = document.getElementById("btnSubmitCamionModal");
+    if (tituloModal) tituloModal.textContent = titulo;
+    if (botonSubmit) botonSubmit.textContent = textoBoton;
+}
+
+function limpiarFormularioCamion() {
+    const form = document.getElementById("formAgregarCamion");
+    form?.reset();
+    setValor("camionId", "");
+}
+
+function setValor(id, valor) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.value = valor ?? "";
     }
 }
 

@@ -12,7 +12,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CrearCamionDTO {
+public class CamionDTO {
+    private Long id;
+
     @NotBlank(message = "La placa es obligatoria")
     private String placa;
 

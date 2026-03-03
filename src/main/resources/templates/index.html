@@ -3,77 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Demo Gestor de Camiones - Login</title>
+    <title>Gestor de Camiones - Acceso</title>
     <th:block th:replace="fragments/assets :: globalStyles"></th:block>
+
+    <style>
+        :root {
+            --mp-blue:       #1a3a8f;
+            --mp-blue-dark:  #0f2460;
+            --mp-blue-light: #2a52c9;
+            --mp-orange:     #f07a18;
+            --mp-orange-dk:  #d4640a;
+            --mp-white:      #ffffff;
+            --mp-gray-bg:    #f4f6fb;
+            --mp-gray-text:  #4a5568;
+            --mp-border:     #dde3f0;
+        }
+
+        body {
+            background-color: var(--mp-gray-bg);
+            min-height: 100vh;
+        }
+
+        .login-wrapper {
+            min-height: 100vh;
+        }
+
+        .login-card {
+            border: none;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(15, 36, 96, 0.15);
+        }
+
+        .login-header {
+            background-color: var(--mp-blue-dark);
+            color: var(--mp-white);
+            padding: 30px;
+            text-align: center;
+        }
+
+        .login-header h4 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .login-header p {
+            margin: 5px 0 0;
+            font-size: 0.9rem;
+            opacity: 0.85;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            border: 1px solid var(--mp-border);
+        }
+
+        .form-control:focus {
+            border-color: var(--mp-blue);
+            box-shadow: 0 0 0 0.2rem rgba(26, 58, 143, 0.2);
+        }
+
+        .btn-mp {
+            background-color: var(--mp-orange);
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            padding: 12px;
+            transition: 0.3s;
+        }
+
+        .btn-mp:hover {
+            background-color: var(--mp-orange-dk);
+        }
+
+        .login-footer {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--mp-gray-text);
+        }
+    </style>
 </head>
+
 <body>
 
-<div class="container-fluid">
-    <div class="row min-vh-100">
+<div class="container d-flex align-items-center justify-content-center login-wrapper">
+    <div class="col-12 col-md-8 col-lg-5">
 
-        <div class="col-lg-6 d-none d-lg-flex flex-column justify-content-center align-items-center text-white login-hero">
+        <div class="card login-card">
 
-            <h1 class="fw-bold display-5">Gestor de Camiones</h1>
-            <p class="lead text-center px-5 mt-3">
-                Plataforma de administracion y control de flota empresarial.
-            </p>
-
-            <div class="mt-4 text-center">
-                <p class="mb-1">Gestion de flota</p>
-                <p class="mb-1">Control de mantenimiento</p>
-                <p class="mb-1">Monitoreo de estado</p>
+            <div class="login-header">
+                <h4>Gestor de Camiones</h4>
+                <p>Acceso al sistema de gestión empresarial</p>
             </div>
 
-        </div>
+            <div class="card-body p-4">
 
-        <div class="col-lg-6 d-flex align-items-center justify-content-center bg-light">
-
-            <div class="w-100 login-form-wrap">
-
-                <h3 class="mb-4 fw-bold">Iniciar sesion</h3>
-
-                <div th:if="${error}" class="alert alert-danger">
+                <div th:if="${error}" class="alert alert-danger text-center">
                     <span th:text="${error}"></span>
                 </div>
 
-                <div th:if="${message}" class="alert alert-success">
+                <div th:if="${message}" class="alert alert-success text-center">
                     <span th:text="${message}"></span>
                 </div>
 
                 <form method="post" th:action="@{/login}">
 
                     <div class="mb-3">
-                        <label for="email" class="form-label">Correo</label>
+                        <label for="email" class="form-label fw-semibold">Correo electrónico</label>
                         <input type="email"
                                class="form-control form-control-lg"
                                id="email"
                                name="email"
-                               placeholder="Ingresa tu correo"
+                               placeholder="ejemplo@empresa.com"
                                required autofocus>
                     </div>
 
                     <div class="mb-4">
-                        <label for="password" class="form-label">Contrasena</label>
+                        <label for="password" class="form-label fw-semibold">Contraseña</label>
                         <input type="password"
                                class="form-control form-control-lg"
                                id="password"
                                name="password"
-                               placeholder="Ingresa tu contrasena"
+                               placeholder="Ingresa tu contraseña"
                                required>
                     </div>
 
-                    <button type="submit" class="btn btn-dark btn-lg w-100">
-                        Acceder al sistema
+                    <button type="submit" class="btn btn-mp w-100">
+                        Ingresar al sistema
                     </button>
 
                 </form>
 
-                <div class="mt-4 text-muted small">
-                        <p class="mb-1"><strong>Usuario de prueba:</strong> soporte@demo.local / 123</p>
+                <div class="login-footer mt-4">
+                    © 2026 GestorCamiones · Plataforma corporativa
                 </div>
 
             </div>
-
         </div>
 
     </div>

@@ -34,7 +34,7 @@
                 </div>
 
                 <div class="col-12 col-md-3 d-grid">
-                    <button class="btn btn-add" data-bs-toggle="modal" data-bs-target="#modalAgregarCamion">+ Agregar Camion</button>
+                    <button id="btnAbrirModalAgregarCamion" class="btn btn-add" data-bs-toggle="modal" data-bs-target="#modalAgregarCamion">+ Agregar Camion</button>
                 </div>
             </div>
         </div>
@@ -75,6 +75,7 @@
 
             <div class="modal-body">
                 <form id="formAgregarCamion" class="row g-4" enctype="multipart/form-data">
+                    <input type="hidden" id="camionId">
                     <div class="col-md-8">
                         <div class="row g-3">
                             <div class="col-12">
@@ -99,7 +100,7 @@
 
                             <div class="col-md-6">
                                 <label for="camionModelo" class="form-label">Modelo *</label>
-                                <input type="text" class="form-control mp-modal-input" id="camionModelo" name="modelo" placeholder="Volvo FH16 - 2024" required>
+                                <input type="text" class="form-control mp-modal-input" id="camionModelo" name="modelo" placeholder="Volvo FH16 - 2024">
                             </div>
 
                             <div class="col-md-6">
@@ -144,7 +145,7 @@
 
             <div class="modal-footer mp-modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" form="formAgregarCamion" class="btn btn-add">Registrar Camion</button>
+                <button id="btnSubmitCamionModal" type="submit" form="formAgregarCamion" class="btn btn-add">Registrar Camion</button>
             </div>
         </div>
     </div>
