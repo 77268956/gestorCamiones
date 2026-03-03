@@ -85,7 +85,7 @@ function renderCamiones(camiones) {
                 <td class="text-center">
                     <div class="d-flex gap-2 justify-content-center">
                         <button class="btn-edit" type="button" data-camion-id="${camion.id}">Editar</button>
-                        <button class="btn-del" type="button" disabled>Eliminar</button>
+                        <button class="btn-del" type="button" data-camion-id="${camion.id}">Eliminar</button>
                     </div>
                 </td>
             </tr>
@@ -102,24 +102,32 @@ function renderCamiones(camiones) {
 
 function manejarAccionesTabla(event) {
     const botonEditar = event.target.closest(".btn-edit");
-    if (!botonEditar) return;
+    if (botonEditar) {
+        const id = Number(botonEditar.dataset.camionId);
+        if (!Number.isInteger(id)) return;
 
-    const id = Number(botonEditar.dataset.camionId);
-    if (!Number.isInteger(id)) return;
+        const camion = camionesCache.find(c => c.id === id);
+        if (!camion) {
+            alert("No se pudo cargar la informacion del camion");
+            return;
+        }
 
-    const camion = camionesCache.find(c => c.id === id);
-    if (!camion) {
-        alert("No se pudo cargar la informacion del camion");
+        prepararModalEdicion(camion);
+
+        const modalEl = document.getElementById("modalAgregarCamion");
+        if (!modalEl) return;
+
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
         return;
     }
 
-    prepararModalEdicion(camion);
+    const botonEliminar = event.target.closest(".btn-del");
+    if (!botonEliminar) return;
 
-    const modalEl = document.getElementById("modalAgregarCamion");
-    if (!modalEl) return;
-
-    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-    modal.show();
+    const id = Number(botonEliminar.dataset.camionId);
+    if (!Number.isInteger(id)) return;
+    eliminarCamion(id);
 }
 
 async function guardarCamion(event) {
@@ -183,6 +191,42 @@ async function guardarCamion(event) {
     } catch (error) {
         console.error(error);
         alert(`Error al ${enEdicion ? "actualizar" : "registrar"} camion: ` + error.message);
+    }
+}
+
+async function eliminarCamion(id) {
+    const camion = camionesCache.find(c => c.id === id);
+    if (!camion) {
+        alert("No se pudo identificar el camion a eliminar");
+        return;
+    }
+
+    const confirmar = window.confirm(`¿Eliminar el camion ${camion.placa}?`);
+    if (!confirmar) return;
+
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+    const headers = {};
+    if (csrfHeader && csrfToken) {
+        headers[csrfHeader] = csrfToken;
+    }
+
+    try {
+        const res = await fetch(`/api/camiones/${id}`, {
+            method: "DELETE",
+            headers
+        });
+
+        if (!res.ok) {
+            const error = await res.text();
+            throw new Error(error || "No se pudo eliminar el camion");
+        }
+
+        await cargarCamiones();
+        alert("Camion eliminado correctamente");
+    } catch (error) {
+        console.error(error);
+        alert("Error al eliminar camion: " + error.message);
     }
 }
 

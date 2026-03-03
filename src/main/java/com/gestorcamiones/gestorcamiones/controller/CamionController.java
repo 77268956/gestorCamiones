@@ -54,4 +54,11 @@ public class CamionController {
         return ResponseEntity.ok(camionService.editarCamion(id, dto));
     }
 
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Eliminar camion", description = "Elimina logicamente un camion por su id.")
+    public ResponseEntity<Void> eliminarCamion(@PathVariable Long id) {
+        camionService.eliminarCamion(id);
+        return ResponseEntity.noContent().build();
+    }
+
 }

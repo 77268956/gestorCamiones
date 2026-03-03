@@ -40,7 +40,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/login", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/usuarios/**", "/api/usuarios/**").hasRole("ADMIN")
-                        .requestMatchers("/camiones").hasRole( "ADMIN")
+                        .requestMatchers("/camiones", "/camiones/**", "/api/camiones/**").hasRole("ADMIN")
                         .requestMatchers("/dashboard", "/practica").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated()
                 )

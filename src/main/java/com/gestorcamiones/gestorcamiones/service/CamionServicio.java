@@ -63,8 +63,11 @@ public class CamionServicio implements ICamionService {
     }
 
     @Override
+    @Transactional
     public void eliminarCamion(Long id) {
-
+        Camion camion = camionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Camión no encontrado con ID: " + id));
+        camionRepository.delete(camion);
     }
 
     @Override
