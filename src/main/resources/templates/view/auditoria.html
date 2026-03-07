@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Auditoria</title>
+    <th:block th:replace="fragments/assets :: globalStyles"></th:block>
+</head>
+<body>
+<div th:replace="fragments/navbar :: navbar"></div>
+
+<div class="container">
+    <div class="page-surface">
+        <div class="mp-stripe"></div>
+
+        <div class="mp-toolbar">
+            <div class="d-flex flex-column gap-3">
+                <h5 class="mp-title">Auditoria</h5>
+
+                <ul class="nav nav-tabs mp-audit-tabs" id="auditTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab-login" data-bs-toggle="tab" data-bs-target="#pane-login" type="button" role="tab" aria-controls="pane-login" aria-selected="true">
+                            Login
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-usuarios" data-bs-toggle="tab" data-bs-target="#pane-usuarios" type="button" role="tab" aria-controls="pane-usuarios" aria-selected="false">
+                            Usuarios
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-camiones" data-bs-toggle="tab" data-bs-target="#pane-camiones" type="button" role="tab" aria-controls="pane-camiones" aria-selected="false">
+                            Camiones
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-sistema" data-bs-toggle="tab" data-bs-target="#pane-sistema" type="button" role="tab" aria-controls="pane-sistema" aria-selected="false">
+                            Sistema
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="tab-content p-3" id="auditTabContent">
+            <div class="tab-pane fade show active" id="pane-login" role="tabpanel" aria-labelledby="tab-login" tabindex="0">
+                <div class="row g-2 align-items-end mb-3">
+                    <div class="col-12 col-md-2">
+                        <label for="fDesde" class="form-label mb-1">Desde</label>
+                        <input id="fDesde" type="datetime-local" class="form-control mp-select">
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <label for="fHasta" class="form-label mb-1">Hasta</label>
+                        <input id="fHasta" type="datetime-local" class="form-control mp-select">
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <label for="fTipoEvento" class="form-label mb-1">Tipo evento</label>
+                        <select id="fTipoEvento" class="form-select mp-select">
+                            <option value="">Todos</option>
+                            <option value="LOGIN">LOGIN</option>
+                            <option value="LOGOUT">LOGOUT</option>
+                            <option value="LOGIN_FALLIDO">LOGIN_FALLIDO</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <label for="fResultado" class="form-label mb-1">Resultado</label>
+                        <select id="fResultado" class="form-select mp-select">
+                            <option value="">Todos</option>
+                            <option value="EXITOSO">EXITOSO</option>
+                            <option value="FALLIDO">FALLIDO</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label for="fBusqueda" class="form-label mb-1">Buscar</label>
+                        <input id="fBusqueda" type="text" class="form-control mp-select" placeholder="email, id, ip, motivo...">
+                    </div>
+                    <div class="col-12 col-md-1 d-grid">
+                        <button id="btnBuscarAuditoria" class="btn btn-add">Filtrar</button>
+                    </div>
+                    <div class="col-12 col-md-2 d-grid">
+                        <button id="btnLimpiarAuditoria" class="btn btn-outline-secondary">Limpiar</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table mp-table">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Fecha</th>
+                            <th>Tipo Evento</th>
+                            <th>Usuario / Email</th>
+                            <th>ID Usuario</th>
+                            <th>IP</th>
+                            <th>User Agent</th>
+                            <th>Motivo / Detalle</th>
+                            <th>Resultado</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaAuditoriaLogin">
+                        <tr>
+                            <td colspan="9" class="text-center">Cargando auditoria...</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mp-table-footer d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                    <span id="totalAuditoriaLogin">Mostrando 0 registros</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <button id="btnPrevAuditoria" class="btn btn-sm btn-outline-secondary">Anterior</button>
+                        <span id="pageInfoAuditoria" class="small text-muted">Pagina 0 de 0</span>
+                        <button id="btnNextAuditoria" class="btn btn-sm btn-outline-secondary">Siguiente</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="pane-usuarios" role="tabpanel" aria-labelledby="tab-usuarios" tabindex="0">
+                <div class="audit-placeholder">
+                    <h6>Auditoria de Usuarios</h6>
+                    <p class="mb-0">Seccion preparada para eventos CRUD de usuarios.</p>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="pane-camiones" role="tabpanel" aria-labelledby="tab-camiones" tabindex="0">
+                <div class="audit-placeholder">
+                    <h6>Auditoria de Camiones</h6>
+                    <p class="mb-0">Seccion preparada para eventos CRUD de camiones.</p>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="pane-sistema" role="tabpanel" aria-labelledby="tab-sistema" tabindex="0">
+                <div class="audit-placeholder">
+                    <h6>Auditoria de Sistema</h6>
+                    <p class="mb-0">Seccion preparada para eventos tecnicos y de seguridad.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block th:replace="fragments/assets :: globalScripts"></th:block>
+<script src="/js/auditoria.js"></script>
+</body>
+</html>
