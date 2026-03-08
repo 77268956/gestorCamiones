@@ -5,6 +5,8 @@ import com.gestorcamiones.gestorcamiones.dto.AuditoriaLoginPageDTO;
 import java.time.LocalDateTime;
 
 public interface IAuditoriaService {
+
+
     AuditoriaLoginPageDTO obtenerAuditoriaLogin(
             LocalDateTime desde,
             LocalDateTime hasta,

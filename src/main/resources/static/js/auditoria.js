@@ -1,6 +1,6 @@
 const auditoriaState = {
     page: 0,
-    size: 20,
+    size: 25,
     totalPages: 0,
     totalElements: 0
 };

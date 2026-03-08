@@ -1,13 +1,40 @@
 ﻿let camionesCache = [];
 let camionEditandoId = null;
 
+const paginacionCamiones = {
+    page: 0,
+    size: 10,
+    totalPages: 1,
+    totalElements: 0,
+    sort: "idCamion,desc"
+};
+
+const filtrosCamiones = {
+    q: "",
+    estado: ""
+};
+
+let debounceBusquedaCamiones = null;
+
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("formAgregarCamion");
     const btnAgregar = document.getElementById("btnAbrirModalAgregarCamion");
     const tabla = document.getElementById("tablaCamiones");
+    const btnPrev = document.getElementById("btnPrevCamiones");
+    const btnNext = document.getElementById("btnNextCamiones");
+    const tamanoPagina = document.getElementById("tamanoPaginaCamiones");
+    const inputBusqueda = document.getElementById("filtroBusquedaCamiones");
+    const selectEstado = document.getElementById("filtroEstadoCamiones");
+
+    if (tamanoPagina) {
+        const size = Number(tamanoPagina.value);
+        if (Number.isInteger(size) && size > 0) {
+            paginacionCamiones.size = size;
+        }
+    }
 
     cargarEstadosCamion();
-    cargarCamiones();
+    cargarCamiones(0);
 
     if (form) {
         form.addEventListener("submit", guardarCamion);
@@ -20,22 +47,75 @@ document.addEventListener("DOMContentLoaded", () => {
     if (tabla) {
         tabla.addEventListener("click", manejarAccionesTabla);
     }
+
+    if (btnPrev) {
+        btnPrev.addEventListener("click", () => cambiarPagina(-1));
+    }
+
+    if (btnNext) {
+        btnNext.addEventListener("click", () => cambiarPagina(1));
+    }
+
+    if (tamanoPagina) {
+        tamanoPagina.addEventListener("change", () => {
+            const size = Number(tamanoPagina.value);
+            if (!Number.isInteger(size) || size <= 0) return;
+            paginacionCamiones.size = size;
+            cargarCamiones(0);
+        });
+    }
+
+    if (inputBusqueda) {
+        inputBusqueda.addEventListener("input", () => {
+            clearTimeout(debounceBusquedaCamiones);
+            debounceBusquedaCamiones = setTimeout(() => {
+                filtrosCamiones.q = inputBusqueda.value.trim();
+                cargarCamiones(0);
+            }, 300);
+        });
+    }
+
+    if (selectEstado) {
+        selectEstado.addEventListener("change", () => {
+            filtrosCamiones.estado = selectEstado.value;
+            cargarCamiones(0);
+        });
+    }
 });
 
 async function cargarEstadosCamion() {
-    const select = document.getElementById("camionEstado");
-    if (!select) return;
+    const selectModal = document.getElementById("camionEstado");
+    const selectFiltro = document.getElementById("filtroEstadoCamiones");
+    if (!selectModal && !selectFiltro) return;
 
     try {
         const res = await fetch("/api/camiones/estados");
         if (!res.ok) throw new Error("No se pudieron cargar los estados");
 
         const estados = await res.json();
+
+        if (selectModal) {
+            selectModal.innerHTML = '<option selected disabled value="">Seleccionar...</option>';
+        }
+
+        if (selectFiltro) {
+            selectFiltro.innerHTML = '<option value="" selected>Todos los estados</option>';
+        }
+
         estados.forEach(estado => {
-            const option = document.createElement("option");
-            option.value = estado;
-            option.textContent = formatearTextoEnum(estado);
-            select.appendChild(option);
+            if (selectModal) {
+                const optionModal = document.createElement("option");
+                optionModal.value = estado;
+                optionModal.textContent = formatearTextoEnum(estado);
+                selectModal.appendChild(optionModal);
+            }
+
+            if (selectFiltro) {
+                const optionFiltro = document.createElement("option");
+                optionFiltro.value = estado;
+                optionFiltro.textContent = formatearTextoEnum(estado);
+                selectFiltro.appendChild(optionFiltro);
+            }
         });
     } catch (error) {
         console.error(error);
@@ -43,23 +123,58 @@ async function cargarEstadosCamion() {
     }
 }
 
-async function cargarCamiones() {
+async function cargarCamiones(page = paginacionCamiones.page) {
     const tbody = document.getElementById("tablaCamiones");
     if (!tbody) return;
 
     tbody.innerHTML = '<tr><td colspan="6" class="text-center">Cargando camiones...</td></tr>';
 
+    const pageSeguro = Math.max(0, Number(page) || 0);
+    const sizeSeguro = Math.max(1, Number(paginacionCamiones.size) || 10);
+
     try {
-        const res = await fetch("/api/camiones");
+        const query = new URLSearchParams({
+            page: String(pageSeguro),
+            size: String(sizeSeguro),
+            sort: paginacionCamiones.sort
+        });
+
+        if (filtrosCamiones.q) {
+            query.set("q", filtrosCamiones.q);
+        }
+
+        if (filtrosCamiones.estado) {
+            query.set("estado", filtrosCamiones.estado);
+        }
+
+        const res = await fetch(`/api/camiones?${query.toString()}`);
         if (!res.ok) throw new Error("No se pudieron cargar los camiones");
 
-        const camiones = await res.json();
-        camionesCache = Array.isArray(camiones) ? camiones : [];
+        const pageData = await res.json();
+
+        const totalPages = Number(pageData?.totalPages ?? 1);
+        const totalElements = Number(pageData?.totalElements ?? 0);
+
+        paginacionCamiones.page = Number(pageData?.number ?? pageSeguro);
+        paginacionCamiones.size = Number(pageData?.size ?? sizeSeguro);
+        paginacionCamiones.totalPages = Math.max(totalPages, 1);
+        paginacionCamiones.totalElements = totalElements;
+
+        if (paginacionCamiones.page >= paginacionCamiones.totalPages && paginacionCamiones.totalPages > 0) {
+            await cargarCamiones(paginacionCamiones.totalPages - 1);
+            return;
+        }
+
+        camionesCache = Array.isArray(pageData?.content) ? pageData.content : [];
         renderCamiones(camionesCache);
+        actualizarControlesPaginacion();
     } catch (error) {
         console.error(error);
         camionesCache = [];
+        paginacionCamiones.totalElements = 0;
+        paginacionCamiones.totalPages = 1;
         tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al cargar camiones</td></tr>';
+        actualizarControlesPaginacion();
     }
 }
 
@@ -74,10 +189,12 @@ function renderCamiones(camiones) {
         return;
     }
 
+    const inicio = paginacionCamiones.page * paginacionCamiones.size;
+
     const html = camiones
         .map((camion, index) => `
             <tr>
-                <td class="row-num">${String(index + 1).padStart(2, "0")}</td>
+                <td class="row-num">${String(inicio + index + 1).padStart(2, "0")}</td>
                 <td><span class="plate">${escapeHtml(camion.placa || "-")}</span></td>
                 <td><strong>${escapeHtml(camion.modelo || "-")}</strong></td>
                 <td>${escapeHtml(camion.nombre || "-")}</td>
@@ -95,9 +212,45 @@ function renderCamiones(camiones) {
     tbody.innerHTML = html;
 
     if (total) {
-        const n = camiones.length;
-        total.textContent = `Mostrando ${n} camion${n === 1 ? "" : "es"}`;
+        const fin = inicio + camiones.length;
+        total.textContent = `Mostrando ${inicio + 1}-${fin} de ${paginacionCamiones.totalElements} camiones`;
     }
+}
+
+function actualizarControlesPaginacion() {
+    const btnPrev = document.getElementById("btnPrevCamiones");
+    const btnNext = document.getElementById("btnNextCamiones");
+    const pagina = document.getElementById("paginaActualCamiones");
+    const tamanoPagina = document.getElementById("tamanoPaginaCamiones");
+
+    const paginaActual = paginacionCamiones.page + 1;
+    const totalPaginas = Math.max(paginacionCamiones.totalPages, 1);
+    const hayAnterior = paginacionCamiones.page > 0;
+    const haySiguiente = paginacionCamiones.page < totalPaginas - 1;
+
+    if (btnPrev) {
+        btnPrev.disabled = !hayAnterior;
+        btnPrev.parentElement?.classList.toggle("disabled", !hayAnterior);
+    }
+
+    if (btnNext) {
+        btnNext.disabled = !haySiguiente;
+        btnNext.parentElement?.classList.toggle("disabled", !haySiguiente);
+    }
+
+    if (pagina) {
+        pagina.textContent = `${paginaActual} / ${totalPaginas}`;
+    }
+
+    if (tamanoPagina && String(tamanoPagina.value) !== String(paginacionCamiones.size)) {
+        tamanoPagina.value = String(paginacionCamiones.size);
+    }
+}
+
+function cambiarPagina(delta) {
+    const nuevaPagina = paginacionCamiones.page + delta;
+    if (nuevaPagina < 0 || nuevaPagina >= paginacionCamiones.totalPages) return;
+    cargarCamiones(nuevaPagina);
 }
 
 function manejarAccionesTabla(event) {
@@ -186,7 +339,7 @@ async function guardarCamion(event) {
         const modal = modalEl ? bootstrap.Modal.getInstance(modalEl) : null;
         modal?.hide();
 
-        await cargarCamiones();
+        await cargarCamiones(paginacionCamiones.page);
         alert(enEdicion ? "Camion actualizado correctamente" : "Camion registrado correctamente");
     } catch (error) {
         console.error(error);
@@ -222,7 +375,7 @@ async function eliminarCamion(id) {
             throw new Error(error || "No se pudo eliminar el camion");
         }
 
-        await cargarCamiones();
+        await cargarCamiones(paginacionCamiones.page);
         alert("Camion eliminado correctamente");
     } catch (error) {
         console.error(error);

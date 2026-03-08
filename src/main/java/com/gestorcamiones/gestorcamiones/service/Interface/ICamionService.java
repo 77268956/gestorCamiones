@@ -2,14 +2,13 @@ package com.gestorcamiones.gestorcamiones.service.Interface;
 
 import com.gestorcamiones.gestorcamiones.dto.CamionDTO;
 import com.gestorcamiones.gestorcamiones.dto.UsuarioPerfilDTO;
-import com.gestorcamiones.gestorcamiones.entity.Camion;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCamion;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface ICamionService {
 
-    List<CamionDTO> listarCamiones();
+    Page<CamionDTO> listarCamiones(Pageable pageable, String texto, EstadoCamion estado);
 
     UsuarioPerfilDTO obtenerPerfilCamion(Long id);
 

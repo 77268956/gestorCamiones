@@ -9,6 +9,9 @@ import com.gestorcamiones.gestorcamiones.repository.AuditoriaR.AuditoriaLoginFal
 import com.gestorcamiones.gestorcamiones.repository.AuditoriaR.AuditoriaSesionRepository;
 import com.gestorcamiones.gestorcamiones.repository.LoginRepository;
 import com.gestorcamiones.gestorcamiones.service.Interface.IAuditoriaService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +25,7 @@ import java.util.Map;
 
 @Service
 public class AuditoriaService implements IAuditoriaService {
+    // mejorar en futuro:  con un union en la base de datos.
 
     private final AuditoriaSesionRepository auditoriaSesionRepository;
     private final AuditoriaLoginFallidoRepository auditoriaLoginFallidoRepository;
@@ -50,8 +54,11 @@ public class AuditoriaService implements IAuditoriaService {
         int pageSafe = Math.max(page, 0);
         int sizeSafe = Math.max(1, Math.min(size, 200));
 
+
+
         List<AuditoriaSesion> sesiones = auditoriaSesionRepository.findAll(Sort.by(Sort.Direction.DESC, "fecha"));
         List<AuditoriaLoginFallido> fallidos = auditoriaLoginFallidoRepository.findAll(Sort.by(Sort.Direction.DESC, "fecha"));
+
 
         Map<Long, String> emailPorLoginId = resolverEmailsSesion(sesiones);
 

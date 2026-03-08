@@ -6,10 +6,11 @@ import com.gestorcamiones.gestorcamiones.service.CamionServicio;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * Expone los endpoints REST para consulta y creacion de camiones.
@@ -33,8 +34,15 @@ public class CamionController {
 
     @GetMapping
     @Operation(summary = "Listar camiones", description = "Retorna el listado de camiones registrados.")
-    public List<CamionDTO> listarCamiones() {
-        return camionService.listarCamiones();
+    public Page<CamionDTO> listarCamiones(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "idCamion,desc") String sort,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) EstadoCamion estado
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return camionService.listarCamiones(pageable, q, estado);
     }
 
     @PostMapping

@@ -8,6 +8,9 @@ import com.gestorcamiones.gestorcamiones.mapper.CamionMapper;
 import com.gestorcamiones.gestorcamiones.repository.CamionRepository;
 import com.gestorcamiones.gestorcamiones.service.Interface.ICamionService;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,11 +29,19 @@ public class CamionServicio implements ICamionService {
 
 
     @Override
-    public List<CamionDTO> listarCamiones() {
-        return camionRepository.findAll()
+    public Page<CamionDTO> listarCamiones(Pageable pageable, String texto, EstadoCamion estado) {
+        String textoNormalizado = (texto == null || texto.isBlank()) ? null : texto.trim();
+        String estadoNormalizado = (estado == null) ? null : estado.name();
+        List<CamionDTO> filtrados = camionRepository.buscarFiltrados(textoNormalizado, estadoNormalizado)
                 .stream()
                 .map(CamionMapper::toDTO)
                 .toList();
+
+        int pageSize = Math.max(pageable.getPageSize(), 1);
+        int start = (int) Math.min(pageable.getOffset(), filtrados.size());
+        int end = Math.min(start + pageSize, filtrados.size());
+
+        return new PageImpl<>(filtrados.subList(start, end), pageable, filtrados.size());
     }
 
     @Override
