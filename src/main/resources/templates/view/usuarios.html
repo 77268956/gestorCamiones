@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8">
@@ -27,15 +27,15 @@
 
                     <div class="col-12 col-md-4 mp-search">
                         <div class="input-group">
-                            <span class="input-group-text">🔍</span>
-                            <input type="text" class="form-control" placeholder="Buscar…">
+                            <span class="input-group-text">Buscar</span>
+                            <input id="filtroBusquedaUsuarios" type="text" class="form-control" placeholder="Buscar nombre, apellido o correo...">
                         </div>
                     </div>
 
                     <!-- Filtro por estado (select independiente) -->
                     <div class="col-12 col-md-3">
-                        <select id="filtroEstadoSelect" class="form-select mp-select">
-                            <option selected>Filtrar por estado</option>
+                        <select id="filtroEstadoUsuarios" class="form-select mp-select">
+                            <option value="" selected>Todos los estados</option>
                         </select>
                     </div>
 
@@ -58,6 +58,7 @@
 
                         <div class="modal-body">
                             <form id="formAgregarUsuario" class="row g-4">
+                                <input type="hidden" id="usuarioLogin" name="usuarioLogin">
                                 <!-- ═════ DATOS PERSONALES Y ACCESO EN LA MISMA FILA ═════ -->
                                 <div class="col-md-8">
                                     <div class="row g-3">
@@ -179,7 +180,7 @@
 
                         <div class="modal-footer mp-modal-footer">
                             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" form="formAgregarUsuario" class="btn btn-add" sec:authorize="hasRole('ADMIN')">
+                            <button id="btnSubmitUsuarioModal" type="submit" form="formAgregarUsuario" class="btn btn-add" sec:authorize="hasRole('ADMIN')">
                                 Guardar Usuario
                             </button>
                         </div>
@@ -242,8 +243,30 @@
             </div>
 
             <!-- Footer -->
-            <div class="mp-table-footer d-flex justify-content-between align-items-center">
+            <div class="mp-table-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <span id="totalUsuarios">Mostrando 0 usuarios</span>
+                <div class="d-flex align-items-center gap-2">
+                    <label for="tamanoPaginaUsuarios" class="mb-0">Por pagina</label>
+                    <select id="tamanoPaginaUsuarios" class="form-select form-select-sm" style="width: 90px;">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <nav aria-label="Paginacion de usuarios">
+                    <ul id="paginacionUsuarios" class="pagination pagination-sm mb-0">
+                        <li class="page-item disabled">
+                            <button id="btnPrevUsuarios" class="page-link" type="button">Anterior</button>
+                        </li>
+                        <li class="page-item disabled">
+                            <span id="paginaActualUsuarios" class="page-link">1 / 1</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <button id="btnNextUsuarios" class="page-link" type="button">Siguiente</button>
+                        </li>
+                    </ul>
+                </nav>
             </div>
 
         </div>

@@ -10,11 +10,15 @@ public class UsuarioMapper {
         Login login = usuario.getLogin();
 
         return new UsuarioPerfilDTO(
+                usuario.getIdUsuarios(),
                 usuario.getNombre(),
                 usuario.getApellido(),
                 login != null ? login.getEmail() : null,
+                login != null ? login.getUsuario() : null,
                 usuario.getTelefono(),
+                usuario.getDui(),
                 usuario.getRol() != null ? usuario.getRol().getRol() : null,
+                usuario.getRol() != null ? usuario.getRol().getIdRol() : null,
                 usuario.getEstadoEmpleado(),
                 usuario.getFotoUrl()
         );

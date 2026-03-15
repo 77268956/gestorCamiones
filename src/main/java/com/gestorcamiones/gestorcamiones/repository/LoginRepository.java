@@ -11,6 +11,12 @@ public interface LoginRepository extends JpaRepository<Login, Long> {
 
     Optional<Login> findByEmail(String email);
     Optional<Login> findByUsuario(String usuario);
+    Optional<Login> findByUsuarioEntidad_IdUsuarios(Long idUsuarios);
+
+    boolean existsByUsuarioAndEmail(String usuario, String email);
+    boolean existsByEmailIgnoreCaseAndIdLoginNot(String email, Long idLogin);
+    boolean existsByUsuarioIgnoreCaseAndIdLoginNot(String usuario, Long idLogin);
+
     @Query("""
             select l
             from Login l
@@ -20,4 +26,3 @@ public interface LoginRepository extends JpaRepository<Login, Long> {
             """)
     Optional<Login> findAuthByEmail(@Param("email") String email);
 }
-

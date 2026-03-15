@@ -12,11 +12,15 @@ import lombok.Setter;
 @AllArgsConstructor
 public class UsuarioPerfilDTO {
 
+    private Long id;
     private String nombre;
     private String apellido;
     private String email;
+    private String usuario;
     private String telefono;
+    private String dui;
     private String rol;
+    private Long rolId;
     private EstadoEmpleado estado;
     private String fotoUrl;
 }

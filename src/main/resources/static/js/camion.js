@@ -328,7 +328,7 @@ async function guardarCamion(event) {
         });
 
         if (!res.ok) {
-            const error = await res.text();
+            const error = await obtenerMensajeError(res);
             throw new Error(error || "No se pudo guardar el camion");
         }
 
@@ -371,7 +371,7 @@ async function eliminarCamion(id) {
         });
 
         if (!res.ok) {
-            const error = await res.text();
+            const error = await obtenerMensajeError(res);
             throw new Error(error || "No se pudo eliminar el camion");
         }
 
@@ -438,4 +438,22 @@ function escapeHtml(texto) {
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#39;");
+}
+
+async function obtenerMensajeError(response) {
+    const contentType = response.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+        const data = await response.json();
+        if (typeof data?.message === "string" && data.message.trim()) return data.message;
+        if (typeof data?.error === "string" && data.error.trim()) return data.error;
+        if (data && typeof data === "object") {
+            const primerValor = Object.values(data).find(valor => typeof valor === "string" && valor.trim());
+            if (primerValor) return primerValor;
+        }
+        return "";
+    }
+
+    const text = await response.text();
+    return text?.trim() || "";
 }

@@ -1,241 +1,507 @@
+﻿let usuariosCache = [];
+let usuarioEditandoId = null;
+
+const paginacionUsuarios = {
+    page: 0,
+    size: 10,
+    totalPages: 1,
+    totalElements: 0,
+    sort: "idUsuarios,desc"
+};
+
+const filtrosUsuarios = {
+    q: "",
+    estado: ""
+};
+
+let debounceBusquedaUsuarios = null;
+
 document.addEventListener("DOMContentLoaded", () => {
-    cargarSelect("/api/usuarios/estados", "filtroEstadoSelect");
-    cargarSelect("/api/usuarios/estados", "estadoEmpleado");
+    const form = document.getElementById("formAgregarUsuario");
+    const tabla = document.getElementById("tablaUsuarios");
+    const btnPrev = document.getElementById("btnPrevUsuarios");
+    const btnNext = document.getElementById("btnNextUsuarios");
+    const tamanoPagina = document.getElementById("tamanoPaginaUsuarios");
+    const inputBusqueda = document.getElementById("filtroBusquedaUsuarios");
+    const selectEstado = document.getElementById("filtroEstadoUsuarios");
+    const btnAgregar = document.querySelector('[data-bs-target="#modalAgregarUsuario"]');
+
+    if (tamanoPagina) {
+        const size = Number(tamanoPagina.value);
+        if (Number.isInteger(size) && size > 0) {
+            paginacionUsuarios.size = size;
+        }
+    }
+
+    cargarEstadosUsuarios();
+    cargarRoles();
+    cargarUsuarios(0);
+
+    if (form) {
+        form.addEventListener("submit", guardarUsuario);
+    }
+
+    if (btnAgregar) {
+        btnAgregar.addEventListener("click", prepararModalAgregar);
+    }
+
+    if (tabla) {
+        tabla.addEventListener("click", manejarAccionesTabla);
+    }
+
+    if (btnPrev) {
+        btnPrev.addEventListener("click", () => cambiarPagina(-1));
+    }
+
+    if (btnNext) {
+        btnNext.addEventListener("click", () => cambiarPagina(1));
+    }
+
+    if (tamanoPagina) {
+        tamanoPagina.addEventListener("change", () => {
+            const size = Number(tamanoPagina.value);
+            if (!Number.isInteger(size) || size <= 0) return;
+            paginacionUsuarios.size = size;
+            cargarUsuarios(0);
+        });
+    }
+
+    if (inputBusqueda) {
+        inputBusqueda.addEventListener("input", () => {
+            clearTimeout(debounceBusquedaUsuarios);
+            debounceBusquedaUsuarios = setTimeout(() => {
+                filtrosUsuarios.q = inputBusqueda.value.trim();
+                cargarUsuarios(0);
+            }, 300);
+        });
+    }
+
+    if (selectEstado) {
+        selectEstado.addEventListener("change", () => {
+            filtrosUsuarios.estado = selectEstado.value;
+            cargarUsuarios(0);
+        });
+    }
 });
 
-async function cargarSelect(url, selectId) {
+async function cargarEstadosUsuarios() {
+    const selectFiltro = document.getElementById("filtroEstadoUsuarios");
+    const selectModal = document.getElementById("estadoEmpleado");
+    if (!selectFiltro && !selectModal) return;
+
     try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Error al obtener datos");
+        const res = await fetch("/api/usuarios/estados");
+        if (!res.ok) throw new Error("No se pudieron cargar los estados");
 
-        const data = await res.json();
-        const select = document.getElementById(selectId);
+        const estados = await res.json();
 
-        if (!select) return;
+        if (selectFiltro) {
+            selectFiltro.innerHTML = '<option value="" selected>Todos los estados</option>';
+        }
+        if (selectModal) {
+            selectModal.innerHTML = '<option value="" disabled selected>Selecciona</option>';
+        }
 
-        data.forEach(valor => {
-            const option = document.createElement("option");
-            option.value = valor;
-            option.textContent = valor.replace("_", " ");
-            select.appendChild(option);
+        estados.forEach(estado => {
+            if (selectFiltro) {
+                const optionFiltro = document.createElement("option");
+                optionFiltro.value = estado;
+                optionFiltro.textContent = formatearTextoEnum(estado);
+                selectFiltro.appendChild(optionFiltro);
+            }
+            if (selectModal) {
+                const optionModal = document.createElement("option");
+                optionModal.value = estado;
+                optionModal.textContent = formatearTextoEnum(estado);
+                selectModal.appendChild(optionModal);
+            }
         });
-
     } catch (error) {
-        console.error(`Error en ${selectId}:`, error);
+        console.error(error);
+        alert("Error al cargar estados de usuarios");
     }
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    console.log("🔍 Cargando roles...");
+async function cargarRoles() {
+    const select = document.getElementById("rol");
+    if (!select) return;
 
-    fetch("/api/rol/estados")
-        .then(response => {
-            console.log("📡 Respuesta status:", response.status);
-            return response.json();
-        })
-        .then(data => {
-            console.log("✅ Datos CRUDOS recibidos:", JSON.stringify(data, null, 2));
+    try {
+        const res = await fetch("/api/rol/estados");
+        if (!res.ok) throw new Error("No se pudieron cargar los roles");
 
-            const select = document.getElementById("rol");
-            if (!select) {
-                console.error("❌ No se encontró el select");
-                return;
-            }
+        const roles = await res.json();
+        select.innerHTML = '<option value="" disabled selected>Selecciona un rol</option>';
 
-            select.innerHTML = '<option value="" disabled selected>Selecciona un rol</option>';
-
-            if (!data || data.length === 0) {
-                console.warn("⚠️ No hay roles");
-                select.innerHTML += '<option value="" disabled>No hay roles</option>';
-                return;
-            }
-
-            // Mostrar la estructura del primer elemento
-            console.log("📋 PRIMER ROL - ESTRUCTURA COMPLETA:");
-            const primerRol = data[0];
-
-            // Mostrar todas las propiedades del objeto
-            console.log("Propiedades disponibles:", Object.keys(primerRol));
-
-            // Mostrar cada propiedad con su valor
-            for (let propiedad in primerRol) {
-                console.log(`  - ${propiedad}: ${primerRol[propiedad]} (${typeof primerRol[propiedad]})`);
-            }
-
-            // AHORA, basado en lo que vimos, seleccionar el campo correcto
-            data.forEach((rol, index) => {
-                console.log(`\n🔍 Rol ${index}:`, rol);
-
-                // 🔴 IMPORTANTE: Basado en lo que muestre el log de arriba,
-                // vamos a intentar con el nombre correcto
-
-                // Intenta con diferentes nombres hasta encontrar el correcto
-                let idRol = null;
-
-                // Lista de posibles nombres - AJUSTA ESTO SEGÚN LO QUE Viste
-                const posiblesNombres = ['id', 'idRol', 'rolId', 'id_rol', 'codigo', 'id_rol', 'pk_rol'];
-
-                for (let nombre of posiblesNombres) {
-                    if (rol[nombre] !== undefined) {
-                        idRol = rol[nombre];
-                        console.log(`✅ Encontrado ID en campo "${nombre}": ${idRol}`);
-                        break;
-                    }
-                }
-
-                if (idRol === null) {
-                    console.warn("❌ No se encontró ID para:", rol);
-                    return;
-                }
-
-                // Buscar el nombre del rol
-                let nombreRol = rol.rol || rol.nombre || rol.descripcion || "Rol";
-
-                const option = document.createElement("option");
-                option.value = idRol;
-                option.textContent = nombreRol.replace("ROLE_", "").replace(/_/g, " ");
-
-                select.appendChild(option);
-                console.log(`✅ Opción agregada: ${option.value} - ${option.textContent}`);
-            });
-        })
-        .catch(error => {
-            console.error("❌ Error:", error);
+        roles.forEach(rol => {
+            const option = document.createElement("option");
+            option.value = rol.id || rol.idRol || rol.rolId || rol.id_rol;
+            option.textContent = formatearRol(rol.rol || rol.nombre || rol.descripcion || "Rol");
+            select.appendChild(option);
         });
-});
-
-
-// enviar datos al controller
-document.getElementById("formAgregarUsuario")
-    ?.addEventListener("submit", async e => {
-        e.preventDefault();
-
-        const get = id => document.getElementById(id)?.value?.trim();
-
-        const nombre = get("nombre");
-        const email = get("email");
-        const password = get("password");
-        const rolId = parseInt(get("rol"), 10);
-
-        if (!nombre || !email || !password || isNaN(rolId)) {
-            return alert("Completa los campos requeridos correctamente");
-        }
-
-        const data = {
-            nombre,
-            apellido: get("apellido") || null,
-            telefono: get("telefono") || null,
-            dui: get("dui") || null,
-            email,
-            password,
-            estadoEmpleado: get("estadoEmpleado"),
-            id_rol: rolId,
-            camionId: get("camionId") ? parseInt(get("camionId"), 10) : null
-        };
-
-        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
-        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
-
-        const headers = { "Content-Type": "application/json" };
-        if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
-
-        try {
-            const res = await fetch("/api/usuarios", {
-                method: "POST",
-                headers,
-                body: JSON.stringify(data)
-            });
-
-            if (!res.ok) throw new Error(await res.text());
-
-            alert("✅ Usuario creado exitosamente");
-            location.reload();
-        } catch (error) {
-            console.error(error);
-            alert("❌ Error: " + error.message);
-        }
-    });
-
-
-function seleccionarCamion(id, placa, modelo) {
-    document.getElementById("camionId").value = id;
-    document.getElementById("camionSeleccionado").value = placa + " - " + modelo;
-
-    const modal = bootstrap.Modal.getInstance(
-        document.getElementById('modalBuscarCamion')
-    );
-    modal.hide();
+    } catch (error) {
+        console.error(error);
+        alert("Error al cargar roles");
+    }
 }
 
-
-
-// Función para cargar usuarios en la tabla
-function cargarUsuarios() {
+async function cargarUsuarios(page = paginacionUsuarios.page) {
     const tbody = document.getElementById("tablaUsuarios");
+    if (!tbody) return;
+
     tbody.innerHTML = '<tr><td colspan="6" class="text-center">Cargando usuarios...</td></tr>';
 
-    fetch("/api/usuarios")
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Error al cargar usuarios");
-            }
-            return response.json();
-        })
-        .then(usuarios => {
-            console.log("Usuarios recibidos:", usuarios);
+    const pageSeguro = Math.max(0, Number(page) || 0);
+    const sizeSeguro = Math.max(1, Number(paginacionUsuarios.size) || 10);
 
-            if (!usuarios || usuarios.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay usuarios registrados</td></tr>';
-                return;
-            }
-
-            // Construir las filas de la tabla
-            let html = '';
-            usuarios.forEach((usuario, index) => {
-                html += `
-                    <tr>
-                        <td class="row-num">${String(index + 1).padStart(2, '0')}</td>
-                        <td><strong>${usuario.nombre || 'N/A'}</strong></td>
-                        <td>${usuario.email || 'N/A'}</td>
-                        <td>${formatearRol(usuario.rol) || 'N/A'}</td>
-                        <td>
-                            <span class="${getEstadoClass(usuario.estado)}">
-                                ${formatearEstado(usuario.estado) || 'N/A'}
-                            </span>
-                        </td>
-                        <td class="text-center">
-                            <div class="d-flex gap-2 justify-content-center">
-                                <button class="btn-edit" onclick="editarUsuario(${usuario.id})">✏ Editar</button>
-                                <button class="btn-del" onclick="eliminarUsuario(${usuario.id})">🗑 Eliminar</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            tbody.innerHTML = html;
-
-            // Actualizar contador en el footer
-            const totalSpan = document.getElementById("totalUsuarios");
-            if (totalSpan) {
-                totalSpan.textContent = `Mostrando ${usuarios.length} usuario${usuarios.length !== 1 ? 's' : ''}`;
-            }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al cargar usuarios</td></tr>';
+    try {
+        const query = new URLSearchParams({
+            page: String(pageSeguro),
+            size: String(sizeSeguro),
+            sort: paginacionUsuarios.sort
         });
+
+        if (filtrosUsuarios.q) {
+            query.set("q", filtrosUsuarios.q);
+        }
+
+        if (filtrosUsuarios.estado) {
+            query.set("estado", filtrosUsuarios.estado);
+        }
+
+        const res = await fetch(`/api/usuarios?${query.toString()}`);
+        if (!res.ok) throw new Error("No se pudieron cargar los usuarios");
+
+        const pageData = await res.json();
+
+        const totalPages = Number(pageData?.totalPages ?? 1);
+        const totalElements = Number(pageData?.totalElements ?? 0);
+
+        paginacionUsuarios.page = Number(pageData?.number ?? pageSeguro);
+        paginacionUsuarios.size = Number(pageData?.size ?? sizeSeguro);
+        paginacionUsuarios.totalPages = Math.max(totalPages, 1);
+        paginacionUsuarios.totalElements = totalElements;
+
+        if (paginacionUsuarios.page >= paginacionUsuarios.totalPages && paginacionUsuarios.totalPages > 0) {
+            await cargarUsuarios(paginacionUsuarios.totalPages - 1);
+            return;
+        }
+
+        usuariosCache = Array.isArray(pageData?.content) ? pageData.content : [];
+        renderUsuarios(usuariosCache);
+        actualizarControlesPaginacion();
+    } catch (error) {
+        console.error(error);
+        usuariosCache = [];
+        paginacionUsuarios.totalElements = 0;
+        paginacionUsuarios.totalPages = 1;
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al cargar usuarios</td></tr>';
+        actualizarControlesPaginacion();
+    }
 }
 
-// Funciones auxiliares para formato
+function renderUsuarios(usuarios) {
+    const tbody = document.getElementById("tablaUsuarios");
+    const total = document.getElementById("totalUsuarios");
+    if (!tbody) return;
+
+    if (!Array.isArray(usuarios) || usuarios.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay usuarios registrados</td></tr>';
+        if (total) total.textContent = "Mostrando 0 usuarios";
+        return;
+    }
+
+    const inicio = paginacionUsuarios.page * paginacionUsuarios.size;
+
+    const html = usuarios
+        .map((usuario, index) => `
+            <tr>
+                <td class="row-num">${String(inicio + index + 1).padStart(2, "0")}</td>
+                <td><strong>${escapeHtml(usuario.nombre || "-")} ${escapeHtml(usuario.apellido || "")}</strong></td>
+                <td>${escapeHtml(usuario.email || "-")}</td>
+                <td>${escapeHtml(formatearRol(usuario.rol) || "-")}</td>
+                <td>
+                    <span class="${getEstadoClass(usuario.estado)}">
+                        ${escapeHtml(formatearTextoEnum(usuario.estado) || "-")}
+                    </span>
+                </td>
+                <td class="text-center">
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button class="btn-edit" type="button" data-usuario-id="${usuario.id}">Editar</button>
+                        <button class="btn-del" type="button" data-usuario-id="${usuario.id}">Eliminar</button>
+                    </div>
+                </td>
+            </tr>
+        `)
+        .join("");
+
+    tbody.innerHTML = html;
+
+    if (total) {
+        const fin = inicio + usuarios.length;
+        total.textContent = `Mostrando ${inicio + 1}-${fin} de ${paginacionUsuarios.totalElements} usuarios`;
+    }
+}
+
+function actualizarControlesPaginacion() {
+    const btnPrev = document.getElementById("btnPrevUsuarios");
+    const btnNext = document.getElementById("btnNextUsuarios");
+    const pagina = document.getElementById("paginaActualUsuarios");
+    const tamanoPagina = document.getElementById("tamanoPaginaUsuarios");
+
+    const paginaActual = paginacionUsuarios.page + 1;
+    const totalPaginas = Math.max(paginacionUsuarios.totalPages, 1);
+    const hayAnterior = paginacionUsuarios.page > 0;
+    const haySiguiente = paginacionUsuarios.page < totalPaginas - 1;
+
+    if (btnPrev) {
+        btnPrev.disabled = !hayAnterior;
+        btnPrev.parentElement?.classList.toggle("disabled", !hayAnterior);
+    }
+
+    if (btnNext) {
+        btnNext.disabled = !haySiguiente;
+        btnNext.parentElement?.classList.toggle("disabled", !haySiguiente);
+    }
+
+    if (pagina) {
+        pagina.textContent = `${paginaActual} / ${totalPaginas}`;
+    }
+
+    if (tamanoPagina && String(tamanoPagina.value) !== String(paginacionUsuarios.size)) {
+        tamanoPagina.value = String(paginacionUsuarios.size);
+    }
+}
+
+function cambiarPagina(delta) {
+    const nuevaPagina = paginacionUsuarios.page + delta;
+    if (nuevaPagina < 0 || nuevaPagina >= paginacionUsuarios.totalPages) return;
+    cargarUsuarios(nuevaPagina);
+}
+
+function manejarAccionesTabla(event) {
+    const botonEditar = event.target.closest(".btn-edit");
+    if (botonEditar) {
+        const id = Number(botonEditar.dataset.usuarioId);
+        if (!Number.isInteger(id)) return;
+
+        const usuario = usuariosCache.find(u => Number(u.id) === id);
+        if (!usuario) {
+            alert("No se pudo cargar la informacion del usuario");
+            return;
+        }
+
+        prepararModalEdicion(usuario);
+
+        const modalEl = document.getElementById("modalAgregarUsuario");
+        if (!modalEl) return;
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+        return;
+    }
+
+    const botonEliminar = event.target.closest(".btn-del");
+    if (!botonEliminar) return;
+
+    const id = Number(botonEliminar.dataset.usuarioId);
+    if (!Number.isInteger(id)) return;
+    eliminarUsuario(id);
+}
+
+async function guardarUsuario(event) {
+    event.preventDefault();
+
+    const nombre = obtenerValor("nombre");
+    const apellido = obtenerValor("apellido");
+    const telefono = obtenerValor("telefono");
+    const dui = obtenerValor("dui");
+    const email = obtenerValor("email");
+    const password = obtenerValor("password");
+    const estadoEmpleado = document.getElementById("estadoEmpleado")?.value;
+    const rolId = obtenerValor("rol");
+    const camionId = obtenerValor("camionId");
+    const usuarioLogin = obtenerValor("usuarioLogin");
+
+    if (!nombre || !email || !estadoEmpleado || !rolId) {
+        alert("Completa los campos requeridos correctamente");
+        return;
+    }
+
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+
+    const headers = { "Content-Type": "application/json" };
+    if (csrfHeader && csrfToken) {
+        headers[csrfHeader] = csrfToken;
+    }
+
+    const enEdicion = Number.isInteger(usuarioEditandoId);
+
+    if (!enEdicion && !password) {
+        alert("La contrasena es obligatoria para crear un usuario");
+        return;
+    }
+
+    const payload = enEdicion
+        ? {
+            idUsuario: usuarioEditandoId,
+            nombre,
+            apellido,
+            estadoEmpleado,
+            telefono: telefono || null,
+            dui: dui || null,
+            fotoUrl: null,
+            rol: String(rolId),
+            usuario: usuarioLogin || null,
+            email,
+            password: password || null
+        }
+        : {
+            nombre,
+            apellido: apellido || null,
+            telefono: telefono || null,
+            dui: dui || null,
+            email,
+            password,
+            estadoEmpleado,
+            id_rol: Number(rolId),
+            camionId: camionId ? Number(camionId) : null
+        };
+
+    const url = enEdicion ? `/api/usuarios/${usuarioEditandoId}` : "/api/usuarios";
+    const method = enEdicion ? "PUT" : "POST";
+
+    try {
+        const res = await fetch(url, {
+            method,
+            headers,
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            const error = await obtenerMensajeError(res);
+            throw new Error(error || "No se pudo guardar el usuario");
+        }
+
+        limpiarFormularioUsuario();
+        prepararModalAgregar();
+
+        const modalEl = document.getElementById("modalAgregarUsuario");
+        const modal = modalEl ? bootstrap.Modal.getInstance(modalEl) : null;
+        modal?.hide();
+
+        await cargarUsuarios(paginacionUsuarios.page);
+        alert(enEdicion ? "Usuario actualizado correctamente" : "Usuario registrado correctamente");
+    } catch (error) {
+        console.error(error);
+        alert(`Error al ${enEdicion ? "actualizar" : "registrar"} usuario: ` + error.message);
+    }
+}
+
+async function eliminarUsuario(id) {
+    const usuario = usuariosCache.find(u => Number(u.id) === id);
+    if (!usuario) {
+        alert("No se pudo identificar el usuario a eliminar");
+        return;
+    }
+
+    const confirmar = window.confirm(`¿Eliminar el usuario ${usuario.nombre || ""} ${usuario.apellido || ""}?`);
+    if (!confirmar) return;
+
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+    const headers = {};
+    if (csrfHeader && csrfToken) {
+        headers[csrfHeader] = csrfToken;
+    }
+
+    try {
+        const res = await fetch(`/api/usuarios/${id}`, {
+            method: "DELETE",
+            headers
+        });
+
+        if (!res.ok) {
+            const error = await obtenerMensajeError(res);
+            throw new Error(error || "No se pudo eliminar el usuario");
+        }
+
+        await cargarUsuarios(paginacionUsuarios.page);
+        alert("Usuario eliminado correctamente");
+    } catch (error) {
+        console.error(error);
+        alert("Error al eliminar usuario: " + error.message);
+    }
+}
+
+function prepararModalAgregar() {
+    usuarioEditandoId = null;
+    actualizarTextosModal("Agregar Usuario", "Guardar Usuario");
+    establecerPasswordRequerida(true);
+    limpiarFormularioUsuario();
+}
+
+function prepararModalEdicion(usuario) {
+    usuarioEditandoId = Number(usuario.id);
+    actualizarTextosModal("Editar Usuario", "Guardar Cambios");
+    establecerPasswordRequerida(false);
+
+    setValor("nombre", usuario.nombre);
+    setValor("apellido", usuario.apellido);
+    setValor("telefono", usuario.telefono);
+    setValor("dui", usuario.dui);
+    setValor("email", usuario.email);
+    setValor("estadoEmpleado", usuario.estado);
+    setValor("rol", usuario.rolId || "");
+    setValor("usuarioLogin", usuario.usuario || "");
+    setValor("password", "");
+}
+
+function actualizarTextosModal(titulo, textoBoton) {
+    const tituloModal = document.getElementById("modalAgregarUsuarioLabel");
+    const botonSubmit = document.getElementById("btnSubmitUsuarioModal");
+    if (tituloModal) tituloModal.textContent = titulo;
+    if (botonSubmit) botonSubmit.textContent = textoBoton;
+}
+
+function establecerPasswordRequerida(requerida) {
+    const passwordInput = document.getElementById("password");
+    if (passwordInput) {
+        if (requerida) {
+            passwordInput.setAttribute("required", "required");
+        } else {
+            passwordInput.removeAttribute("required");
+        }
+    }
+}
+
+function limpiarFormularioUsuario() {
+    const form = document.getElementById("formAgregarUsuario");
+    form?.reset();
+    setValor("camionId", "");
+    setValor("camionSeleccionado", "");
+    setValor("usuarioLogin", "");
+}
+
+function setValor(id, valor) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.value = valor ?? "";
+    }
+}
+
+function obtenerValor(id) {
+    return document.getElementById(id)?.value?.trim() || "";
+}
+
 function formatearRol(rol) {
-    if (!rol) return 'N/A';
-    return rol.replace("ROLE_", "").replace(/_/g, " ");
+    if (!rol) return "";
+    return String(rol).replace("ROLE_", "").replace(/_/g, " ");
 }
 
-function formatearEstado(estado) {
-    if (!estado) return 'N/A';
-    return estado.replace(/_/g, " ").toUpperCase();
+function formatearTextoEnum(valor) {
+    if (!valor) return "";
+    return String(valor).replaceAll("_", " ");
 }
 
 const getEstadoClass = estado =>
@@ -244,31 +510,31 @@ const getEstadoClass = estado =>
         suspendido: 'badge bg-warning',
         baja: 'badge bg-danger',
         inactivo: 'badge bg-danger'
-    }[estado?.toLowerCase()] || 'badge bg-secondary');
+    }[String(estado || "").toLowerCase()] || 'badge bg-secondary');
 
-
-// Funciones para acciones (implementar después)
-function editarUsuario(id) {
-    console.log("Editar usuario:", id);
-    alert("Función de editar en desarrollo");
+function escapeHtml(texto) {
+    return String(texto)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
 }
 
-function eliminarUsuario(id) {
-    console.log("Eliminar usuario:", id);
-    if (confirm("¿Estás seguro de eliminar este usuario?")) {
-        alert("Función de eliminar en desarrollo");
+async function obtenerMensajeError(response) {
+    const contentType = response.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+        const data = await response.json();
+        if (typeof data?.message === "string" && data.message.trim()) return data.message;
+        if (typeof data?.error === "string" && data.error.trim()) return data.error;
+        if (data && typeof data === "object") {
+            const primerValor = Object.values(data).find(valor => typeof valor === "string" && valor.trim());
+            if (primerValor) return primerValor;
+        }
+        return "";
     }
+
+    const text = await response.text();
+    return text?.trim() || "";
 }
-
-// Cargar usuarios cuando la página esté lista
-document.addEventListener("DOMContentLoaded", function() {
-    cargarUsuarios();
-
-    // También recargar cuando se cierre el modal de creación
-    const modalAgregar = document.getElementById('modalAgregarUsuario');
-    if (modalAgregar) {
-        modalAgregar.addEventListener('hidden.bs.modal', function () {
-            cargarUsuarios();  // Recargar lista al cerrar el modal
-        });
-    }
-});

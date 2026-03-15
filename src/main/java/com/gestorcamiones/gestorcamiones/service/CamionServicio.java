@@ -54,6 +54,14 @@ public class CamionServicio implements ICamionService {
     @Transactional
     public CamionDTO crearCamion(CamionDTO dto) {
         Camion camion = CamionMapper.toEntity(dto);
+        if (camionRepository.existsByPlaca(dto.getPlaca())) {
+            throw new IllegalArgumentException("La placa ya esta registrada");
+        }
+
+        if (camionRepository.existsByCodigo(dto.getCodigo())) {
+            throw new IllegalArgumentException("El codigo ya esta registrado");
+        }
+
         Camion camionGuardado = camionRepository.save(camion);
         return CamionMapper.toDTO(camionGuardado);
     }
@@ -61,7 +69,15 @@ public class CamionServicio implements ICamionService {
     @Override
     public CamionDTO editarCamion(Long id, CamionDTO dto) {
         Camion camion = camionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Camión no encontrado con ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Camion no encontrado con ID: " + id));
+
+        if (camionRepository.existsByPlacaAndIdCamionNot(dto.getPlaca(), id)) {
+            throw new IllegalArgumentException("La placa ya esta registrada");
+        }
+
+        if (camionRepository.existsByCodigoAndIdCamionNot(dto.getCodigo(), id)) {
+            throw new IllegalArgumentException("El codigo ya esta registrado");
+        }
 
         camion.setPlaca(dto.getPlaca());
         camion.setCodigo(dto.getCodigo());
@@ -77,7 +93,7 @@ public class CamionServicio implements ICamionService {
     @Transactional
     public void eliminarCamion(Long id) {
         Camion camion = camionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Camión no encontrado con ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Camion no encontrado con ID: " + id));
         camionRepository.delete(camion);
     }
 

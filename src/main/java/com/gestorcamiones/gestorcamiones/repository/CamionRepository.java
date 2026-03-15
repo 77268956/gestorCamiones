@@ -9,6 +9,12 @@ import java.util.List;
 
 public interface CamionRepository  extends JpaRepository<Camion, Long> {
 
+    boolean existsByPlaca(String placa);
+    boolean existsByCodigo(String codigo);
+    boolean existsByPlacaAndIdCamionNot(String placa, Long idCamion);
+    boolean existsByCodigoAndIdCamionNot(String codigo, Long idCamion);
+
+
     @Query(
             value = """
                 SELECT c.*
