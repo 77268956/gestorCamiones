@@ -23,4 +23,7 @@ public class UsuarioPerfilDTO {
     private Long rolId;
     private EstadoEmpleado estado;
     private String fotoUrl;
+    private Long camionId;
+    private String camionPlaca;
+    private String camionModelo;
 }

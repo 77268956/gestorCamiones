@@ -136,6 +136,13 @@ public class UsuarioService implements IUsuarioService {
         }
         usuario.setRol(rol);
 
+        Camion camion = null;
+        if (dto.getCamionId() != null) {
+            camion = camionRepository.findById(dto.getCamionId())
+                    .orElseThrow(() -> new IllegalArgumentException("Camion no encontrado"));
+        }
+        usuario.setCamion(camion);
+
         // cudardar el usuarios
         usuarioRepository.save(usuario);
 
@@ -185,4 +192,3 @@ public class UsuarioService implements IUsuarioService {
 
 
 }
-

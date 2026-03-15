@@ -20,7 +20,10 @@ public class UsuarioMapper {
                 usuario.getRol() != null ? usuario.getRol().getRol() : null,
                 usuario.getRol() != null ? usuario.getRol().getIdRol() : null,
                 usuario.getEstadoEmpleado(),
-                usuario.getFotoUrl()
+                usuario.getFotoUrl(),
+                usuario.getCamion() != null ? usuario.getCamion().getIdCamion() : null,
+                usuario.getCamion() != null ? usuario.getCamion().getPlaca() : null,
+                usuario.getCamion() != null ? usuario.getCamion().getModelo() : null
         );
     }
 

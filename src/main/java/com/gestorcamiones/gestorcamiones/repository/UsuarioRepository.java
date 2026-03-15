@@ -22,7 +22,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     boolean existsByNombre(String nombre);
 
-    @EntityGraph(attributePaths = {"rol", "login"})
+    @EntityGraph(attributePaths = {"rol", "login", "camion"})
     @Query("""
             select u
             from Usuario u

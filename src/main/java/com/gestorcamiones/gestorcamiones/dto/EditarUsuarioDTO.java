@@ -19,6 +19,7 @@ public class EditarUsuarioDTO {
     private String telefono;
     private String dui;
     private String fotoUrl;
+    private Long camionId;
 
     //datos solo de rol
     private String rol;
