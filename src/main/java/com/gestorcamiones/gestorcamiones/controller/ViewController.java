@@ -85,6 +85,11 @@ public class ViewController {
         return "/view/view_camiones";
     }
 
+    @GetMapping("/clientes")
+    public String clientes() {
+        return "/view/clientes";
+    }
+
     @GetMapping("/auditoria")
     public String auditoria() {
         return "/view/auditoria";
