@@ -55,6 +55,9 @@ public class CustomUserDetails implements UserDetails {
         return List.of(new SimpleGrantedAuthority(rol));
     }
 
+    public Usuario getUsuario() {
+        return login.getUsuarioEntidad();
+    }
 
 
     @Override

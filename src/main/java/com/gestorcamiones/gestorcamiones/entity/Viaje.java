@@ -39,7 +39,11 @@ public class Viaje {
     @JoinColumn(name = "id_cliente", nullable = false)
     private Cliente cliente;
 
-    @OneToMany(mappedBy = "viaje", cascade = CascadeType.ALL)
+    @OneToMany(
+            mappedBy = "viaje",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     private List<ViajeDetalle> detalles;
 
     // 🔹 Auditoría

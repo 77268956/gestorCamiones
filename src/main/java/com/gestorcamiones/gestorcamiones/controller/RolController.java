@@ -4,6 +4,7 @@ import com.gestorcamiones.gestorcamiones.dto.RolDTO;
 import com.gestorcamiones.gestorcamiones.service.RolService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,7 +20,6 @@ import java.util.stream.Collectors;
 @Tag(name = "Roles", description = "Consulta de roles disponibles en el sistema.")
 public class RolController {
     private final RolService rolService;
-
     public RolController(RolService rolService) {
         this.rolService = rolService;
     }

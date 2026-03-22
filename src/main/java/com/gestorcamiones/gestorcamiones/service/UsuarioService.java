@@ -16,6 +16,7 @@ import com.gestorcamiones.gestorcamiones.repository.RolRepository;
 import com.gestorcamiones.gestorcamiones.repository.UsuarioRepository;
 import com.gestorcamiones.gestorcamiones.service.Interface.IUsuarioService;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -109,6 +110,7 @@ public class UsuarioService implements IUsuarioService {
     }
 
     @Override
+    @Transactional
     public UsuarioPerfilDTO editarUsuario(Long id, EditarUsuarioDTO dto) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("El usuario no se encontro" + id));
@@ -123,7 +125,7 @@ public class UsuarioService implements IUsuarioService {
                 : rolRepository.findById(rolId)
                 .orElseThrow(() -> new IllegalArgumentException("Rol no encontrado"));
 
-        if (usuarioRepository.existsByNombreAndApellidoAndIdUsuariosNot(dto.getNombre(), dto.getApellido(), id)){
+        if (usuarioRepository.existsByNombreAndApellidoAndIdUsuariosNot(dto.getNombre(), dto.getApellido(), id)) {
             throw new IllegalArgumentException("El usuario ya existe");
         }
 
@@ -165,7 +167,7 @@ public class UsuarioService implements IUsuarioService {
             login.setUsuario(dto.getUsuario());
         }
 
-        if (dto.getPassword() != null && !dto.getPassword().trim().equals("")){
+        if (dto.getPassword() != null && !dto.getPassword().trim().equals("")) {
             login.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
@@ -189,6 +191,4 @@ public class UsuarioService implements IUsuarioService {
 
         usuarioRepository.delete(usuario);
     }
-
-
 }

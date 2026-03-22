@@ -1,4 +1,19 @@
 package com.gestorcamiones.gestorcamiones.service.Interface;
 
+import com.gestorcamiones.gestorcamiones.dto.CrearViajeDTO;
+import com.gestorcamiones.gestorcamiones.dto.ListaViajesDTO;
+import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
+import com.gestorcamiones.gestorcamiones.entity.Usuario;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.time.LocalDate;
+
 public interface IViajeService {
+
+    Page<ListaViajesDTO> listaViejes (Pageable pageable, String texto, EstadoViaje estado, LocalDate fecehaIncio, LocalDate fecehaFin);
+    CrearViajeDTO CrearViaje(CrearViajeDTO dto, Usuario usuario);
+    CrearViajeDTO actualizarViaje(Long idViaje, CrearViajeDTO dto);
+
+
 }
