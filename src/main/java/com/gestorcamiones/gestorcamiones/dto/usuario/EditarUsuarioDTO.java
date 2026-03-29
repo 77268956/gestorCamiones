@@ -1,4 +1,4 @@
-package com.gestorcamiones.gestorcamiones.dto;
+package com.gestorcamiones.gestorcamiones.dto.usuario;
 
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoEmpleado;
 import lombok.AllArgsConstructor;
@@ -11,20 +11,20 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EditarUsuarioDTO {
-    //datos solo del usuario
+    // datos solo del usuario
     private long idUsuario;
     private String nombre;
     private String apellido;
-    EstadoEmpleado estadoEmpleado;
+    private EstadoEmpleado estadoEmpleado;
     private String telefono;
     private String dui;
     private String fotoUrl;
     private Long camionId;
 
-    //datos solo de rol
+    // datos solo de rol
     private String rol;
 
-    //datos de login
+    // datos de login
     private String usuario;
     private String email;
     private String password;

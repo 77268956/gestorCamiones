@@ -1,27 +1,17 @@
 package com.gestorcamiones.gestorcamiones.mapper;
 
-import com.gestorcamiones.gestorcamiones.dto.ClienteDTO;
+import com.gestorcamiones.gestorcamiones.dto.cliente.ClienteDTO;
 import com.gestorcamiones.gestorcamiones.entity.Cliente;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-public class ClienteMapper {
+@Mapper(componentModel = "spring")
+public interface ClienteMapper {
 
-    public static ClienteDTO toDTO(Cliente cliente) {
-        return new ClienteDTO(
-                cliente.getId(),
-                cliente.getNombre(),
-                cliente.getTelefono(),
-                cliente.getDireccion(),
-                cliente.getDuiNit()
-        );
-    }
+    ClienteDTO toDTO(Cliente cliente);
 
-    public static Cliente toEntity(ClienteDTO dto) {
-        Cliente cliente = new Cliente();
-        cliente.setId(dto.getId());
-        cliente.setNombre(dto.getNombre());
-        cliente.setTelefono(dto.getTelefono());
-        cliente.setDireccion(dto.getDireccion());
-        cliente.setDuiNit(dto.getDuiNit());
-        return cliente;
-    }
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "deletedAt", ignore = true)
+    Cliente toEntity(ClienteDTO dto);
 }

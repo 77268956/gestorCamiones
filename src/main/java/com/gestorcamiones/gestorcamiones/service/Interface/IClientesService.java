@@ -1,6 +1,6 @@
 package com.gestorcamiones.gestorcamiones.service.Interface;
 
-import com.gestorcamiones.gestorcamiones.dto.ClienteDTO;
+import com.gestorcamiones.gestorcamiones.dto.cliente.ClienteDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

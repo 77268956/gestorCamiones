@@ -1,34 +1,19 @@
 package com.gestorcamiones.gestorcamiones.mapper;
 
-import com.gestorcamiones.gestorcamiones.dto.CamionDTO;
+import com.gestorcamiones.gestorcamiones.dto.camion.CamionDTO;
 import com.gestorcamiones.gestorcamiones.entity.Camion;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
+@Mapper(componentModel = "spring")
+public interface CamionMapper {
 
-public class CamionMapper {
+    @Mapping(target = "id", source = "idCamion")
+    CamionDTO toDTO(Camion camion);
 
-    public static CamionDTO toDTO(Camion camion) {
-        return new CamionDTO(
-                camion.getIdCamion(),
-                camion.getPlaca(),
-                camion.getNombre(),
-                camion.getCodigo(),
-                camion.getModelo(),
-                camion.getFotoUrl(),
-                camion.getComentario(),
-                camion.getEstadoCamion()
-        );
-    }
-
-    public static Camion toEntity(CamionDTO dto) {
-        Camion camion = new Camion();
-        camion.setIdCamion(dto.getId());
-        camion.setPlaca(dto.getPlaca());
-        camion.setNombre(dto.getNombre());
-        camion.setCodigo(dto.getCodigo());
-        camion.setModelo(dto.getModelo());
-        camion.setFotoUrl(dto.getFotoUrl());
-        camion.setComentario(dto.getComentario());
-        camion.setEstadoCamion(dto.getEstadoCamion());
-        return camion;
-    }
+    @Mapping(target = "idCamion", source = "id")
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "deletedAt", ignore = true)
+    Camion toEntity(CamionDTO dto);
 }

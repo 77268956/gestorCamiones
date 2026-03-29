@@ -1,8 +1,5 @@
-package com.gestorcamiones.gestorcamiones.dto;
+package com.gestorcamiones.gestorcamiones.dto.gasto;
 
-import com.gestorcamiones.gestorcamiones.entity.TipoGasto;
-import com.gestorcamiones.gestorcamiones.entity.Usuario;
-import com.gestorcamiones.gestorcamiones.entity.ViajeDetalle;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -1,7 +1,10 @@
 package com.gestorcamiones.gestorcamiones.service;
 
-import com.gestorcamiones.gestorcamiones.dto.CrearViajeDTO;
-import com.gestorcamiones.gestorcamiones.dto.ListaViajesDTO;
+import com.gestorcamiones.gestorcamiones.dto.viaje.ActualizarViajeDTO;
+import com.gestorcamiones.gestorcamiones.dto.viaje.CrearViajeDTO;
+import com.gestorcamiones.gestorcamiones.dto.viaje.DetalleViajeDTO;
+import com.gestorcamiones.gestorcamiones.dto.viaje.ListaViajesDTO;
+import com.gestorcamiones.gestorcamiones.dto.viaje.ViajeUpsertDTO;
 import com.gestorcamiones.gestorcamiones.entity.Cliente;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
 import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
@@ -64,8 +67,8 @@ public class ViajeService implements IViajeService {
             }
 
             // separar IDA y VUELTA
-            List<ViajeDetalle> ida = new ArrayList<>();
-            List<ViajeDetalle> vuelta = new ArrayList<>();
+            List<DetalleViajeDTO> ida = new ArrayList<>();
+            List<DetalleViajeDTO> vuelta = new ArrayList<>();
 
             BigDecimal gananciaTotal = BigDecimal.ZERO;
             BigDecimal gastoTotal = BigDecimal.ZERO;
@@ -73,10 +76,11 @@ public class ViajeService implements IViajeService {
             for (ViajeDetalle detalle : viaje.getDetalles()) {
 
                 // separar por tipo
+                DetalleViajeDTO detalleDTO = toDetalleDTO(detalle);
                 if (detalle.getTipoTramo() == TipoTramo.ida) {
-                    ida.add(detalle);
+                    ida.add(detalleDTO);
                 } else if (detalle.getTipoTramo() == TipoTramo.vuelta) {
-                    vuelta.add(detalle);
+                    vuelta.add(detalleDTO);
                 }
 
                 // ejemplo de calculo (ajusta segun tu logica real)
@@ -109,7 +113,7 @@ public class ViajeService implements IViajeService {
         return dto;
     }
 
-    private Viaje guardarViaje(CrearViajeDTO dto, Usuario usuario) {
+    private Viaje guardarViaje(ViajeUpsertDTO dto, Usuario usuario) {
 
         Cliente cliente = clienteRepository.findById(dto.getIdCliente())
                 .orElseThrow(() -> new IllegalArgumentException("Cliente no encontrado"));
@@ -125,7 +129,7 @@ public class ViajeService implements IViajeService {
 
     @Transactional
     @Override
-    public CrearViajeDTO actualizarViaje(Long idViaje, CrearViajeDTO dto, Usuario usuario) {
+    public ActualizarViajeDTO actualizarViaje(Long idViaje, ActualizarViajeDTO dto, Usuario usuario) {
         if (usuario == null) {
             throw new IllegalArgumentException("Usuario no autenticado correctamente");
         }
@@ -148,6 +152,24 @@ public class ViajeService implements IViajeService {
         }
 
         viajeRepository.save(viaje);
+        return dto;
+    }
+
+    private DetalleViajeDTO toDetalleDTO(ViajeDetalle detalle) {
+        DetalleViajeDTO dto = new DetalleViajeDTO();
+        dto.setId(detalle.getIdViajeDetalle());
+        dto.setTipoTramo(detalle.getTipoTramo());
+        dto.setEstadoViaje(detalle.getEstado());
+        dto.setPagado(detalle.getPagado());
+        dto.setIva(detalle.getIva());
+        dto.setFechaSalida(detalle.getFechaSalida());
+        dto.setFechaEntrada(detalle.getFechaLlegada());
+        if (detalle.getCamion() != null) {
+            dto.setCamionId(detalle.getCamion().getIdCamion());
+        }
+        if (detalle.getChofer() != null) {
+            dto.setConductorId(detalle.getChofer().getIdUsuarios());
+        }
         return dto;
     }
 

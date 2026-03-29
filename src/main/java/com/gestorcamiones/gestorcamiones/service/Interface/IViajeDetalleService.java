@@ -1,6 +1,6 @@
 package com.gestorcamiones.gestorcamiones.service.Interface;
 
-import com.gestorcamiones.gestorcamiones.dto.TramoDTO;
+import com.gestorcamiones.gestorcamiones.dto.tramo.TramoDTO;
 import com.gestorcamiones.gestorcamiones.entity.Usuario;
 import com.gestorcamiones.gestorcamiones.entity.Viaje;
 

@@ -1,6 +1,6 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
-import com.gestorcamiones.gestorcamiones.dto.CamionDTO;
+import com.gestorcamiones.gestorcamiones.dto.camion.CamionDTO;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCamion;
 import com.gestorcamiones.gestorcamiones.service.CamionServicio;
 import io.swagger.v3.oas.annotations.Operation;

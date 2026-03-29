@@ -1,6 +1,6 @@
 package com.gestorcamiones.gestorcamiones.service;
 
-import com.gestorcamiones.gestorcamiones.dto.TramoDTO;
+import com.gestorcamiones.gestorcamiones.dto.tramo.TramoDTO;
 import com.gestorcamiones.gestorcamiones.entity.GastoViaje;
 import com.gestorcamiones.gestorcamiones.entity.TipoGasto;
 import com.gestorcamiones.gestorcamiones.entity.Usuario;

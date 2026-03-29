@@ -1,4 +1,4 @@
-package com.gestorcamiones.gestorcamiones.dto;
+package com.gestorcamiones.gestorcamiones.dto.camion;
 
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCamion;
 import jakarta.validation.constraints.NotBlank;
@@ -8,7 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class CamionDTO {
@@ -20,7 +21,7 @@ public class CamionDTO {
     @NotBlank(message = "El nombre es obligatorio")
     private String nombre;
 
-    @NotBlank(message = "El código es obligatorio")
+    @NotBlank(message = "El codigo es obligatorio")
     private String codigo;
 
     @NotBlank(message = "El modelo es obligatorio")
@@ -32,5 +33,4 @@ public class CamionDTO {
 
     @NotNull(message = "El estado es obligatorio")
     private EstadoCamion estadoCamion;
-
 }

@@ -1,4 +1,4 @@
-package com.gestorcamiones.gestorcamiones.dto;
+package com.gestorcamiones.gestorcamiones.dto.usuario;
 
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoEmpleado;
 import lombok.AllArgsConstructor;

@@ -1,11 +1,11 @@
-package com.gestorcamiones.gestorcamiones.dto;
+package com.gestorcamiones.gestorcamiones.dto.rol;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter @Setter
-
+@Getter
+@Setter
 public class RolDTO {
     @JsonProperty("id_rol")
     private Long idRol;

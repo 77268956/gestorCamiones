@@ -1,7 +1,6 @@
-package com.gestorcamiones.gestorcamiones.dto;
+package com.gestorcamiones.gestorcamiones.dto.viaje;
 
-import com.gestorcamiones.gestorcamiones.entity.GastoViaje;
-import com.gestorcamiones.gestorcamiones.entity.ViajeDetalle;
+import com.gestorcamiones.gestorcamiones.dto.gasto.GastoViajeDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,12 +22,11 @@ public class ListaViajesDTO {
 
     private long idCamion;
 
-    BigDecimal ganaciaTotal = BigDecimal.valueOf(0);
-    BigDecimal gastoTotal = BigDecimal.valueOf(0);
+    private BigDecimal ganaciaTotal = BigDecimal.ZERO;
+    private BigDecimal gastoTotal = BigDecimal.ZERO;
 
-    private List<ViajeDetalle> listaVuelta;
-    private List<ViajeDetalle> listaIDa;
+    private List<DetalleViajeDTO> listaVuelta;
+    private List<DetalleViajeDTO> listaIDa;
 
-    private List<GastoViaje> gastoViajes;
-
+    private List<GastoViajeDTO> gastoViajes;
 }

@@ -1,7 +1,7 @@
 package com.gestorcamiones.gestorcamiones.service;
 
-import com.gestorcamiones.gestorcamiones.dto.CamionDTO;
-import com.gestorcamiones.gestorcamiones.dto.UsuarioPerfilDTO;
+import com.gestorcamiones.gestorcamiones.dto.camion.CamionDTO;
+import com.gestorcamiones.gestorcamiones.dto.usuario.UsuarioPerfilDTO;
 import com.gestorcamiones.gestorcamiones.entity.Camion;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCamion;
 import com.gestorcamiones.gestorcamiones.mapper.CamionMapper;
@@ -22,9 +22,11 @@ import java.util.List;
 public class CamionServicio implements ICamionService {
 
     private final CamionRepository camionRepository;
+    private final CamionMapper camionMapper;
 
-    public CamionServicio(CamionRepository camionRepository) {
+    public CamionServicio(CamionRepository camionRepository, CamionMapper camionMapper) {
         this.camionRepository = camionRepository;
+        this.camionMapper = camionMapper;
     }
 
 
@@ -34,7 +36,7 @@ public class CamionServicio implements ICamionService {
         String estadoNormalizado = (estado == null) ? null : estado.name();
         List<CamionDTO> filtrados = camionRepository.buscarFiltrados(textoNormalizado, estadoNormalizado)
                 .stream()
-                .map(CamionMapper::toDTO)
+                .map(camionMapper::toDTO)
                 .toList();
 
         int pageSize = Math.max(pageable.getPageSize(), 1);
@@ -53,7 +55,7 @@ public class CamionServicio implements ICamionService {
     @Override
     @Transactional
     public CamionDTO crearCamion(CamionDTO dto) {
-        Camion camion = CamionMapper.toEntity(dto);
+        Camion camion = camionMapper.toEntity(dto);
         if (camionRepository.existsByPlaca(dto.getPlaca())) {
             throw new IllegalArgumentException("La placa ya esta registrada");
         }
@@ -63,7 +65,7 @@ public class CamionServicio implements ICamionService {
         }
 
         Camion camionGuardado = camionRepository.save(camion);
-        return CamionMapper.toDTO(camionGuardado);
+        return camionMapper.toDTO(camionGuardado);
     }
 
     @Override
@@ -86,7 +88,7 @@ public class CamionServicio implements ICamionService {
         camion.setModelo(dto.getModelo());
         camion.setComentario(dto.getComentario());
         Camion camionGuardado = camionRepository.save(camion);
-        return CamionMapper.toDTO(camionGuardado);
+        return camionMapper.toDTO(camionGuardado);
     }
 
     @Override

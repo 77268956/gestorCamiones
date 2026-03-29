@@ -1,7 +1,7 @@
 package com.gestorcamiones.gestorcamiones.service.Interface;
 
-import com.gestorcamiones.gestorcamiones.dto.CamionDTO;
-import com.gestorcamiones.gestorcamiones.dto.UsuarioPerfilDTO;
+import com.gestorcamiones.gestorcamiones.dto.camion.CamionDTO;
+import com.gestorcamiones.gestorcamiones.dto.usuario.UsuarioPerfilDTO;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCamion;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -1,4 +1,4 @@
-package com.gestorcamiones.gestorcamiones.dto;
+package com.gestorcamiones.gestorcamiones.dto.auditoria;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

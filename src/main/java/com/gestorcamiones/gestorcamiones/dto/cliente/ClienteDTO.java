@@ -1,4 +1,4 @@
-package com.gestorcamiones.gestorcamiones.dto;
+package com.gestorcamiones.gestorcamiones.dto.cliente;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

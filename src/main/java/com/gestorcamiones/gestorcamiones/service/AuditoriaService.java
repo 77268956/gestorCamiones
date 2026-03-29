@@ -1,7 +1,7 @@
 package com.gestorcamiones.gestorcamiones.service;
 
-import com.gestorcamiones.gestorcamiones.dto.AuditoriaLoginDTO;
-import com.gestorcamiones.gestorcamiones.dto.AuditoriaLoginPageDTO;
+import com.gestorcamiones.gestorcamiones.dto.auditoria.AuditoriaLoginDTO;
+import com.gestorcamiones.gestorcamiones.dto.auditoria.AuditoriaLoginPageDTO;
 import com.gestorcamiones.gestorcamiones.entity.Auditoria.AuditoriaLoginFallido;
 import com.gestorcamiones.gestorcamiones.entity.Auditoria.AuditoriaSesion;
 import com.gestorcamiones.gestorcamiones.entity.Login;

@@ -1,8 +1,8 @@
 package com.gestorcamiones.gestorcamiones.service;
 
-import com.gestorcamiones.gestorcamiones.dto.CrearUsuarioDTO;
-import com.gestorcamiones.gestorcamiones.dto.EditarUsuarioDTO;
-import com.gestorcamiones.gestorcamiones.dto.UsuarioPerfilDTO;
+import com.gestorcamiones.gestorcamiones.dto.usuario.CrearUsuarioDTO;
+import com.gestorcamiones.gestorcamiones.dto.usuario.EditarUsuarioDTO;
+import com.gestorcamiones.gestorcamiones.dto.usuario.UsuarioPerfilDTO;
 import com.gestorcamiones.gestorcamiones.entity.Camion;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCuenta;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoEmpleado;
@@ -16,7 +16,6 @@ import com.gestorcamiones.gestorcamiones.repository.RolRepository;
 import com.gestorcamiones.gestorcamiones.repository.UsuarioRepository;
 import com.gestorcamiones.gestorcamiones.service.Interface.IUsuarioService;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,26 +32,29 @@ public class UsuarioService implements IUsuarioService {
     private final RolRepository rolRepository;
     private final CamionRepository camionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UsuarioMapper usuarioMapper;
 
     public UsuarioService(
             UsuarioRepository usuarioRepository,
             LoginRepository loginRepository,
             RolRepository rolRepository,
             CamionRepository camionRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            UsuarioMapper usuarioMapper
     ) {
         this.usuarioRepository = usuarioRepository;
         this.loginRepository = loginRepository;
         this.rolRepository = rolRepository;
         this.camionRepository = camionRepository;
         this.passwordEncoder = passwordEncoder;
+        this.usuarioMapper = usuarioMapper;
     }
 
     @Override
     public Page<UsuarioPerfilDTO> listarUsuarios(Pageable pageable, String texto, EstadoEmpleado estado) {
         String textoNormalizado = (texto == null || texto.isBlank()) ? "" : texto.trim();
         Page<Usuario> page = usuarioRepository.buscarFiltrados(textoNormalizado, estado, pageable);
-        return page.map(UsuarioMapper::mapToPerfilDTO);
+        return page.map(usuarioMapper::mapToPerfilDTO);
     }
 
     @Override
@@ -65,7 +67,7 @@ public class UsuarioService implements IUsuarioService {
     public UsuarioPerfilDTO obtenerPerfil(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        return UsuarioMapper.mapToPerfilDTO(usuario);
+        return usuarioMapper.mapToPerfilDTO(usuario);
     }
 
     @Override
@@ -106,7 +108,7 @@ public class UsuarioService implements IUsuarioService {
         loginRepository.save(login);
 
         usuarioGuardado.setLogin(login);
-        return UsuarioMapper.mapToPerfilDTO(usuarioGuardado);
+        return usuarioMapper.mapToPerfilDTO(usuarioGuardado);
     }
 
     @Override
@@ -175,7 +177,7 @@ public class UsuarioService implements IUsuarioService {
         loginRepository.save(login);
 
         usuario.setLogin(login);
-        return UsuarioMapper.mapToPerfilDTO(usuario);
+        return usuarioMapper.mapToPerfilDTO(usuario);
     }
 
 

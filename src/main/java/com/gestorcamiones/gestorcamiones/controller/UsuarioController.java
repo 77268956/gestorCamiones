@@ -1,8 +1,8 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
-import com.gestorcamiones.gestorcamiones.dto.CrearUsuarioDTO;
-import com.gestorcamiones.gestorcamiones.dto.EditarUsuarioDTO;
-import com.gestorcamiones.gestorcamiones.dto.UsuarioPerfilDTO;
+import com.gestorcamiones.gestorcamiones.dto.usuario.CrearUsuarioDTO;
+import com.gestorcamiones.gestorcamiones.dto.usuario.EditarUsuarioDTO;
+import com.gestorcamiones.gestorcamiones.dto.usuario.UsuarioPerfilDTO;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoEmpleado;
 import com.gestorcamiones.gestorcamiones.service.Interface.IUsuarioService;
 import io.swagger.v3.oas.annotations.Operation;

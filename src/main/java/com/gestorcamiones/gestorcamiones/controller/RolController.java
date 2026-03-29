@@ -1,6 +1,6 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
-import com.gestorcamiones.gestorcamiones.dto.RolDTO;
+import com.gestorcamiones.gestorcamiones.dto.rol.RolDTO;
 import com.gestorcamiones.gestorcamiones.service.RolService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

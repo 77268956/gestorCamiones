@@ -1,6 +1,6 @@
 package com.gestorcamiones.gestorcamiones.service;
 
-import com.gestorcamiones.gestorcamiones.dto.ClienteDTO;
+import com.gestorcamiones.gestorcamiones.dto.cliente.ClienteDTO;
 import com.gestorcamiones.gestorcamiones.entity.Cliente;
 import com.gestorcamiones.gestorcamiones.mapper.ClienteMapper;
 import com.gestorcamiones.gestorcamiones.repository.ClienteRepository;
@@ -14,16 +14,18 @@ import org.springframework.stereotype.Service;
 public class ClientesService implements IClientesService {
 
     private final ClienteRepository clienteRepository;
+    private final ClienteMapper clienteMapper;
 
-    public ClientesService(ClienteRepository clienteRepository) {
+    public ClientesService(ClienteRepository clienteRepository, ClienteMapper clienteMapper) {
         this.clienteRepository = clienteRepository;
+        this.clienteMapper = clienteMapper;
     }
 
     @Override
     public Page<ClienteDTO> listar(Pageable pageable, String texto) {
         String textoNormalizado = (texto == null || texto.isBlank()) ? "" : texto.trim();
         Page<Cliente> page = clienteRepository.buscarFiltrados(textoNormalizado, pageable);
-        return page.map(ClienteMapper::toDTO);
+        return page.map(clienteMapper::toDTO);
     }
 
     @Override
@@ -35,9 +37,9 @@ public class ClientesService implements IClientesService {
             }
         }
 
-        Cliente cliente = ClienteMapper.toEntity(dto);
+        Cliente cliente = clienteMapper.toEntity(dto);
         Cliente guardado = clienteRepository.save(cliente);
-        return ClienteMapper.toDTO(guardado);
+        return clienteMapper.toDTO(guardado);
     }
 
     @Override
@@ -58,7 +60,7 @@ public class ClientesService implements IClientesService {
         cliente.setDuiNit(dto.getDuiNit());
 
         Cliente guardado = clienteRepository.save(cliente);
-        return ClienteMapper.toDTO(guardado);
+        return clienteMapper.toDTO(guardado);
     }
 
     @Override

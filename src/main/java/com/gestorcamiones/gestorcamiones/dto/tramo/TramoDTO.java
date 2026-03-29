@@ -1,14 +1,13 @@
-package com.gestorcamiones.gestorcamiones.dto;
+package com.gestorcamiones.gestorcamiones.dto.tramo;
 
+import com.gestorcamiones.gestorcamiones.dto.gasto.GastoViajeDTO;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
 import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -32,6 +31,3 @@ public class TramoDTO {
 
     private GastoViajeDTO gastoViaje;
 }
-
-
-

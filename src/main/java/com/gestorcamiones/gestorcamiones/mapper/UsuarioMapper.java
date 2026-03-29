@@ -1,30 +1,21 @@
 package com.gestorcamiones.gestorcamiones.mapper;
 
-import com.gestorcamiones.gestorcamiones.dto.UsuarioPerfilDTO;
-import com.gestorcamiones.gestorcamiones.entity.Login;
+import com.gestorcamiones.gestorcamiones.dto.usuario.UsuarioPerfilDTO;
 import com.gestorcamiones.gestorcamiones.entity.Usuario;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-public class UsuarioMapper {
+@Mapper(componentModel = "spring")
+public interface UsuarioMapper {
 
-    public static UsuarioPerfilDTO mapToPerfilDTO(Usuario usuario) {
-        Login login = usuario.getLogin();
-
-        return new UsuarioPerfilDTO(
-                usuario.getIdUsuarios(),
-                usuario.getNombre(),
-                usuario.getApellido(),
-                login != null ? login.getEmail() : null,
-                login != null ? login.getUsuario() : null,
-                usuario.getTelefono(),
-                usuario.getDui(),
-                usuario.getRol() != null ? usuario.getRol().getRol() : null,
-                usuario.getRol() != null ? usuario.getRol().getIdRol() : null,
-                usuario.getEstadoEmpleado(),
-                usuario.getFotoUrl(),
-                usuario.getCamion() != null ? usuario.getCamion().getIdCamion() : null,
-                usuario.getCamion() != null ? usuario.getCamion().getPlaca() : null,
-                usuario.getCamion() != null ? usuario.getCamion().getModelo() : null
-        );
-    }
-
+    @Mapping(target = "id", source = "idUsuarios")
+    @Mapping(target = "email", source = "login.email")
+    @Mapping(target = "usuario", source = "login.usuario")
+    @Mapping(target = "rol", source = "rol.rol")
+    @Mapping(target = "rolId", source = "rol.idRol")
+    @Mapping(target = "estado", source = "estadoEmpleado")
+    @Mapping(target = "camionId", source = "camion.idCamion")
+    @Mapping(target = "camionPlaca", source = "camion.placa")
+    @Mapping(target = "camionModelo", source = "camion.modelo")
+    UsuarioPerfilDTO mapToPerfilDTO(Usuario usuario);
 }

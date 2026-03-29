@@ -1,6 +1,7 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
-import com.gestorcamiones.gestorcamiones.dto.CrearViajeDTO;
+import com.gestorcamiones.gestorcamiones.dto.viaje.ActualizarViajeDTO;
+import com.gestorcamiones.gestorcamiones.dto.viaje.CrearViajeDTO;
 import com.gestorcamiones.gestorcamiones.security.CustomUserDetails;
 import com.gestorcamiones.gestorcamiones.service.ViajeService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,9 +31,9 @@ public class viajesController {
     }
 
     @PutMapping("/viajes/{idViaje}")
-    public CrearViajeDTO actualizarViaje(
+    public ActualizarViajeDTO actualizarViaje(
             @PathVariable Long idViaje,
-            @RequestBody CrearViajeDTO dto,
+            @RequestBody ActualizarViajeDTO dto,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         return viajeService.actualizarViaje(idViaje, dto, userDetails.getUsuario());

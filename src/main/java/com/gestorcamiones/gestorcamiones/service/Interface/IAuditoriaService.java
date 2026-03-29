@@ -1,6 +1,6 @@
 package com.gestorcamiones.gestorcamiones.service.Interface;
 
-import com.gestorcamiones.gestorcamiones.dto.AuditoriaLoginPageDTO;
+import com.gestorcamiones.gestorcamiones.dto.auditoria.AuditoriaLoginPageDTO;
 
 import java.time.LocalDateTime;
 
