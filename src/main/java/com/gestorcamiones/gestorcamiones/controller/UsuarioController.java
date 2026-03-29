@@ -4,7 +4,7 @@ import com.gestorcamiones.gestorcamiones.dto.usuario.CrearUsuarioDTO;
 import com.gestorcamiones.gestorcamiones.dto.usuario.EditarUsuarioDTO;
 import com.gestorcamiones.gestorcamiones.dto.usuario.UsuarioPerfilDTO;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoEmpleado;
-import com.gestorcamiones.gestorcamiones.service.Interface.IUsuarioService;
+import com.gestorcamiones.gestorcamiones.service.usuario.IUsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

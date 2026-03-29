@@ -1,4 +1,4 @@
-package com.gestorcamiones.gestorcamiones.service;
+package com.gestorcamiones.gestorcamiones.service.gasto;
 
 import org.springframework.stereotype.Service;
 

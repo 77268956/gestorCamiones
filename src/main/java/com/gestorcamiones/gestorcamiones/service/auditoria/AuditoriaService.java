@@ -1,4 +1,4 @@
-package com.gestorcamiones.gestorcamiones.service;
+package com.gestorcamiones.gestorcamiones.service.auditoria;
 
 import com.gestorcamiones.gestorcamiones.dto.auditoria.AuditoriaLoginDTO;
 import com.gestorcamiones.gestorcamiones.dto.auditoria.AuditoriaLoginPageDTO;
@@ -8,10 +8,6 @@ import com.gestorcamiones.gestorcamiones.entity.Login;
 import com.gestorcamiones.gestorcamiones.repository.AuditoriaR.AuditoriaLoginFallidoRepository;
 import com.gestorcamiones.gestorcamiones.repository.AuditoriaR.AuditoriaSesionRepository;
 import com.gestorcamiones.gestorcamiones.repository.LoginRepository;
-import com.gestorcamiones.gestorcamiones.service.Interface.IAuditoriaService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -54,11 +50,8 @@ public class AuditoriaService implements IAuditoriaService {
         int pageSafe = Math.max(page, 0);
         int sizeSafe = Math.max(1, Math.min(size, 200));
 
-
-
         List<AuditoriaSesion> sesiones = auditoriaSesionRepository.findAll(Sort.by(Sort.Direction.DESC, "fecha"));
         List<AuditoriaLoginFallido> fallidos = auditoriaLoginFallidoRepository.findAll(Sort.by(Sort.Direction.DESC, "fecha"));
-
 
         Map<Long, String> emailPorLoginId = resolverEmailsSesion(sesiones);
 

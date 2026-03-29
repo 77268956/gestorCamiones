@@ -1,9 +1,7 @@
-package com.gestorcamiones.gestorcamiones.service;
+package com.gestorcamiones.gestorcamiones.service.gasto;
 
 import com.gestorcamiones.gestorcamiones.entity.GastoViaje;
 import com.gestorcamiones.gestorcamiones.repository.GastosViajeRepository;
-import com.gestorcamiones.gestorcamiones.service.Interface.IGastosViaje;
-import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 @Service

@@ -1,11 +1,10 @@
-package com.gestorcamiones.gestorcamiones.service.Interface;
+package com.gestorcamiones.gestorcamiones.service.auditoria;
 
 import com.gestorcamiones.gestorcamiones.dto.auditoria.AuditoriaLoginPageDTO;
 
 import java.time.LocalDateTime;
 
 public interface IAuditoriaService {
-
 
     AuditoriaLoginPageDTO obtenerAuditoriaLogin(
             LocalDateTime desde,

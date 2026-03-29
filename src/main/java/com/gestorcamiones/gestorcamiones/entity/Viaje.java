@@ -45,7 +45,7 @@ public class Viaje {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    private List<ViajeDetalle> detalles = new ArrayList<>(); // NUEVO: evita NPE al agregar detalles
+    private List<ViajeDetalle> detalles = new ArrayList<>();
 
     // 🔹 Auditoría
 
@@ -57,4 +57,26 @@ public class Viaje {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    public void addDetalle(ViajeDetalle detalle) {
+        detalles.add(detalle);
+        detalle.setViaje(this);
+    }
+
+    public void removeDetalle(ViajeDetalle detalle) {
+        detalles.remove(detalle);
+        detalle.setViaje(null);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Viaje)) return false;
+        return idViaje != null && idViaje.equals(((Viaje) o).idViaje);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

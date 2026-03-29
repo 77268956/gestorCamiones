@@ -1,4 +1,4 @@
-package com.gestorcamiones.gestorcamiones.service;
+package com.gestorcamiones.gestorcamiones.service.rol;
 
 import com.gestorcamiones.gestorcamiones.entity.Rol;
 import com.gestorcamiones.gestorcamiones.repository.RolRepository;
@@ -16,7 +16,6 @@ public class RolService {
     public RolService(RolRepository rolRepository) {
         this.rolRepository = rolRepository;
     }
-
 
     public List<Rol> listarTodos() {
         return rolRepository.findAll();

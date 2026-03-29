@@ -1,7 +1,7 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
 import com.gestorcamiones.gestorcamiones.dto.auditoria.AuditoriaLoginPageDTO;
-import com.gestorcamiones.gestorcamiones.service.Interface.IAuditoriaService;
+import com.gestorcamiones.gestorcamiones.service.auditoria.IAuditoriaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;

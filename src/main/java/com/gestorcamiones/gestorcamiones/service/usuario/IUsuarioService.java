@@ -1,4 +1,4 @@
-package com.gestorcamiones.gestorcamiones.service.Interface;
+package com.gestorcamiones.gestorcamiones.service.usuario;
 
 import com.gestorcamiones.gestorcamiones.dto.usuario.CrearUsuarioDTO;
 import com.gestorcamiones.gestorcamiones.dto.usuario.EditarUsuarioDTO;

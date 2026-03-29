@@ -1,4 +1,4 @@
-package com.gestorcamiones.gestorcamiones.service;
+package com.gestorcamiones.gestorcamiones.service.camion;
 
 import com.gestorcamiones.gestorcamiones.dto.camion.CamionDTO;
 import com.gestorcamiones.gestorcamiones.dto.usuario.UsuarioPerfilDTO;
@@ -6,7 +6,6 @@ import com.gestorcamiones.gestorcamiones.entity.Camion;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCamion;
 import com.gestorcamiones.gestorcamiones.mapper.CamionMapper;
 import com.gestorcamiones.gestorcamiones.repository.CamionRepository;
-import com.gestorcamiones.gestorcamiones.service.Interface.ICamionService;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -29,7 +28,6 @@ public class CamionServicio implements ICamionService {
         this.camionMapper = camionMapper;
     }
 
-
     @Override
     public Page<CamionDTO> listarCamiones(Pageable pageable, String texto, EstadoCamion estado) {
         String textoNormalizado = (texto == null || texto.isBlank()) ? null : texto.trim();
@@ -50,7 +48,6 @@ public class CamionServicio implements ICamionService {
     public UsuarioPerfilDTO obtenerPerfilCamion(Long id) {
         return null;
     }
-
 
     @Override
     @Transactional
@@ -103,5 +100,4 @@ public class CamionServicio implements ICamionService {
     public EstadoCamion[] estadosCamion() {
         return EstadoCamion.values();
     }
-
 }

@@ -1,4 +1,4 @@
-package com.gestorcamiones.gestorcamiones.service.Interface;
+package com.gestorcamiones.gestorcamiones.service.viaje;
 
 import com.gestorcamiones.gestorcamiones.dto.viaje.ActualizarViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.CrearViajeDTO;
@@ -12,9 +12,7 @@ import java.time.LocalDate;
 
 public interface IViajeService {
 
-    Page<ListaViajesDTO> listaViejes (Pageable pageable, String texto, EstadoViaje estado, LocalDate fecehaIncio, LocalDate fecehaFin);
+    Page<ListaViajesDTO> listaViejes(Pageable pageable, String texto, EstadoViaje estado, LocalDate fecehaIncio, LocalDate fecehaFin);
     CrearViajeDTO CrearViaje(CrearViajeDTO dto, Usuario usuario);
     ActualizarViajeDTO actualizarViaje(Long idViaje, ActualizarViajeDTO dto, Usuario usuario);
-
-
 }

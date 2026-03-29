@@ -1,7 +1,7 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
 import com.gestorcamiones.gestorcamiones.security.CustomUserDetails;
-import com.gestorcamiones.gestorcamiones.service.UsuarioService;
+import com.gestorcamiones.gestorcamiones.service.usuario.UsuarioService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;

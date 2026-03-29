@@ -1,7 +1,7 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
 import com.gestorcamiones.gestorcamiones.dto.cliente.ClienteDTO;
-import com.gestorcamiones.gestorcamiones.service.Interface.IClientesService;
+import com.gestorcamiones.gestorcamiones.service.cliente.IClientesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

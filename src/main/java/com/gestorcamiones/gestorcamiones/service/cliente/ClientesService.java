@@ -1,10 +1,9 @@
-package com.gestorcamiones.gestorcamiones.service;
+package com.gestorcamiones.gestorcamiones.service.cliente;
 
 import com.gestorcamiones.gestorcamiones.dto.cliente.ClienteDTO;
 import com.gestorcamiones.gestorcamiones.entity.Cliente;
 import com.gestorcamiones.gestorcamiones.mapper.ClienteMapper;
 import com.gestorcamiones.gestorcamiones.repository.ClienteRepository;
-import com.gestorcamiones.gestorcamiones.service.Interface.IClientesService;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -1,4 +1,4 @@
-package com.gestorcamiones.gestorcamiones.service;
+package com.gestorcamiones.gestorcamiones.service.viaje;
 
 import com.gestorcamiones.gestorcamiones.dto.viaje.ActualizarViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.CrearViajeDTO;
@@ -13,7 +13,6 @@ import com.gestorcamiones.gestorcamiones.entity.Viaje;
 import com.gestorcamiones.gestorcamiones.entity.ViajeDetalle;
 import com.gestorcamiones.gestorcamiones.repository.ClienteRepository;
 import com.gestorcamiones.gestorcamiones.repository.ViajeRepository;
-import com.gestorcamiones.gestorcamiones.service.Interface.IViajeService;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,7 +37,6 @@ public class ViajeService implements IViajeService {
         this.clienteRepository = clienteRepository;
         this.viajeDetallesService = viajeDetallesService;
     }
-
 
     @Override
     public Page<ListaViajesDTO> listaViejes(Pageable pageable,
@@ -126,10 +124,10 @@ public class ViajeService implements IViajeService {
         return viaje;
     }
 
-
     @Transactional
     @Override
     public ActualizarViajeDTO actualizarViaje(Long idViaje, ActualizarViajeDTO dto, Usuario usuario) {
+        // u
         if (usuario == null) {
             throw new IllegalArgumentException("Usuario no autenticado correctamente");
         }
@@ -172,7 +170,6 @@ public class ViajeService implements IViajeService {
         }
         return dto;
     }
-
 
     public void eliminarViaje(Long idViaje) {
 

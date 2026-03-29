@@ -3,7 +3,7 @@ package com.gestorcamiones.gestorcamiones.controller;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ActualizarViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.CrearViajeDTO;
 import com.gestorcamiones.gestorcamiones.security.CustomUserDetails;
-import com.gestorcamiones.gestorcamiones.service.ViajeService;
+import com.gestorcamiones.gestorcamiones.service.viaje.ViajeService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;

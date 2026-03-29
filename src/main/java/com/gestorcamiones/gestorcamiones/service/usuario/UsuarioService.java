@@ -1,4 +1,4 @@
-package com.gestorcamiones.gestorcamiones.service;
+package com.gestorcamiones.gestorcamiones.service.usuario;
 
 import com.gestorcamiones.gestorcamiones.dto.usuario.CrearUsuarioDTO;
 import com.gestorcamiones.gestorcamiones.dto.usuario.EditarUsuarioDTO;
@@ -14,7 +14,6 @@ import com.gestorcamiones.gestorcamiones.repository.CamionRepository;
 import com.gestorcamiones.gestorcamiones.repository.LoginRepository;
 import com.gestorcamiones.gestorcamiones.repository.RolRepository;
 import com.gestorcamiones.gestorcamiones.repository.UsuarioRepository;
-import com.gestorcamiones.gestorcamiones.service.Interface.IUsuarioService;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -61,7 +60,6 @@ public class UsuarioService implements IUsuarioService {
     public EstadoEmpleado[] estados() {
         return EstadoEmpleado.values();
     }
-
 
     @Override
     public UsuarioPerfilDTO obtenerPerfil(Long id) {
@@ -179,7 +177,6 @@ public class UsuarioService implements IUsuarioService {
         usuario.setLogin(login);
         return usuarioMapper.mapToPerfilDTO(usuario);
     }
-
 
     @Override
     @Transactional

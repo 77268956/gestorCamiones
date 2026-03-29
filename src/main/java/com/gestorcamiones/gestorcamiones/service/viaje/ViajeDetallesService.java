@@ -1,4 +1,4 @@
-package com.gestorcamiones.gestorcamiones.service;
+package com.gestorcamiones.gestorcamiones.service.viaje;
 
 import com.gestorcamiones.gestorcamiones.dto.tramo.TramoDTO;
 import com.gestorcamiones.gestorcamiones.entity.GastoViaje;
@@ -11,7 +11,7 @@ import com.gestorcamiones.gestorcamiones.repository.CamionRepository;
 import com.gestorcamiones.gestorcamiones.repository.TipoGastoRepository;
 import com.gestorcamiones.gestorcamiones.repository.UsuarioRepository;
 import com.gestorcamiones.gestorcamiones.repository.ViajesDetallerRepository;
-import com.gestorcamiones.gestorcamiones.service.Interface.IViajeDetalleService;
+import com.gestorcamiones.gestorcamiones.service.gasto.GastosViajeServicie;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -40,7 +40,6 @@ public class ViajeDetallesService implements IViajeDetalleService {
         this.tipoGastoRepository = tipoGastoRepository;
     }
 
-
     @Override
     public void guardarTramos(List<TramoDTO> tramo, Viaje viaje, Usuario usuarioAdmin) {
         for (TramoDTO dto : tramo) {
@@ -56,6 +55,7 @@ public class ViajeDetallesService implements IViajeDetalleService {
                 }
                 TipoGasto tipoGasto = tipoGastoRepository.findById(idTipoGasto)
                         .orElseThrow(() -> new IllegalArgumentException("TipoGasto no encontrado"));
+
                 gasto.setTipoGasto(tipoGasto);
                 gasto.setUsuarioAdmin(usuarioAdmin);
                 gastosService.guardarGasto(gasto);
@@ -65,7 +65,7 @@ public class ViajeDetallesService implements IViajeDetalleService {
         }
     }
 
-    private ViajeDetalle guardarDetalle(TramoDTO dto, Viaje viaje){
+    private ViajeDetalle guardarDetalle(TramoDTO dto, Viaje viaje) {
         ViajeDetalle detalle = new ViajeDetalle();
         detalle.setViaje(viaje);
         detalle.setTipoTramo(dto.getTipoTramo());

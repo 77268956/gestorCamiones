@@ -2,7 +2,7 @@ package com.gestorcamiones.gestorcamiones.config;
 
 import com.gestorcamiones.gestorcamiones.security.CustomAuthenticationFailureHandler;
 import com.gestorcamiones.gestorcamiones.security.CustomAuthenticationSuccessHandler;
-import com.gestorcamiones.gestorcamiones.service.LoginUserDetailsService;
+import com.gestorcamiones.gestorcamiones.service.login.LoginUserDetailsService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
