@@ -9,9 +9,9 @@ import org.mapstruct.Mapping;
 public interface GastosViajesMapper {
 
     @Mapping(source = "idGastoViaje", target = "id")
-    @Mapping(source = "viajeDetalle.id", target = "idViajeDetalle")
-    @Mapping(source = "tipoGasto.id", target = "idTipoGasto")
-    @Mapping(source = "usuarioAdmin.id", target = "idUsuarioAdmin")
+    @Mapping(source = "viajeDetalle.idViajeDetalle", target = "idViajeDetalle")
+    @Mapping(source = "tipoGasto.idTipoGasto", target = "idTipoGasto")
+    @Mapping(source = "usuarioAdmin.idUsuarios", target = "idUsuarioAdmin")
 
     GastoViajeDTO toDto(GastoViaje gastoViaje);
 
@@ -21,6 +21,9 @@ public interface GastosViajesMapper {
     @Mapping(target = "viajeDetalle", ignore = true)
     @Mapping(target = "tipoGasto", ignore = true)
     @Mapping(target = "usuarioAdmin", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "deletedAt", ignore = true)
 
     GastoViaje toEntity(GastoViajeDTO dto);
 }
