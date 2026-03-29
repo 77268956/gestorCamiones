@@ -2,6 +2,7 @@ package com.gestorcamiones.gestorcamiones.dto;
 
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
 import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,6 +29,8 @@ public class TramoDTO {
 
     private LocalDateTime fechaSalida;
     private LocalDateTime fechaEntrada;
+
+    private GastoViajeDTO gastoViaje;
 }
 
 

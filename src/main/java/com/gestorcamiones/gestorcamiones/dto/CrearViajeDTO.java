@@ -14,10 +14,9 @@ import java.util.List;
 @AllArgsConstructor
 public class CrearViajeDTO {
 
+ private long id_vieje;
  private String nombreViaje;
  private long idCliente;
- private boolean tieneVuelta;
 
  private List<TramoDTO> tramos;
-
 }

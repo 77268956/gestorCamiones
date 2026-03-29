@@ -94,4 +94,7 @@ public class ViewController {
     public String auditoria() {
         return "/view/auditoria";
     }
+
+    @GetMapping("/viajes")
+    public String viajes() { return "/view/Viajes"; }
 }

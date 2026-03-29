@@ -11,9 +11,9 @@ import com.gestorcamiones.gestorcamiones.entity.ViajeDetalle;
 import com.gestorcamiones.gestorcamiones.repository.ClienteRepository;
 import com.gestorcamiones.gestorcamiones.repository.ViajeRepository;
 import com.gestorcamiones.gestorcamiones.service.Interface.IViajeService;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class ViajeService implements IViajeService{
+public class ViajeService implements IViajeService {
 
     private ViajeRepository viajeRepository;
     private ClienteRepository clienteRepository;
@@ -79,13 +79,10 @@ public class ViajeService implements IViajeService{
                     vuelta.add(detalle);
                 }
 
-                // ejemplo de cálculo (ajusta según tu lógica real)
+                // ejemplo de calculo (ajusta segun tu logica real)
                 if (detalle.getPagado() != null) {
-
-                    gananciaTotal = gananciaTotal.add(detalle.);
+                    // gananciaTotal = gananciaTotal.add(...);
                 }
-
-
             }
 
             dto.setListaIDa(ida);
@@ -98,11 +95,21 @@ public class ViajeService implements IViajeService{
         });
     }
 
+    @Transactional
     @Override
     public CrearViajeDTO CrearViaje(CrearViajeDTO dto, Usuario usuario) {
+        // el usuario es el admin
         if (usuario == null) {
             throw new IllegalArgumentException("Usuario no autenticado correctamente");
         }
+
+        Viaje viaje = guardarViaje(dto, usuario);
+
+        viajeDetallesService.guardarTramos(dto.getTramos(), viaje, usuario);
+        return dto;
+    }
+
+    private Viaje guardarViaje(CrearViajeDTO dto, Usuario usuario) {
 
         Cliente cliente = clienteRepository.findById(dto.getIdCliente())
                 .orElseThrow(() -> new IllegalArgumentException("Cliente no encontrado"));
@@ -111,28 +118,34 @@ public class ViajeService implements IViajeService{
         viaje.setNombreViaje(dto.getNombreViaje());
         viaje.setAdmin(usuario);
         viaje.setCliente(cliente);
-
-        // 🔥 agregar detalles ANTES de guardar
-        viajeDetallesService.agregrarViaje(dto.getTramos(), viaje);
-
-        // 🔥 guardar todo junto (padre + hijos)
         viajeRepository.save(viaje);
-
-        return dto;
+        return viaje;
     }
 
+
+    @Transactional
     @Override
-    public CrearViajeDTO actualizarViaje(Long idViaje, CrearViajeDTO dto) {
+    public CrearViajeDTO actualizarViaje(Long idViaje, CrearViajeDTO dto, Usuario usuario) {
+        if (usuario == null) {
+            throw new IllegalArgumentException("Usuario no autenticado correctamente");
+        }
         Viaje viaje = viajeRepository.findById(idViaje)
                 .orElseThrow(() -> new RuntimeException("Viaje no encontrado"));
 
         viaje.setNombreViaje(dto.getNombreViaje());
 
-        // 🔥 limpiar detalles
+        viaje.setAdmin(usuario);
+        if (dto.getIdCliente() > 0) {
+            Cliente cliente = clienteRepository.findById(dto.getIdCliente())
+                    .orElseThrow(() -> new IllegalArgumentException("Cliente no encontrado"));
+            viaje.setCliente(cliente);
+        }
+
         viaje.getDetalles().clear();
 
-        // 🔥 agregar nuevos
-        viajeDetallesService.agregrarViaje(dto.getTramos(), viaje);
+        if (dto.getTramos() != null) {
+            viajeDetallesService.guardarTramos(dto.getTramos(), viaje, usuario);
+        }
 
         viajeRepository.save(viaje);
         return dto;

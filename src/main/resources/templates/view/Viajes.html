@@ -1,10 +1,260 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title>Viajes</title>
+    <th:block th:replace="fragments/assets :: globalStyles"></th:block>
 </head>
 <body>
+<div th:replace="fragments/navbar :: navbar"></div>
 
+<div class="container">
+    <div class="page-surface">
+        <div class="mp-stripe"></div>
+
+        <div class="mp-toolbar">
+            <div class="row align-items-center g-2">
+                <div class="col-12 col-md-9">
+                    <h5 class="mp-title">Viajes</h5>
+                </div>
+                <div class="col-12 col-md-3 d-grid">
+                    <button id="btnNuevoViaje" class="btn btn-add">+ Nuevo viaje</button>
+                </div>
+            </div>
+
+            <div class="row align-items-center g-2 mt-2">
+                <div class="col-12 col-md-4">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="input-group">
+                                <span class="input-group-text">Desde</span>
+                                <input id="filtroFechaInicioViajes" type="date" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="input-group">
+                                <span class="input-group-text">Hasta</span>
+                                <input id="filtroFechaFinViajes" type="date" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-4 mp-search">
+                    <div class="input-group">
+                        <span class="input-group-text">Buscar</span>
+                        <input id="filtroBusquedaViajes" type="text" class="form-control" placeholder="Nombre, destino o camion...">
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <select id="filtroEstadoViajes" class="form-select mp-select">
+                        <option value="" selected>Todos los estados</option>
+                        <option>Programado</option>
+                        <option>En ruta</option>
+                        <option>Finalizado</option>
+                        <option>Cancelado</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4">
+            <div class="row g-3">
+                <div class="col-12 col-lg-4">
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6 col-lg-12">
+                            <div class="mp-metric-card">
+                                <div class="mp-metric-label">Dinero generado</div>
+                                <div class="mp-metric-value">$24,580.00</div>
+                                <div class="mp-metric-meta">Ultimos 30 dias</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-lg-12">
+                            <div class="mp-metric-card">
+                                <div class="mp-metric-label">Dinero gastado</div>
+                                <div class="mp-metric-value">$9,430.00</div>
+                                <div class="mp-metric-meta">Combustible y viaticos</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-lg-12">
+                            <div class="mp-metric-card">
+                                <div class="mp-metric-label">Viajes totales</div>
+                                <div class="mp-metric-value">128</div>
+                                <div class="mp-metric-meta">Acumulado del anio</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-lg-12">
+                            <div class="mp-metric-card">
+                                <div class="mp-metric-label">Viajes activos</div>
+                                <div class="mp-metric-value">8</div>
+                                <div class="mp-metric-meta">En ruta o programados</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-8">
+                    <div class="mp-card-table">
+                        <div class="mp-card-table-header">
+                            <div class="row g-0">
+                                <div class="col-5">Viaje</div>
+                                <div class="col-3">Montos</div>
+                                <div class="col-2">Camion / Fecha</div>
+                                <div class="col-2 text-end">Acciones</div>
+                            </div>
+                        </div>
+
+                        <div class="mp-card-table-body">
+                            <div class="trip-card">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-12 col-lg-5">
+                                        <div class="trip-title">Ruta Centro - Puerto</div>
+                                        <div class="trip-sub">Destino: Puerto Acajutla</div>
+                                        <div class="trip-sub">Cliente: AgroLogistica</div>
+                                        <span class="badge bg-success">En ruta</span>
+                                    </div>
+                                    <div class="col-6 col-lg-3">
+                                        <div class="trip-stat">
+                                            <span class="trip-label">Total viaje</span>
+                                            <span class="trip-value">$3,250.00</span>
+                                        </div>
+                                        <div class="trip-stat">
+                                            <span class="trip-label">Gastos</span>
+                                            <span class="trip-value text-danger">$820.00</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-lg-2">
+                                        <div class="trip-stat">
+                                            <span class="trip-label">Camion</span>
+                                            <span class="trip-value">P-12345</span>
+                                        </div>
+                                        <div class="trip-stat">
+                                            <span class="trip-label">Salida</span>
+                                            <span class="trip-value">20/03/2026</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-lg-2 text-lg-end">
+                                        <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                                            <button class="btn btn-edit">Editar</button>
+                                            <button class="btn btn-outline-secondary btn-sm">Ver</button>
+                                            <button class="btn btn-del">Cancelar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="trip-card">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-12 col-lg-5">
+                                        <div class="trip-title">Ruta Norte - Planta</div>
+                                        <div class="trip-sub">Destino: Santa Ana</div>
+                                        <div class="trip-sub">Cliente: Grupo Alimentos</div>
+                                        <span class="badge bg-warning">Programado</span>
+                                    </div>
+                                    <div class="col-6 col-lg-3">
+                                        <div class="trip-stat">
+                                            <span class="trip-label">Total viaje</span>
+                                            <span class="trip-value">$1,980.00</span>
+                                        </div>
+                                        <div class="trip-stat">
+                                            <span class="trip-label">Gastos</span>
+                                            <span class="trip-value text-danger">$430.00</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-lg-2">
+                                        <div class="trip-stat">
+                                            <span class="trip-label">Camion</span>
+                                            <span class="trip-value">P-78901</span>
+                                        </div>
+                                        <div class="trip-stat">
+                                            <span class="trip-label">Salida</span>
+                                            <span class="trip-value">25/03/2026</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-lg-2 text-lg-end">
+                                        <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                                            <button class="btn btn-edit">Editar</button>
+                                            <button class="btn btn-outline-secondary btn-sm">Ver</button>
+                                            <button class="btn btn-del">Cancelar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="trip-card">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-12 col-lg-5">
+                                        <div class="trip-title">Ruta Este - Bodega</div>
+                                        <div class="trip-sub">Destino: San Miguel</div>
+                                        <div class="trip-sub">Cliente: Textiles Mayas</div>
+                                        <span class="badge bg-primary">Finalizado</span>
+                                    </div>
+                                    <div class="col-6 col-lg-3">
+                                        <div class="trip-stat">
+                                            <span class="trip-label">Total viaje</span>
+                                            <span class="trip-value">$2,540.00</span>
+                                        </div>
+                                        <div class="trip-stat">
+                                            <span class="trip-label">Gastos</span>
+                                            <span class="trip-value text-danger">$690.00</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-lg-2">
+                                        <div class="trip-stat">
+                                            <span class="trip-label">Camion</span>
+                                            <span class="trip-value">P-45678</span>
+                                        </div>
+                                        <div class="trip-stat">
+                                            <span class="trip-label">Salida</span>
+                                            <span class="trip-value">12/03/2026</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-lg-2 text-lg-end">
+                                        <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                                            <button class="btn btn-edit">Editar</button>
+                                            <button class="btn btn-outline-secondary btn-sm">Ver</button>
+                                            <button class="btn btn-del">Eliminar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mp-table-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <span id="totalViajes">Mostrando 0 viajes</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="tamanoPaginaViajes" class="mb-0">Por pagina</label>
+                                <select id="tamanoPaginaViajes" class="form-select form-select-sm" style="width: 90px;">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="20">20</option>
+                                    <option value="50">50</option>
+                                </select>
+                            </div>
+                            <nav aria-label="Paginacion de viajes">
+                                <ul id="paginacionViajes" class="pagination pagination-sm mb-0">
+                                    <li class="page-item disabled">
+                                        <button id="btnPrevViajes" class="page-link" type="button">Anterior</button>
+                                    </li>
+                                    <li class="page-item disabled">
+                                        <span id="paginaActualViajes" class="page-link">1 / 1</span>
+                                    </li>
+                                    <li class="page-item disabled">
+                                        <button id="btnNextViajes" class="page-link" type="button">Siguiente</button>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block th:replace="fragments/assets :: globalScripts"></th:block>
 </body>
 </html>

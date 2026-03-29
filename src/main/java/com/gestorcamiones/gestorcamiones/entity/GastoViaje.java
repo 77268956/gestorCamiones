@@ -27,7 +27,7 @@ public class GastoViaje {
     @Column(name = "id_gasto_viaje")
     private Long idGastoViaje;
 
-    // 🔹 Relaciones
+    //  Relaciones
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_viaje_detalle", nullable = false)
@@ -41,7 +41,7 @@ public class GastoViaje {
     @JoinColumn(name = "id_admin")
     private Usuario UsuarioAdmin;
 
-    // 🔹 Datos del gasto
+    //  Datos del gasto
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal monto;
@@ -54,7 +54,7 @@ public class GastoViaje {
     @Column(name = "fecha_gasto")
     private LocalDate fechaGasto;
 
-    // 🔹 Auditoría
+    //  Auditoría
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;

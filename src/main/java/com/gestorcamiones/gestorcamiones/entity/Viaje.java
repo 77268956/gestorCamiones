@@ -9,6 +9,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -44,7 +45,7 @@ public class Viaje {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    private List<ViajeDetalle> detalles;
+    private List<ViajeDetalle> detalles = new ArrayList<>(); // NUEVO: evita NPE al agregar detalles
 
     // 🔹 Auditoría
 

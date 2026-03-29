@@ -13,7 +13,7 @@ public interface IViajeService {
 
     Page<ListaViajesDTO> listaViejes (Pageable pageable, String texto, EstadoViaje estado, LocalDate fecehaIncio, LocalDate fecehaFin);
     CrearViajeDTO CrearViaje(CrearViajeDTO dto, Usuario usuario);
-    CrearViajeDTO actualizarViaje(Long idViaje, CrearViajeDTO dto);
+    CrearViajeDTO actualizarViaje(Long idViaje, CrearViajeDTO dto, Usuario usuario);
 
 
 }

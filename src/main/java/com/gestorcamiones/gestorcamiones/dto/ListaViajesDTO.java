@@ -1,5 +1,6 @@
 package com.gestorcamiones.gestorcamiones.dto;
 
+import com.gestorcamiones.gestorcamiones.entity.GastoViaje;
 import com.gestorcamiones.gestorcamiones.entity.ViajeDetalle;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -27,5 +28,7 @@ public class ListaViajesDTO {
 
     private List<ViajeDetalle> listaVuelta;
     private List<ViajeDetalle> listaIDa;
+
+    private List<GastoViaje> gastoViajes;
 
 }
