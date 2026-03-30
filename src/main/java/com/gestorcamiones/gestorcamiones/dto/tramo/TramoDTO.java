@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -29,5 +30,4 @@ public class TramoDTO {
     private LocalDateTime fechaSalida;
     private LocalDateTime fechaEntrada;
 
-    private GastoViajeDTO gastoViaje;
-}
+    private List<GastoViajeDTO> gastos;}

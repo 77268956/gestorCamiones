@@ -1,5 +1,6 @@
 package com.gestorcamiones.gestorcamiones.service.viaje;
 
+import com.gestorcamiones.gestorcamiones.dto.gasto.GastoViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.tramo.TramoDTO;
 import com.gestorcamiones.gestorcamiones.entity.GastoViaje;
 import com.gestorcamiones.gestorcamiones.entity.TipoGasto;
@@ -45,20 +46,19 @@ public class ViajeDetallesService implements IViajeDetalleService {
         for (TramoDTO dto : tramo) {
             ViajeDetalle detalle = guardarDetalle(dto, viaje);
 
-            if (dto.getGastoViaje() != null) {
-                GastoViaje gasto = mapper.toEntity(dto.getGastoViaje());
-                gasto.setViajeDetalle(detalle);
+            if (dto.getGastos() != null) {
+                for (GastoViajeDTO gastoDTO : dto.getGastos()) {
+                    GastoViaje gasto = mapper.toEntity(gastoDTO);
+                    gasto.setViajeDetalle(detalle);
+                    gasto.setUsuarioAdmin(usuarioAdmin);
 
-                long idTipoGasto = dto.getGastoViaje().getIdTipoGasto();
-                if (idTipoGasto <= 0) {
-                    throw new IllegalArgumentException("idTipoGasto es requerido para gastos de viaje");
+                    TipoGasto tipoGasto = tipoGastoRepository.findById(gastoDTO.getIdTipoGasto())
+                            .orElseThrow(() -> new IllegalArgumentException("TipoGasto no encontrado"));
+
+                    gasto.setTipoGasto(tipoGasto);
+
+                    gastosService.guardarGasto(gasto);
                 }
-                TipoGasto tipoGasto = tipoGastoRepository.findById(idTipoGasto)
-                        .orElseThrow(() -> new IllegalArgumentException("TipoGasto no encontrado"));
-
-                gasto.setTipoGasto(tipoGasto);
-                gasto.setUsuarioAdmin(usuarioAdmin);
-                gastosService.guardarGasto(gasto);
             }
 
             viaje.getDetalles().add(detalle);
