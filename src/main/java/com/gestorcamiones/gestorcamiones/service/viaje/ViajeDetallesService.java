@@ -74,6 +74,7 @@ public class ViajeDetallesService implements IViajeDetalleService {
         detalle.setIva(dto.isIva());
         detalle.setFechaSalida(dto.getFechaSalida());
         detalle.setFechaLlegada(dto.getFechaEntrada());
+        detalle.setPrecioViaje(dto.getPrecioViaje());
 
         if (dto.getIdCamion() > 0) {
             detalle.setCamion(camionRepository.findById(dto.getIdCamion())

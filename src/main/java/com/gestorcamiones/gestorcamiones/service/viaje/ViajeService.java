@@ -1,16 +1,15 @@
 package com.gestorcamiones.gestorcamiones.service.viaje;
 
+import com.gestorcamiones.gestorcamiones.dto.gasto.GastoViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ActualizarViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.CrearViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.DetalleViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ListaViajesDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ViajeUpsertDTO;
-import com.gestorcamiones.gestorcamiones.entity.Cliente;
+import com.gestorcamiones.gestorcamiones.dto.tramo.TramoDTO;
+import com.gestorcamiones.gestorcamiones.entity.*;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
 import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
-import com.gestorcamiones.gestorcamiones.entity.Usuario;
-import com.gestorcamiones.gestorcamiones.entity.Viaje;
-import com.gestorcamiones.gestorcamiones.entity.ViajeDetalle;
 import com.gestorcamiones.gestorcamiones.repository.ClienteRepository;
 import com.gestorcamiones.gestorcamiones.repository.ViajeRepository;
 import jakarta.transaction.Transactional;
@@ -41,55 +40,84 @@ public class ViajeService implements IViajeService {
     @Override
     public Page<ListaViajesDTO> listaViejes(Pageable pageable,
                                             String texto,
-                                            EstadoViaje estado,
+                                            String estado,
                                             LocalDate fechaInicio,
-                                            LocalDate fechaFin) {
+                                            LocalDate fechaFin,
+                                            boolean excluirCompletados) {
 
-        Page<Viaje> viajesPage = viajeRepository.findAll(pageable);
+        String estadoFiltro = (estado != null && !estado.isBlank()) ? estado : null;
+        Page<Viaje> viajesPage = viajeRepository.viajesFiltrados(
+                texto,
+                estadoFiltro,
+                fechaInicio,
+                fechaFin,
+                excluirCompletados,
+                pageable
+        );
 
         return viajesPage.map(viaje -> {
 
             ListaViajesDTO dto = new ListaViajesDTO();
 
-            dto.setId(viaje.getIdViaje());
+            dto.setId_viaje(viaje.getIdViaje());
             dto.setNombreVieje(viaje.getNombreViaje());
 
             // admin
             if (viaje.getAdmin() != null) {
                 dto.setNombreAdmin(viaje.getAdmin().getNombre());
+                dto.setId_admin(viaje.getAdmin().getIdUsuarios());
             }
 
             // cliente
             if (viaje.getCliente() != null) {
                 dto.setNombreEmpleado(viaje.getCliente().getNombre());
+                dto.setId_chofer(viaje.getCliente().getId());
             }
 
             // separar IDA y VUELTA
             List<DetalleViajeDTO> ida = new ArrayList<>();
             List<DetalleViajeDTO> vuelta = new ArrayList<>();
 
+            BigDecimal totalGenetado = BigDecimal.ZERO;
             BigDecimal gananciaTotal = BigDecimal.ZERO;
             BigDecimal gastoTotal = BigDecimal.ZERO;
 
+            int condador =0;
             for (ViajeDetalle detalle : viaje.getDetalles()) {
 
                 // separar por tipo
                 DetalleViajeDTO detalleDTO = toDetalleDTO(detalle);
                 if (detalle.getTipoTramo() == TipoTramo.ida) {
                     ida.add(detalleDTO);
+
                 } else if (detalle.getTipoTramo() == TipoTramo.vuelta) {
                     vuelta.add(detalleDTO);
                 }
 
-                // ejemplo de calculo (ajusta segun tu logica real)
-                if (detalle.getPagado() != null) {
-                    // gananciaTotal = gananciaTotal.add(...);
+                if (detalle.getPrecioViaje() != null) {
+                    totalGenetado = totalGenetado.add(detalle.getPrecioViaje());
                 }
+                if (detalle.getGastos() != null) {
+                    for (GastoViaje gastos: detalle.getGastos()){
+                        if (gastos.getMonto() != null) {
+                            gastoTotal = gastoTotal.add(gastos.getMonto());
+                        }
+                    }
+                }
+                gananciaTotal = totalGenetado.subtract(gastoTotal);
+
+                if (detalle.getEstado() != EstadoViaje.cancelado && detalle.getEstado() != EstadoViaje.completado) {
+                   dto.setViajesActivos(condador++);
+                }
+
             }
 
             dto.setListaIDa(ida);
             dto.setListaVuelta(vuelta);
 
+            dto.setViajesTotales(ida.size() + vuelta.size());
+
+            dto.setIngresoTotal(totalGenetado);
             dto.setGanaciaTotal(gananciaTotal);
             dto.setGastoTotal(gastoTotal);
 
@@ -153,20 +181,104 @@ public class ViajeService implements IViajeService {
         return dto;
     }
 
+    public ViajeUpsertDTO obtenerViaje(Long idViaje) {
+        Viaje viaje = viajeRepository.findById(idViaje)
+                .orElseThrow(() -> new RuntimeException("Viaje no encontrado"));
+
+        ViajeUpsertDTO dto = new ViajeUpsertDTO();
+        dto.setIdViaje(viaje.getIdViaje());
+        dto.setNombreViaje(viaje.getNombreViaje());
+        if (viaje.getCliente() != null) {
+            dto.setIdCliente(viaje.getCliente().getId());
+            dto.setClienteNombre(viaje.getCliente().getNombre());
+        }
+
+        List<TramoDTO> tramos = new ArrayList<>();
+        for (ViajeDetalle detalle : viaje.getDetalles()) {
+            TramoDTO tramo = new TramoDTO();
+            tramo.setId(detalle.getIdViajeDetalle());
+            tramo.setTipoTramo(detalle.getTipoTramo());
+            tramo.setEstadoViaje(detalle.getEstado());
+            tramo.setPagado(Boolean.TRUE.equals(detalle.getPagado()));
+            tramo.setIva(Boolean.TRUE.equals(detalle.getIva()));
+            tramo.setPrecioViaje(detalle.getPrecioViaje());
+            tramo.setFechaSalida(detalle.getFechaSalida());
+            tramo.setFechaEntrada(detalle.getFechaLlegada());
+
+            if (detalle.getCamion() != null) {
+                tramo.setIdCamion(detalle.getCamion().getIdCamion());
+                tramo.setCamionNombre(detalle.getCamion().getNombre());
+                tramo.setCamionPlaca(detalle.getCamion().getPlaca());
+            }
+            if (detalle.getChofer() != null) {
+                tramo.setIdConductor(detalle.getChofer().getIdUsuarios());
+                String nombre = detalle.getChofer().getNombre() != null ? detalle.getChofer().getNombre() : "";
+                String apellido = detalle.getChofer().getApellido() != null ? detalle.getChofer().getApellido() : "";
+                tramo.setConductorNombre((nombre + " " + apellido).trim());
+            }
+
+            if (detalle.getGastos() != null) {
+                List<GastoViajeDTO> gastos = new ArrayList<>();
+                for (GastoViaje gasto : detalle.getGastos()) {
+                    GastoViajeDTO gastoDTO = new GastoViajeDTO();
+                    gastoDTO.setId(gasto.getIdGastoViaje());
+                    gastoDTO.setIdViajeDetalle(detalle.getIdViajeDetalle());
+                    if (gasto.getTipoGasto() != null) {
+                        gastoDTO.setIdTipoGasto(gasto.getTipoGasto().getIdTipoGasto());
+                    }
+                    if (gasto.getUsuarioAdmin() != null) {
+                        gastoDTO.setIdUsuarioAdmin(gasto.getUsuarioAdmin().getIdUsuarios());
+                    }
+                    gastoDTO.setMonto(gasto.getMonto());
+                    gastoDTO.setDescripcion(gasto.getDescripcion());
+                    gastoDTO.setEvidenciaUrl(gasto.getEvidenciaUrl());
+                    gastoDTO.setFechaGasto(gasto.getFechaGasto());
+                    gastos.add(gastoDTO);
+                }
+                tramo.setGastos(gastos);
+            }
+
+            tramos.add(tramo);
+        }
+        dto.setTramos(tramos);
+        return dto;
+    }
+
     private DetalleViajeDTO toDetalleDTO(ViajeDetalle detalle) {
         DetalleViajeDTO dto = new DetalleViajeDTO();
+
         dto.setId(detalle.getIdViajeDetalle());
         dto.setTipoTramo(detalle.getTipoTramo());
         dto.setEstadoViaje(detalle.getEstado());
         dto.setPagado(detalle.getPagado());
         dto.setIva(detalle.getIva());
+        dto.setPrecioViaje(detalle.getPrecioViaje());
+        BigDecimal gastosTotal = BigDecimal.ZERO;
+        if (detalle.getGastos() != null) {
+            for (GastoViaje gasto : detalle.getGastos()) {
+                if (gasto.getMonto() != null) {
+                    gastosTotal = gastosTotal.add(gasto.getMonto());
+                }
+            }
+        }
+        dto.setGastoTotal(gastosTotal);
+        if (detalle.getPrecioViaje() != null) {
+            dto.setGananciaTotal(detalle.getPrecioViaje().subtract(gastosTotal));
+        } else {
+            dto.setGananciaTotal(gastosTotal.negate());
+        }
         dto.setFechaSalida(detalle.getFechaSalida());
         dto.setFechaEntrada(detalle.getFechaLlegada());
         if (detalle.getCamion() != null) {
             dto.setCamionId(detalle.getCamion().getIdCamion());
+            dto.setCamionNombre(detalle.getCamion().getNombre());
+            dto.setCamionPlaca(detalle.getCamion().getPlaca());
         }
         if (detalle.getChofer() != null) {
             dto.setConductorId(detalle.getChofer().getIdUsuarios());
+            String nombre = detalle.getChofer().getNombre() != null ? detalle.getChofer().getNombre() : "";
+            String apellido = detalle.getChofer().getApellido() != null ? detalle.getChofer().getApellido() : "";
+            dto.setConductorNombre((nombre + " " + apellido).trim());
         }
         return dto;
     }

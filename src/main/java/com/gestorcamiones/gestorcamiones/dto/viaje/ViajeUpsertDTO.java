@@ -19,6 +19,7 @@ public class ViajeUpsertDTO {
     private long idViaje;
     private String nombreViaje;
     private long idCliente;
+    private String clienteNombre;
 
     private List<TramoDTO> tramos;
 }

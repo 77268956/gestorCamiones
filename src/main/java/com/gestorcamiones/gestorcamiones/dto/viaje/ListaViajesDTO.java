@@ -14,19 +14,28 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ListaViajesDTO {
-    private long id;
+    private String nombreVieje;
+    private long id_viaje;
 
     private String nombreAdmin;
+    private long id_admin;
     private String nombreEmpleado;
-    private String nombreVieje;
+    private long id_chofer;
 
     private long idCamion;
 
+    private BigDecimal ingresoTotal = BigDecimal.ZERO;
     private BigDecimal ganaciaTotal = BigDecimal.ZERO;
     private BigDecimal gastoTotal = BigDecimal.ZERO;
+
+    private int viajesTotales;
+    private int viajesActivos;
+
+
 
     private List<DetalleViajeDTO> listaVuelta;
     private List<DetalleViajeDTO> listaIDa;
 
     private List<GastoViajeDTO> gastoViajes;
+
 }

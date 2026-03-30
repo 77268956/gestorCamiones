@@ -12,6 +12,7 @@ import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -51,6 +52,8 @@ public class ViajeDetalle {
     private Boolean pagado = false;
 
     private Boolean iva = false;
+
+    private BigDecimal precioViaje;
 
     // Fechas
 

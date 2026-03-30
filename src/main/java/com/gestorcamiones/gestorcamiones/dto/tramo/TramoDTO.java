@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -26,6 +27,11 @@ public class TramoDTO {
 
     private boolean pagado;
     private boolean iva;
+
+    private BigDecimal precioViaje;
+    private String camionNombre;
+    private String camionPlaca;
+    private String conductorNombre;
 
     private LocalDateTime fechaSalida;
     private LocalDateTime fechaEntrada;

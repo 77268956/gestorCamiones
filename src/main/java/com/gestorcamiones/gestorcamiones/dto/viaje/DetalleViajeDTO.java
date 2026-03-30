@@ -17,12 +17,18 @@ public class DetalleViajeDTO {
     private Long id;
     private Long camionId;
     private Long conductorId;
+    private String camionNombre;
+    private String camionPlaca;
+    private String conductorNombre;
 
     private EstadoViaje estadoViaje;
     private TipoTramo tipoTramo;
 
     private Boolean pagado;
     private Boolean iva;
+    private java.math.BigDecimal precioViaje;
+    private java.math.BigDecimal gastoTotal;
+    private java.math.BigDecimal gananciaTotal;
 
     private LocalDateTime fechaSalida;
     private LocalDateTime fechaEntrada;

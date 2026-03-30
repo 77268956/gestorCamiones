@@ -5,24 +5,72 @@ document.addEventListener("DOMContentLoaded", () => {
     const viajeForm = document.getElementById("viajeForm");
     const usarMismosDatos = document.getElementById("usarMismosDatos");
     const estadoGuardado = document.getElementById("estadoGuardado");
+    const btnGuardarViaje = document.getElementById("btnGuardarViaje");
+    const modalTitle = modal?.querySelector(".mp-modal-title");
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+    let tiposGastoCache = [];
+
+    const tipoGastoMap = {
+        combustible: 1,
+        viaticos: 2,
+        peaje: 3,
+        mantenimiento: 4
+    };
+    let tiposGastoCargados = false;
+    let estadosViajeCargados = false;
 
     const state = {
         ida: { gastos: [], editIndex: null },
         vuelta: { gastos: [], editIndex: null }
     };
 
-    const abrirModal = () => {
+    const resetFormulario = () => {
+        viajeForm?.reset();
+        ["clienteId", "idaCamionId", "idaChoferId", "vueltaCamionId", "vueltaChoferId"].forEach(id => {
+            const input = document.getElementById(id);
+            if (input) input.value = "";
+        });
+        state.ida.gastos = [];
+        state.vuelta.gastos = [];
+        renderGastos("ida");
+        renderGastos("vuelta");
+        actualizarDuraciones();
+        if (usarMismosDatos) {
+            usarMismosDatos.checked = false;
+            const camposVuelta = document.querySelectorAll("#tab-vuelta input, #tab-vuelta select, #tab-vuelta button");
+            camposVuelta.forEach(el => {
+                if (!el.classList.contains("tab-button")) el.disabled = false;
+            });
+        }
+    };
+
+    const abrirModal = viajeId => {
         modal?.classList.add("is-open");
         if (estadoGuardado) estadoGuardado.textContent = "";
+        if (!tiposGastoCargados) cargarTiposGasto();
+        if (!estadosViajeCargados) cargarEstadosViaje();
+        if (modalTitle) {
+            modalTitle.textContent = viajeId ? "Editar viaje" : "Agregar viaje";
+        }
+        if (viajeForm) {
+            if (viajeId) {
+                viajeForm.dataset.viajeId = viajeId;
+                cargarViajeDetalle(viajeId);
+            } else {
+                delete viajeForm.dataset.viajeId;
+                resetFormulario();
+            }
+        }
     };
 
     const cerrarModal = () => {
         modal?.classList.remove("is-open");
     };
 
-    btnNuevoViaje?.addEventListener("click", abrirModal);
+    btnNuevoViaje?.addEventListener("click", () => abrirModal());
     document.querySelectorAll(".trip-card-action").forEach(card => {
-        card.addEventListener("click", abrirModal);
+        card.addEventListener("click", () => abrirModal(card.dataset.viajeId));
     });
     btnCerrarViaje?.addEventListener("click", cerrarModal);
     modal?.querySelector(".mp-modal-backdrop")?.addEventListener("click", cerrarModal);
@@ -54,6 +102,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const parseNumber = value => {
         const number = Number.parseFloat(value);
         return Number.isNaN(number) ? 0 : number;
+    };
+
+    const normalizeDateTime = value => {
+        if (!value) return null;
+        return value.length === 16 ? `${value}:00` : value;
+    };
+
+    const formatDateTimeLocal = value => {
+        if (!value) return "";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "";
+        const pad = num => String(num).padStart(2, "0");
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
     };
 
     const formatMoney = value => `$${value.toFixed(2)}`;
@@ -128,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
         state[tramo].gastos.forEach((gasto, index) => {
             const row = document.createElement("tr");
             row.innerHTML = `
-                <td>${gasto.tipo}</td>
+                <td>${gasto.tipoLabel || gasto.tipoRaw || "-"}</td>
                 <td>${gasto.descripcion || "-"}</td>
                 <td>${formatMoney(gasto.monto)}</td>
                 <td>${gasto.fecha || "-"}</td>
@@ -173,18 +234,21 @@ document.addEventListener("DOMContentLoaded", () => {
             const tramo = btn.dataset.gastoGuardar;
             const form = document.getElementById(`${tramo}GastoForm`);
             if (!form) return;
-            const tipo = form.querySelector("[data-gasto-tipo]").value;
+            const tipoSelect = form.querySelector("[data-gasto-tipo]");
+            const rawTipo = tipoSelect.value;
+            const tipoLabel = tipoSelect.options[tipoSelect.selectedIndex]?.textContent?.trim() || rawTipo;
+            const tipoId = Number(rawTipo) || tipoGastoMap[String(rawTipo || "").toLowerCase()] || 0;
             const descripcion = form.querySelector("[data-gasto-desc]").value;
             const monto = parseNumber(form.querySelector("[data-gasto-monto]").value);
             const fecha = form.querySelector("[data-gasto-fecha]").value;
             const evidenciaInput = form.querySelector("[data-gasto-evidencia]");
             const evidencia = evidenciaInput.files[0]?.name || "";
 
-            if (!tipo || monto <= 0) {
+            if (!tipoId || monto <= 0) {
                 return;
             }
 
-            const gasto = { tipo, descripcion, monto, fecha, evidencia };
+            const gasto = { tipoId, tipoLabel, tipoRaw: rawTipo, descripcion, monto, fecha, evidencia };
             if (state[tramo].editIndex !== null) {
                 state[tramo].gastos[state[tramo].editIndex] = gasto;
             } else {
@@ -203,7 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const gasto = state[tramo].gastos[index];
             const form = document.getElementById(`${tramo}GastoForm`);
             if (!form || !gasto) return;
-            form.querySelector("[data-gasto-tipo]").value = gasto.tipo;
+            form.querySelector("[data-gasto-tipo]").value = gasto.tipoRaw || gasto.tipoId || "";
             form.querySelector("[data-gasto-desc]").value = gasto.descripcion;
             form.querySelector("[data-gasto-monto]").value = gasto.monto;
             form.querySelector("[data-gasto-fecha]").value = gasto.fecha;
@@ -250,13 +314,229 @@ document.addEventListener("DOMContentLoaded", () => {
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#39;");
 
+    const listaViajes = document.getElementById("listaViajes");
+    const paginacionViajes = {
+        page: 0,
+        size: Number(document.getElementById("tamanoPaginaViajes")?.value) || 10,
+        totalPages: 1,
+        totalElements: 0
+    };
+    const filtrosViajes = { q: "", estado: "", fechaInicio: "", fechaFin: "", excluirCompletados: false };
+    let viajesCache = [];
+    let debounceViajes = null;
+
+    async function cargarViajes(page = paginacionViajes.page) {
+        if (!listaViajes) return;
+        listaViajes.innerHTML = '<div class="card-clean text-center">Cargando viajes...</div>';
+        const pageSeguro = Math.max(0, Number(page) || 0);
+        const sizeSeguro = Math.max(1, Number(paginacionViajes.size) || 10);
+        try {
+            const query = new URLSearchParams({
+                page: String(pageSeguro),
+                size: String(sizeSeguro)
+            });
+            if (filtrosViajes.q) query.set("q", filtrosViajes.q);
+            if (filtrosViajes.estado) query.set("estado", filtrosViajes.estado);
+            query.set("excluirCompletados", String(filtrosViajes.excluirCompletados));
+            if (filtrosViajes.fechaInicio) query.set("fechaInicio", filtrosViajes.fechaInicio);
+            if (filtrosViajes.fechaFin) query.set("fechaFin", filtrosViajes.fechaFin);
+
+            const res = await fetch(`/api/viajes?${query.toString()}`, { credentials: "same-origin" });
+            if (!res.ok) throw new Error("No se pudieron cargar viajes");
+            const pageData = await res.json();
+
+            paginacionViajes.page = Number(pageData?.number ?? pageSeguro);
+            paginacionViajes.totalPages = Math.max(Number(pageData?.totalPages ?? 1), 1);
+            paginacionViajes.totalElements = Number(pageData?.totalElements ?? 0);
+            viajesCache = Array.isArray(pageData?.content) ? pageData.content : [];
+
+            renderViajes();
+        } catch (error) {
+            console.error(error);
+            listaViajes.innerHTML = '<div class="card-clean text-center text-danger">Error al cargar viajes</div>';
+        }
+    }
+
+    function renderViajes() {
+        if (!listaViajes) return;
+        if (!viajesCache.length) {
+            listaViajes.innerHTML = '<div class="card-clean text-center">No hay viajes registrados</div>';
+            const total = document.getElementById("totalViajes");
+            if (total) total.textContent = "Mostrando 0 viajes";
+            actualizarPaginacionViajes();
+            return;
+        }
+
+        let ingresosPagina = 0;
+        let gastosPagina = 0;
+        let gananciaPagina = 0;
+        let activosPagina = 0;
+        const isActivo = detalle => {
+            if (!detalle?.estadoViaje) return false;
+            const estado = String(detalle.estadoViaje).toLowerCase();
+            return estado !== "completado" && estado !== "cancelado";
+        };
+
+        listaViajes.innerHTML = viajesCache.map(viaje => {
+            const ida = Array.isArray(viaje.listaIDa) ? viaje.listaIDa[0] : null;
+            const vuelta = Array.isArray(viaje.listaVuelta) ? viaje.listaVuelta[0] : null;
+            const cliente = viaje.nombreEmpleado || "-";
+            const ingresoNumero = parseNumber(viaje.ingresoTotal);
+            const gastoNumero = parseNumber(viaje.gastoTotal);
+            const gananciaNumero = parseNumber(viaje.ganaciaTotal);
+            const ingresoTotal = formatMoney(ingresoNumero);
+            const gastoTotal = formatMoney(gastoNumero);
+            const gananciaTotal = formatMoney(gananciaNumero);
+            const idaIngreso = formatMoney(parseNumber(ida?.precioViaje));
+            const vueltaIngreso = formatMoney(parseNumber(vuelta?.precioViaje));
+            const idaGastos = formatMoney(parseNumber(ida?.gastoTotal));
+            const vueltaGastos = formatMoney(parseNumber(vuelta?.gastoTotal));
+            const idaGanancia = formatMoney(parseNumber(ida?.gananciaTotal));
+            const vueltaGanancia = formatMoney(parseNumber(vuelta?.gananciaTotal));
+            const idViaje = viaje.id_viaje ?? viaje.idViaje ?? "";
+            ingresosPagina += ingresoNumero;
+            gastosPagina += gastoNumero;
+            gananciaPagina += gananciaNumero;
+            if (isActivo(ida) || isActivo(vuelta)) {
+                activosPagina += 1;
+            }
+
+            const estadoIdaKey = String(ida?.estadoViaje || "").toLowerCase().replaceAll(" ", "_");
+            const estadoVueltaKey = String(vuelta?.estadoViaje || "").toLowerCase().replaceAll(" ", "_");
+            const estadoIdaLabel = String(ida?.estadoViaje || "-").replaceAll("_", " ");
+            const estadoVueltaLabel = String(vuelta?.estadoViaje || "-").replaceAll("_", " ");
+
+            return `
+                <button type="button" class="trip-card trip-card-action" data-viaje-id="${escapeHtml(idViaje)}">
+                    <div class="trip-card-header">
+                        <span class="trip-card-kicker">Viaje</span>
+                        <span class="trip-card-title">${escapeHtml(viaje.nombreVieje || "Sin nombre")}</span>
+                    </div>
+                    <div class="trip-card-body">
+                        <div class="trip-legs">
+                            <div class="trip-leg-block">
+                                <div class="trip-leg-title">Ida</div>
+                                <div class="trip-leg-info">Camion: ${escapeHtml(ida?.camionNombre || ida?.camionPlaca || "-")}</div>
+                                <div class="trip-leg-info">Chofer: ${escapeHtml(ida?.conductorNombre || "-")}</div>
+                                <div class="trip-leg-info">Cliente: ${escapeHtml(cliente)}</div>
+                                <div class="trip-leg-info">
+                                    Estado:
+                                    <span class="status-badge ${estadoIdaKey ? `status-${escapeHtml(estadoIdaKey)}` : ""}">
+                                        ${escapeHtml(estadoIdaLabel)}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="trip-leg-block">
+                                <div class="trip-leg-title">Vuelta</div>
+                                <div class="trip-leg-info">Camion: ${escapeHtml(vuelta?.camionNombre || vuelta?.camionPlaca || "-")}</div>
+                                <div class="trip-leg-info">Chofer: ${escapeHtml(vuelta?.conductorNombre || "-")}</div>
+                                <div class="trip-leg-info">Cliente: ${escapeHtml(cliente)}</div>
+                                <div class="trip-leg-info">
+                                    Estado:
+                                    <span class="status-badge ${estadoVueltaKey ? `status-${escapeHtml(estadoVueltaKey)}` : ""}">
+                                        ${escapeHtml(estadoVueltaLabel)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="trip-metrics">
+                            <div class="trip-metric-block">
+                                <div class="trip-metric-title">Ida</div>
+                                <div class="trip-metric-item">
+                                    <span>Ingresos</span>
+                                    <span>${idaIngreso}</span>
+                                </div>
+                                <div class="trip-metric-item">
+                                    <span>Gastos</span>
+                                    <span>${idaGastos}</span>
+                                </div>
+                                <div class="trip-metric-item">
+                                    <span>Ganancia</span>
+                                    <span>${idaGanancia}</span>
+                                </div>
+                            </div>
+                            <div class="trip-metric-block">
+                                <div class="trip-metric-title">Vuelta</div>
+                                <div class="trip-metric-item">
+                                    <span>Ingresos</span>
+                                    <span>${vueltaIngreso}</span>
+                                </div>
+                                <div class="trip-metric-item">
+                                    <span>Gastos</span>
+                                    <span>${vueltaGastos}</span>
+                                </div>
+                                <div class="trip-metric-item">
+                                    <span>Ganancia</span>
+                                    <span>${vueltaGanancia}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="trip-total">
+                            <div class="trip-total-title">Total</div>
+                            <div class="trip-metric-item">
+                                <span>Ingresos</span>
+                                <span>${ingresoTotal}</span>
+                            </div>
+                            <div class="trip-metric-item">
+                                <span>Gastos</span>
+                                <span>${gastoTotal}</span>
+                            </div>
+                            <div class="trip-metric-item">
+                                <span>Ganancia</span>
+                                <span>${gananciaTotal}</span>
+                            </div>
+                        </div>
+                    </div>
+                </button>
+            `;
+        }).join("");
+
+        const inicio = paginacionViajes.page * paginacionViajes.size;
+        const fin = inicio + viajesCache.length;
+        const total = document.getElementById("totalViajes");
+        if (total) total.textContent = `Mostrando ${inicio + 1}-${fin} de ${paginacionViajes.totalElements} viajes`;
+        actualizarPaginacionViajes();
+
+        const metricIngresos = document.getElementById("metricIngresos");
+        const metricGastos = document.getElementById("metricGastos");
+        const metricGanancia = document.getElementById("metricGanancia");
+        const metricActivos = document.getElementById("metricActivos");
+        if (metricIngresos) metricIngresos.textContent = formatMoney(ingresosPagina);
+        if (metricGastos) metricGastos.textContent = formatMoney(gastosPagina);
+        if (metricGanancia) metricGanancia.textContent = formatMoney(gananciaPagina);
+        if (metricActivos) metricActivos.textContent = String(activosPagina);
+    }
+
+    function actualizarPaginacionViajes() {
+        const btnPrev = document.getElementById("btnPrevViajes");
+        const btnNext = document.getElementById("btnNextViajes");
+        const pagina = document.getElementById("paginaActualViajes");
+        const paginaActual = paginacionViajes.page + 1;
+        const totalPaginas = Math.max(paginacionViajes.totalPages, 1);
+        const hayAnterior = paginacionViajes.page > 0;
+        const haySiguiente = paginacionViajes.page < totalPaginas - 1;
+        if (btnPrev) {
+            btnPrev.disabled = !hayAnterior;
+            btnPrev.parentElement?.classList.toggle("disabled", !hayAnterior);
+        }
+        if (btnNext) {
+            btnNext.disabled = !haySiguiente;
+            btnNext.parentElement?.classList.toggle("disabled", !haySiguiente);
+        }
+        if (pagina) pagina.textContent = `${paginaActual} / ${totalPaginas}`;
+    }
+
+    let focusReturnTarget = null;
+
     const abrirModalCamion = tramo => {
         seleccion.camionTramo = tramo;
+        focusReturnTarget = document.getElementById(tramo === "vuelta" ? "vueltaCamionInput" : "idaCamionInput");
         const modalInstance = bootstrap.Modal.getOrCreateInstance(modalBuscarCamion);
         modalInstance.show();
     };
 
     const abrirModalCliente = () => {
+        focusReturnTarget = document.getElementById("clienteInput");
         const modalInstance = bootstrap.Modal.getOrCreateInstance(modalBuscarCliente);
         modalInstance.show();
     };
@@ -267,12 +547,203 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const abrirModalChofer = tramo => {
         seleccion.choferTramo = tramo;
+        focusReturnTarget = document.getElementById(tramo === "vuelta" ? "vueltaChoferInput" : "idaChoferInput");
         const modalInstance = bootstrap.Modal.getOrCreateInstance(modalBuscarChofer);
         modalInstance.show();
     };
 
+    async function cargarViajeDetalle(idViaje) {
+        if (!viajeForm) return;
+        if (estadoGuardado) {
+            estadoGuardado.textContent = "Cargando...";
+            estadoGuardado.className = "estado-guardado";
+        }
+        if (btnGuardarViaje) btnGuardarViaje.disabled = true;
+        try {
+            if (!estadosViajeCargados) {
+                await cargarEstadosViaje();
+            }
+            const res = await fetch(`/api/viajes/${idViaje}`, { credentials: "same-origin" });
+            if (!res.ok) throw new Error("No se pudo cargar el viaje");
+            const data = await res.json();
+
+            resetFormulario();
+
+            document.getElementById("nombreViaje").value = data.nombreViaje || "";
+            document.getElementById("clienteId").value = data.idCliente || "";
+            document.getElementById("clienteInput").value = data.clienteNombre || "";
+
+            const tramos = Array.isArray(data.tramos) ? data.tramos : [];
+            const tramoIda = tramos.find(t => String(t.tipoTramo).toLowerCase() === "ida");
+            const tramoVuelta = tramos.find(t => String(t.tipoTramo).toLowerCase() === "vuelta");
+            const tramoBase = tramoIda || tramoVuelta;
+            if (tramoBase) {
+                document.getElementById("pagadoGeneral").checked = Boolean(tramoBase.pagado);
+                document.getElementById("ivaGeneral").checked = Boolean(tramoBase.iva);
+            }
+
+            if (tramoIda) {
+                document.getElementById("idaEstado").value = tramoIda.estadoViaje || "";
+                document.getElementById("idaCamionId").value = tramoIda.idCamion || "";
+                const idaCamionLabel = tramoIda.camionNombre
+                    ? `${tramoIda.camionNombre}${tramoIda.camionPlaca ? ` (${tramoIda.camionPlaca})` : ""}`
+                    : (tramoIda.camionPlaca || "");
+                document.getElementById("idaCamionInput").value = idaCamionLabel || "";
+                document.getElementById("idaChoferId").value = tramoIda.idConductor || "";
+                document.getElementById("idaChoferInput").value = tramoIda.conductorNombre || "";
+                document.getElementById("idaSalida").value = formatDateTimeLocal(tramoIda.fechaSalida);
+                document.getElementById("idaLlegada").value = formatDateTimeLocal(tramoIda.fechaEntrada);
+                document.getElementById("idaIngreso").value = tramoIda.precioViaje ?? "";
+
+                state.ida.gastos = (tramoIda.gastos || []).map(g => ({
+                    tipoId: g.idTipoGasto,
+                    tipoLabel: resolveTipoLabel(g.idTipoGasto),
+                    tipoRaw: g.idTipoGasto ? String(g.idTipoGasto) : "",
+                    descripcion: g.descripcion || "",
+                    monto: Number(g.monto) || 0,
+                    fecha: g.fechaGasto || "",
+                    evidencia: g.evidenciaUrl || ""
+                }));
+                renderGastos("ida");
+            }
+
+            if (tramoVuelta) {
+                document.getElementById("vueltaEstado").value = tramoVuelta.estadoViaje || "";
+                document.getElementById("vueltaCamionId").value = tramoVuelta.idCamion || "";
+                const vueltaCamionLabel = tramoVuelta.camionNombre
+                    ? `${tramoVuelta.camionNombre}${tramoVuelta.camionPlaca ? ` (${tramoVuelta.camionPlaca})` : ""}`
+                    : (tramoVuelta.camionPlaca || "");
+                document.getElementById("vueltaCamionInput").value = vueltaCamionLabel || "";
+                document.getElementById("vueltaChoferId").value = tramoVuelta.idConductor || "";
+                document.getElementById("vueltaChoferInput").value = tramoVuelta.conductorNombre || "";
+                document.getElementById("vueltaSalida").value = formatDateTimeLocal(tramoVuelta.fechaSalida);
+                document.getElementById("vueltaLlegada").value = formatDateTimeLocal(tramoVuelta.fechaEntrada);
+                document.getElementById("vueltaIngreso").value = tramoVuelta.precioViaje ?? "";
+
+                state.vuelta.gastos = (tramoVuelta.gastos || []).map(g => ({
+                    tipoId: g.idTipoGasto,
+                    tipoLabel: resolveTipoLabel(g.idTipoGasto),
+                    tipoRaw: g.idTipoGasto ? String(g.idTipoGasto) : "",
+                    descripcion: g.descripcion || "",
+                    monto: Number(g.monto) || 0,
+                    fecha: g.fechaGasto || "",
+                    evidencia: g.evidenciaUrl || ""
+                }));
+                renderGastos("vuelta");
+            }
+
+            actualizarDuraciones();
+            actualizarResumen();
+            if (estadoGuardado) estadoGuardado.textContent = "";
+        } catch (error) {
+            console.error(error);
+            if (estadoGuardado) {
+                estadoGuardado.textContent = "Error al cargar el viaje.";
+                estadoGuardado.className = "estado-guardado error";
+            }
+        } finally {
+            if (btnGuardarViaje) btnGuardarViaje.disabled = false;
+        }
+    }
+
     document.getElementById("btnBuscarChoferIda")?.addEventListener("click", () => abrirModalChofer("ida"));
     document.getElementById("btnBuscarChoferVuelta")?.addEventListener("click", () => abrirModalChofer("vuelta"));
+
+    [modalBuscarCamion, modalBuscarCliente, modalBuscarChofer].forEach(modalEl => {
+        if (!modalEl) return;
+        modalEl.addEventListener("hide.bs.modal", () => {
+            const active = document.activeElement;
+            if (active && modalEl.contains(active)) {
+                active.blur();
+            }
+        });
+        modalEl.addEventListener("hidden.bs.modal", () => {
+            if (focusReturnTarget) {
+                focusReturnTarget.focus();
+                focusReturnTarget = null;
+            }
+        });
+    });
+
+    async function cargarEstadosViaje() {
+        const selectIda = document.getElementById("idaEstado");
+        const selectVuelta = document.getElementById("vueltaEstado");
+        const selectFiltro = document.getElementById("filtroEstadoViajes");
+        if (!selectIda && !selectVuelta && !selectFiltro) return;
+        try {
+            const res = await fetch("/api/viajes/estados");
+            if (!res.ok) throw new Error("No se pudieron cargar estados");
+            const estados = await res.json();
+            const poblarSelect = (select, placeholder) => {
+                if (!select) return;
+                const current = select.value;
+                select.innerHTML = `<option value="" selected>${placeholder}</option>`;
+                estados.forEach(estado => {
+                    const option = document.createElement("option");
+                    option.value = estado;
+                    option.textContent = String(estado).replaceAll("_", " ");
+                    select.appendChild(option);
+                });
+                if (current) select.value = current;
+            };
+
+            poblarSelect(selectIda, "Seleccione un estado");
+            poblarSelect(selectVuelta, "Seleccione un estado");
+            if (selectFiltro) {
+                const current = selectFiltro.value;
+                selectFiltro.innerHTML = '<option value="" selected>Todos los estados</option>';
+                const activosOption = document.createElement("option");
+                activosOption.value = "__activos__";
+                activosOption.textContent = "Viajes activos";
+                selectFiltro.appendChild(activosOption);
+                estados.forEach(estado => {
+                    const option = document.createElement("option");
+                    option.value = String(estado).replaceAll("_", " ");
+                    option.textContent = String(estado).replaceAll("_", " ");
+                    selectFiltro.appendChild(option);
+                });
+                if (current) selectFiltro.value = current;
+            }
+            estadosViajeCargados = true;
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function cargarTiposGasto() {
+        const selects = document.querySelectorAll("[data-gasto-tipo]");
+        if (!selects.length) return;
+        try {
+            const res = await fetch("/api/tipogasto");
+            if (!res.ok) throw new Error("No se pudieron cargar tipos de gasto");
+            const tipos = await res.json();
+            tiposGastoCache = Array.isArray(tipos) ? tipos : [];
+            tipos.forEach(tipo => {
+                if (!tipo?.tipoGasto) return;
+                tipoGastoMap[String(tipo.tipoGasto).toLowerCase()] = Number(tipo.id);
+            });
+            selects.forEach(select => {
+                const current = select.value;
+                select.innerHTML = '<option value="">Seleccione</option>';
+                tipos.forEach(tipo => {
+                    const option = document.createElement("option");
+                    option.value = String(tipo.id);
+                    option.textContent = tipo.tipoGasto;
+                    select.appendChild(option);
+                });
+                if (current) select.value = current;
+            });
+            tiposGastoCargados = true;
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    const resolveTipoLabel = idTipo => {
+        if (!idTipo) return "-";
+        const match = tiposGastoCache.find(t => Number(t.id) === Number(idTipo));
+        return match?.tipoGasto || `Tipo #${idTipo}`;
+    };
 
     async function cargarEstadosCamionModal() {
         const selectEstado = document.getElementById("filtroEstadoCamionesViajeModal");
@@ -578,6 +1049,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById(inputId).value = nombre ? `${nombre} (${placa || "-"})` : (placa || camion.modelo || "");
         document.getElementById(hiddenId).value = camion.id;
         bootstrap.Modal.getInstance(modalBuscarCamion)?.hide();
+        document.getElementById(inputId)?.focus();
     });
 
     document.getElementById("tablaClientesViaje")?.addEventListener("click", event => {
@@ -589,6 +1061,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("clienteInput").value = cliente.nombre || "";
         document.getElementById("clienteId").value = cliente.id;
         bootstrap.Modal.getInstance(modalBuscarCliente)?.hide();
+        document.getElementById("clienteInput")?.focus();
     });
 
     document.getElementById("tablaChoferesViaje")?.addEventListener("click", event => {
@@ -603,6 +1076,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById(inputId).value = nombre || usuario.email || "";
         document.getElementById(hiddenId).value = usuario.id;
         bootstrap.Modal.getInstance(modalBuscarChofer)?.hide();
+        document.getElementById(inputId)?.focus();
     });
 
     modalBuscarCamion?.addEventListener("shown.bs.modal", () => {
@@ -724,15 +1198,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const requeridos = [
             "nombreViaje",
             "clienteInput",
-            "estadoViaje",
             "idaCamionInput",
             "idaChoferInput",
             "idaSalida",
             "idaLlegada"
         ];
-        if (!usarMismosDatos?.checked) {
-            requeridos.push("vueltaCamionInput", "vueltaChoferInput", "vueltaSalida", "vueltaLlegada");
-        }
         requeridos.forEach(id => {
             const input = document.getElementById(id);
             if (!input) return;
@@ -743,10 +1213,62 @@ document.addEventListener("DOMContentLoaded", () => {
                 input.classList.remove("is-invalid");
             }
         });
+        const clienteId = document.getElementById("clienteId");
+        if (clienteId && !clienteId.value) {
+            document.getElementById("clienteInput")?.classList.add("is-invalid");
+            valido = false;
+        }
+        const idaCamion = document.getElementById("idaCamionId")?.value;
+        const idaChofer = document.getElementById("idaChoferId")?.value;
+        if (!idaCamion) {
+            document.getElementById("idaCamionInput")?.classList.add("is-invalid");
+            valido = false;
+        }
+        if (!idaChofer) {
+            document.getElementById("idaChoferInput")?.classList.add("is-invalid");
+            valido = false;
+        }
+        const idaEstado = document.getElementById("idaEstado");
+        if (idaEstado && !idaEstado.value) {
+            idaEstado.classList.add("is-invalid");
+            valido = false;
+        } else if (idaEstado) {
+            idaEstado.classList.remove("is-invalid");
+        }
+
+        const vueltaInputs = [
+            "vueltaCamionId",
+            "vueltaChoferId",
+            "vueltaSalida",
+            "vueltaLlegada",
+            "vueltaIngreso"
+        ];
+        const vueltaTieneDatos = vueltaInputs.some(id => {
+            const el = document.getElementById(id);
+            return Boolean(el?.value);
+        }) || state.vuelta.gastos.length > 0;
+
+        const vueltaEstado = document.getElementById("vueltaEstado");
+        if (vueltaTieneDatos) {
+            if (vueltaEstado && !vueltaEstado.value) {
+                vueltaEstado.classList.add("is-invalid");
+                valido = false;
+            } else if (vueltaEstado) {
+                vueltaEstado.classList.remove("is-invalid");
+            }
+        } else if (vueltaEstado) {
+            vueltaEstado.classList.remove("is-invalid");
+        }
         return valido;
     };
 
     const buildPayload = () => {
+        const estadoIda = document.getElementById("idaEstado")?.value || null;
+        const estadoVuelta = document.getElementById("vueltaEstado")?.value || null;
+        const pagado = document.getElementById("pagadoGeneral")?.checked ?? false;
+        const iva = document.getElementById("ivaGeneral")?.checked ?? false;
+
+
         const getId = (hiddenId, inputId) => {
             const hidden = document.getElementById(hiddenId)?.value;
             if (hidden) return Number(hidden);
@@ -754,29 +1276,59 @@ document.addEventListener("DOMContentLoaded", () => {
             return Number.isNaN(Number(raw)) ? null : Number(raw);
         };
 
-        const buildTramo = tramo => ({
-            tipoTramo: tramo,
-            idCamion: getId(`${tramo}CamionId`, `${tramo}CamionInput`),
-            idConductor: getId(`${tramo}ChoferId`, `${tramo}ChoferInput`),
-            fechaSalida: document.getElementById(`${tramo}Salida`)?.value || null,
-            fechaEntrada: document.getElementById(`${tramo}Llegada`)?.value || null,
-            gastos: state[tramo].gastos.map(g => ({
-                tipoGasto: g.tipo,
-                descripcion: g.descripcion,
+        const buildTramo = tramo => {
+            const idCamion = getId(`${tramo}CamionId`, `${tramo}CamionInput`);
+            const idConductor = getId(`${tramo}ChoferId`, `${tramo}ChoferInput`);
+            const fechaSalida = normalizeDateTime(document.getElementById(`${tramo}Salida`)?.value);
+            const fechaEntrada = normalizeDateTime(document.getElementById(`${tramo}Llegada`)?.value);
+            const precioViajeRaw = document.getElementById(`${tramo}Ingreso`)?.value;
+            const precioViaje = precioViajeRaw ? parseNumber(precioViajeRaw) : null;
+            const gastos = state[tramo].gastos.map(g => ({
+                idTipoGasto: g.tipoId,
                 monto: g.monto,
-                fecha: g.fecha,
-                evidencia: g.evidencia
-            }))
-        });
+                descripcion: g.descripcion || "",
+                evidenciaUrl: g.evidencia || "",
+                fechaGasto: g.fecha || null
+            }));
+
+            const hasData = Boolean(idCamion || idConductor || fechaSalida || fechaEntrada || gastos.length || precioViaje);
+            if (!hasData) return null;
+
+            return {
+                tipoTramo: tramo,
+                idCamion,
+                idConductor,
+                estadoViaje: tramo === "ida" ? estadoIda : estadoVuelta,
+                pagado,
+                iva,
+                precioViaje,
+                fechaSalida,
+                fechaEntrada,
+                gastos
+            };
+        };
+
+        const tramos = [];
+        const tramoIda = buildTramo("ida");
+        if (!tramoIda) {
+            return {
+                nombreViaje: document.getElementById("nombreViaje")?.value || "",
+                idCliente: Number(document.getElementById("clienteId")?.value) || null,
+                tramos: []
+            };
+        }
+        if (tramoIda) tramos.push(tramoIda);
+        const tramoVuelta = buildTramo("vuelta");
+        if (tramoVuelta) tramos.push(tramoVuelta);
 
         return {
             nombreViaje: document.getElementById("nombreViaje")?.value || "",
             idCliente: Number(document.getElementById("clienteId")?.value) || null,
-            tramos: [buildTramo("ida"), buildTramo("vuelta")]
+            tramos
         };
     };
 
-    viajeForm?.addEventListener("submit", event => {
+    viajeForm?.addEventListener("submit", async event => {
         event.preventDefault();
         if (estadoGuardado) estadoGuardado.textContent = "";
         if (!validarFormulario()) {
@@ -791,26 +1343,106 @@ document.addEventListener("DOMContentLoaded", () => {
             estadoGuardado.textContent = "Guardando...";
             estadoGuardado.className = "estado-guardado";
         }
+        if (btnGuardarViaje) btnGuardarViaje.disabled = true;
 
         const payload = buildPayload();
-        console.log("JSON viaje", payload);
+        const viajeId = viajeForm?.dataset.viajeId;
+        const url = viajeId ? `/api/viajes/${viajeId}` : "/api/viajes";
+        const method = viajeId ? "PUT" : "POST";
 
-        setTimeout(() => {
-            if (!estadoGuardado) return;
-            estadoGuardado.textContent = "Guardado correctamente";
-            estadoGuardado.className = "estado-guardado ok";
-        }, 700);
-    });
-
-    document.getElementById("btnGuardarBorrador")?.addEventListener("click", () => {
-        if (estadoGuardado) {
-            estadoGuardado.textContent = "Guardando borrador...";
-            estadoGuardado.className = "estado-guardado";
+        try {
+            const headers = { "Content-Type": "application/json" };
+            if (csrfToken && csrfHeader) {
+                headers[csrfHeader] = csrfToken;
+            }
+            const res = await fetch(url, {
+                method,
+                headers,
+                credentials: "same-origin",
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) {
+                const errorText = await res.text().catch(() => "");
+                throw new Error(errorText || "Error al guardar");
+            }
+            if (estadoGuardado) {
+                estadoGuardado.textContent = "Guardado correctamente";
+                estadoGuardado.className = "estado-guardado ok";
+            }
+            cerrarModal();
+            alert("Guardado correctamente");
+            cargarViajes(paginacionViajes.page);
+        } catch (error) {
+            console.error(error);
+            if (estadoGuardado) {
+                estadoGuardado.textContent = "Error al guardar";
+                estadoGuardado.className = "estado-guardado error";
+            }
+            alert(`Error al guardar: ${error.message || "verifica los datos"}`);
+        } finally {
+            if (btnGuardarViaje) btnGuardarViaje.disabled = false;
         }
-        setTimeout(() => {
-            if (!estadoGuardado) return;
-            estadoGuardado.textContent = "Borrador guardado";
-            estadoGuardado.className = "estado-guardado ok";
-        }, 500);
     });
+
+    listaViajes?.addEventListener("click", event => {
+        const card = event.target.closest(".trip-card-action");
+        if (!card) return;
+        abrirModal(card.dataset.viajeId);
+    });
+
+    document.getElementById("btnPrevViajes")?.addEventListener("click", () => {
+        cargarViajes(paginacionViajes.page - 1);
+    });
+    document.getElementById("btnNextViajes")?.addEventListener("click", () => {
+        cargarViajes(paginacionViajes.page + 1);
+    });
+    document.getElementById("tamanoPaginaViajes")?.addEventListener("change", event => {
+        paginacionViajes.size = Number(event.target.value) || 10;
+        cargarViajes(0);
+    });
+
+    document.getElementById("filtroBusquedaViajes")?.addEventListener("input", event => {
+        clearTimeout(debounceViajes);
+        debounceViajes = setTimeout(() => {
+            filtrosViajes.q = event.target.value.trim();
+        }, 250);
+    });
+    document.getElementById("btnAplicarFiltrosViajes")?.addEventListener("click", () => {
+        const inputBuscar = document.getElementById("filtroBusquedaViajes");
+        const inputInicio = document.getElementById("filtroFechaInicioViajes");
+        const inputFin = document.getElementById("filtroFechaFinViajes");
+        const selectEstado = document.getElementById("filtroEstadoViajes");
+        filtrosViajes.q = inputBuscar?.value.trim() || "";
+        filtrosViajes.fechaInicio = inputInicio?.value || "";
+        filtrosViajes.fechaFin = inputFin?.value || "";
+        const estadoSeleccionado = selectEstado?.value || "";
+        if (estadoSeleccionado === "__activos__") {
+            filtrosViajes.estado = "";
+            filtrosViajes.excluirCompletados = true;
+        } else {
+            filtrosViajes.estado = estadoSeleccionado;
+            filtrosViajes.excluirCompletados = false;
+        }
+        cargarViajes(0);
+    });
+    document.getElementById("btnLimpiarFiltrosViajes")?.addEventListener("click", () => {
+        filtrosViajes.q = "";
+        filtrosViajes.estado = "";
+        filtrosViajes.fechaInicio = "";
+        filtrosViajes.fechaFin = "";
+        filtrosViajes.excluirCompletados = false;
+        const inputBuscar = document.getElementById("filtroBusquedaViajes");
+        const inputInicio = document.getElementById("filtroFechaInicioViajes");
+        const inputFin = document.getElementById("filtroFechaFinViajes");
+        const selectEstado = document.getElementById("filtroEstadoViajes");
+        if (inputBuscar) inputBuscar.value = "";
+        if (inputInicio) inputInicio.value = "";
+        if (inputFin) inputFin.value = "";
+        if (selectEstado) selectEstado.value = "";
+        cargarViajes(0);
+    });
+
+    cargarEstadosViaje();
+    cargarTiposGasto();
+    cargarViajes();
 });
