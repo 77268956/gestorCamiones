@@ -83,21 +83,38 @@
             cursor: pointer;
         }
 
+        /* El card se renderiza como contenedor clickeable; evitamos estilos por defecto cuando sea button */
+        button.trip-card {
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
         .trip-card:hover {
             box-shadow: 0 10px 22px rgba(26, 58, 143, 0.12);
             transform: translateY(-2px);
         }
 
+        .trip-card:focus-visible {
+            outline: 3px solid rgba(26, 58, 143, 0.28);
+            outline-offset: 2px;
+        }
+
         .trip-card-header {
             display: flex;
-            justify-content: center;
-            align-items: baseline;
-            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
             margin-bottom: 16px;
         }
 
+        .trip-card-header > div:first-child {
+            display: grid;
+            gap: 2px;
+            min-width: 0;
+        }
+
         .trip-card-kicker {
-            font-size: 0.9rem;
+            font-size: 0.75rem;
             font-weight: 700;
             color: var(--mp-blue-dark);
             text-transform: uppercase;
@@ -105,35 +122,92 @@
         }
 
         .trip-card-title {
-            font-size: 1.1rem;
+            font-size: 1.25rem;
             font-weight: 700;
             color: var(--mp-blue);
+            line-height: 1.05;
+        }
+
+        .trip-card-date {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            color: var(--mp-blue-dark);
+            font-weight: 600;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .trip-card-body {
             display: grid;
-            grid-template-columns: minmax(240px, 1.1fr) minmax(220px, 1fr) minmax(180px, 0.85fr);
-            gap: 28px;
+            grid-template-columns: minmax(260px, 1.1fr) minmax(220px, 0.75fr);
+            gap: 20px;
             align-items: start;
         }
 
         .trip-legs {
             display: grid;
-            gap: 18px;
+            gap: 14px;
+        }
+
+        .trip-leg-block {
+            border: 1px solid rgba(26, 58, 143, 0.15);
+            border-radius: 16px;
+            padding: 12px 14px;
+            background: rgba(26, 58, 143, 0.04);
+            display: flex;
+            gap: 14px;
+        }
+
+        .trip-leg-main {
+            flex: 1;
+            min-width: 0;
         }
 
         .trip-leg-title {
             font-weight: 700;
             color: var(--mp-blue-dark);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.9px;
             margin-bottom: 8px;
         }
 
-        .trip-leg-info {
+        .trip-leg-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 0.9rem;
             color: var(--mp-gray-text);
-            padding-left: 16px;
-            line-height: 1.6;
+            padding: 2px 0;
+        }
+
+        .trip-leg-label {
+            font-weight: 600;
+            color: var(--mp-blue-dark);
+        }
+
+        .trip-leg-value {
+            text-align: right;
+            color: var(--mp-gray-text);
+            max-width: 55%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .trip-leg-stats {
+            border: 1px solid rgba(26, 58, 143, 0.2);
+            border-radius: 14px;
+            padding: 10px 12px;
+            background: var(--mp-white);
+            min-width: 190px;
+            align-self: center;
+        }
+
+        .trip-leg-stats .trip-metric-item {
+            font-size: 0.85rem;
         }
 
         .status-badge {
@@ -148,6 +222,8 @@
             letter-spacing: 0.5px;
             color: var(--mp-white);
             background: var(--mp-blue);
+            max-width: 100%;
+            white-space: nowrap;
         }
 
         .status-cargando { background: #f59e0b; }
@@ -159,8 +235,7 @@
 
         .trip-metrics {
             display: grid;
-            gap: 18px;
-            padding-right: 8px;
+            gap: 10px;
         }
 
         .trip-metric-title {
@@ -182,19 +257,132 @@
 
         .trip-total {
             border: 2px solid var(--mp-blue);
-            border-radius: 16px;
-            padding: 14px 16px;
+            border-radius: 18px;
+            padding: 16px 18px;
             background: var(--mp-white);
-            display: grid;
-            gap: 10px;
-            margin-left: 4px;
+            display: flex;
+            flex-direction: column;
+            align-self: stretch;
+            height: 100%;
         }
 
         .trip-total-title {
             font-weight: 700;
             color: var(--mp-blue-dark);
             text-align: center;
-            margin-bottom: 4px;
+            margin-bottom: 10px;
+        }
+
+        .trip-total .trip-metric-item {
+            font-size: 1rem;
+            padding: 18px 0;
+        }
+
+        .trip-card-actions {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .trip-card-action-btn {
+            border-radius: 999px;
+            padding: 10px 18px;
+            font-weight: 600;
+            width: 100%;
+        }
+
+        .trip-card-actions .btn-outline-secondary {
+            background: rgba(26, 58, 143, 0.06);
+        }
+
+        .viaje-view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .viaje-view-title {
+            font-weight: 800;
+            color: var(--mp-blue-dark);
+            letter-spacing: 0.2px;
+            margin: 0;
+        }
+
+        .viaje-view-sub {
+            font-size: 0.9rem;
+            color: var(--mp-gray-text);
+            margin-top: 4px;
+        }
+
+        .viaje-view-totals {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(160px, 1fr));
+            gap: 12px;
+            margin: 12px 0 18px;
+        }
+
+        .viaje-view-total {
+            border: 1px solid var(--mp-border);
+            border-radius: 14px;
+            padding: 12px 14px;
+            background: var(--mp-gray-bg);
+        }
+
+        .viaje-view-total strong {
+            color: var(--mp-blue-dark);
+        }
+
+        .viaje-view-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+        }
+
+        .viaje-view-section {
+            border: 1px solid var(--mp-border);
+            border-radius: 14px;
+            background: var(--mp-white);
+            overflow: hidden;
+        }
+
+        .viaje-view-section-head {
+            padding: 10px 14px;
+            background: rgba(26, 58, 143, 0.05);
+            border-bottom: 1px solid var(--mp-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .viaje-view-section-body {
+            padding: 12px 14px;
+        }
+
+        .viaje-view-kv {
+            display: grid;
+            grid-template-columns: minmax(160px, 0.9fr) minmax(220px, 1.1fr);
+            gap: 8px 14px;
+            align-items: baseline;
+        }
+
+        .viaje-view-kv .k {
+            font-weight: 700;
+            color: var(--mp-blue-dark);
+        }
+
+        .viaje-view-kv .v {
+            color: var(--mp-gray-text);
+            word-break: break-word;
+        }
+
+        @media (max-width: 992px) {
+            .viaje-view-totals {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 992px) {
@@ -204,7 +392,18 @@
 
             .trip-total {
                 max-width: 340px;
+                height: auto;
             }
+
+            .trip-leg-block {
+                flex-direction: column;
+            }
+
+            .trip-leg-stats {
+                width: 100%;
+            }
+
+            /* acciones ya van en el flujo normal; nada especial aqui */
         }
 
         .mp-modal {
@@ -573,7 +772,7 @@
                                         <label class="form-label">Chofer</label>
                                         <div class="input-group">
                                             <input id="idaChoferInput" list="choferesList" type="text" class="form-control" required readonly>
-                                            <input id="idaChoferId" type="hidden">
+                                            <input id="idaChoferId" type="hidden">bo
                                             <button id="btnBuscarChoferIda" class="btn btn-outline-secondary" type="button">
                                                 Buscar
                                             </button>
@@ -804,6 +1003,19 @@
                         <span id="estadoGuardado" class="estado-guardado"></span>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="viajeViewModal" class="mp-modal">
+        <div class="mp-modal-backdrop"></div>
+        <div class="mp-modal-content">
+            <div class="mp-modal-header">
+                <div class="mp-modal-title">Detalle del viaje</div>
+                <button id="btnCerrarViajeView" class="mp-modal-close" type="button">x</button>
+            </div>
+            <div class="mp-modal-body">
+                <div id="viajeViewBody" class="card-clean">Cargando...</div>
             </div>
         </div>
     </div>

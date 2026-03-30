@@ -1,12 +1,16 @@
 document.addEventListener("DOMContentLoaded", () => {
     const modal = document.getElementById("viajeModal");
+    const viewModal = document.getElementById("viajeViewModal");
     const btnNuevoViaje = document.getElementById("btnNuevoViaje");
     const btnCerrarViaje = document.getElementById("btnCerrarViaje");
+    const btnCerrarViajeView = document.getElementById("btnCerrarViajeView");
     const viajeForm = document.getElementById("viajeForm");
+    const viajeViewBody = document.getElementById("viajeViewBody");
     const usarMismosDatos = document.getElementById("usarMismosDatos");
     const estadoGuardado = document.getElementById("estadoGuardado");
     const btnGuardarViaje = document.getElementById("btnGuardarViaje");
     const modalTitle = modal?.querySelector(".mp-modal-title");
+    const viewModalTitle = viewModal?.querySelector(".mp-modal-title");
     const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
     let tiposGastoCache = [];
@@ -21,8 +25,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let estadosViajeCargados = false;
 
     const state = {
-        ida: { gastos: [], editIndex: null },
-        vuelta: { gastos: [], editIndex: null }
+        ida: {gastos: [], editIndex: null},
+        vuelta: {gastos: [], editIndex: null}
     };
 
     const resetFormulario = () => {
@@ -68,12 +72,40 @@ document.addEventListener("DOMContentLoaded", () => {
         modal?.classList.remove("is-open");
     };
 
+    const abrirModalVerViaje = async viajeId => {
+        if (!viajeId) return;
+        viewModal?.classList.add("is-open");
+        if (viajeViewBody) viajeViewBody.innerHTML = "Cargando...";
+        if (viewModalTitle) viewModalTitle.textContent = "Detalle del viaje";
+        try {
+            await renderViajeDetalleView(viajeId);
+        } catch (error) {
+            console.error(error);
+            if (viajeViewBody) {
+                viajeViewBody.innerHTML = '<div class="text-danger text-center">Error al cargar el viaje</div>';
+            }
+        }
+    };
+
+    const cerrarModalVerViaje = () => {
+        viewModal?.classList.remove("is-open");
+    };
+
     btnNuevoViaje?.addEventListener("click", () => abrirModal());
     document.querySelectorAll(".trip-card-action").forEach(card => {
         card.addEventListener("click", () => abrirModal(card.dataset.viajeId));
     });
     btnCerrarViaje?.addEventListener("click", cerrarModal);
     modal?.querySelector(".mp-modal-backdrop")?.addEventListener("click", cerrarModal);
+
+    btnCerrarViajeView?.addEventListener("click", cerrarModalVerViaje);
+    viewModal?.querySelector(".mp-modal-backdrop")?.addEventListener("click", cerrarModalVerViaje);
+    document.addEventListener("keydown", event => {
+        if (event.key !== "Escape") return;
+        if (viewModal?.classList.contains("is-open")) {
+            cerrarModalVerViaje();
+        }
+    });
 
     const tabs = document.querySelectorAll(".tab-button");
     tabs.forEach(tab => {
@@ -104,6 +136,36 @@ document.addEventListener("DOMContentLoaded", () => {
         return Number.isNaN(number) ? 0 : number;
     };
 
+    const parseDateSafe = value => {
+        if (!value) return null;
+        const d = new Date(value);
+        return Number.isNaN(d.getTime()) ? null : d;
+    };
+
+    const formatDateTimeHuman = value => {
+        const d = parseDateSafe(value);
+        if (!d) return "-";
+        const pad = num => String(num).padStart(2, "0");
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
+    const formatDurationHuman = (inicio, fin) => {
+        const d1 = parseDateSafe(inicio);
+        const d2 = parseDateSafe(fin);
+        if (!d1 || !d2) return "-";
+        const diff = d2.getTime() - d1.getTime();
+        if (diff <= 0) return "-";
+        let remaining = diff;
+        const dias = Math.floor(remaining / 86400000);
+        remaining -= dias * 86400000;
+        const horas = Math.floor(remaining / 36e5);
+        remaining -= horas * 36e5;
+        const minutos = Math.floor(remaining / 60000);
+        if (dias > 0) return `${dias}d ${horas}h ${minutos}m`;
+        if (horas > 0) return `${horas}h ${minutos}m`;
+        return `${minutos}m`;
+    };
+
     const normalizeDateTime = value => {
         if (!value) return null;
         return value.length === 16 ? `${value}:00` : value;
@@ -115,6 +177,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (Number.isNaN(date.getTime())) return "";
         const pad = num => String(num).padStart(2, "0");
         return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    };
+    const formatDateOnly = value => {
+        if (!value) return "-";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "-";
+        const pad = num => String(num).padStart(2, "0");
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     };
 
     const formatMoney = value => `$${value.toFixed(2)}`;
@@ -248,7 +317,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const gasto = { tipoId, tipoLabel, tipoRaw: rawTipo, descripcion, monto, fecha, evidencia };
+            const gasto = {tipoId, tipoLabel, tipoRaw: rawTipo, descripcion, monto, fecha, evidencia};
             if (state[tramo].editIndex !== null) {
                 state[tramo].gastos[state[tramo].editIndex] = gasto;
             } else {
@@ -287,23 +356,23 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    const seleccion = { camionTramo: "ida", choferTramo: "ida" };
+    const seleccion = {camionTramo: "ida", choferTramo: "ida"};
     const modalBuscarCamion = document.getElementById("modalBuscarCamionViaje");
     const modalBuscarCliente = document.getElementById("modalBuscarClienteViaje");
     const modalBuscarChofer = document.getElementById("modalBuscarChoferViaje");
 
-    const paginacionCamionesModal = { page: 0, size: 10, totalPages: 1, totalElements: 0, sort: "idCamion,desc" };
-    const filtrosCamionesModal = { q: "", estado: "" };
+    const paginacionCamionesModal = {page: 0, size: 10, totalPages: 1, totalElements: 0, sort: "idCamion,desc"};
+    const filtrosCamionesModal = {q: "", estado: ""};
     let camionesModalCache = [];
     let debounceCamionesModal = null;
 
-    const paginacionClientesModal = { page: 0, size: 10, totalPages: 1, totalElements: 0 };
-    const filtrosClientesModal = { q: "" };
+    const paginacionClientesModal = {page: 0, size: 10, totalPages: 1, totalElements: 0};
+    const filtrosClientesModal = {q: ""};
     let clientesModalCache = [];
     let debounceClientesModal = null;
 
-    const paginacionChoferesModal = { page: 0, size: 10, totalPages: 1, totalElements: 0 };
-    const filtrosChoferesModal = { q: "", estado: "" };
+    const paginacionChoferesModal = {page: 0, size: 10, totalPages: 1, totalElements: 0};
+    const filtrosChoferesModal = {q: "", estado: ""};
     let choferesModalCache = [];
     let debounceChoferesModal = null;
 
@@ -321,7 +390,7 @@ document.addEventListener("DOMContentLoaded", () => {
         totalPages: 1,
         totalElements: 0
     };
-    const filtrosViajes = { q: "", estado: "", fechaInicio: "", fechaFin: "", excluirCompletados: false };
+    const filtrosViajes = {q: "", estado: "", fechaInicio: "", fechaFin: "", excluirCompletados: false};
     let viajesCache = [];
     let debounceViajes = null;
 
@@ -341,7 +410,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (filtrosViajes.fechaInicio) query.set("fechaInicio", filtrosViajes.fechaInicio);
             if (filtrosViajes.fechaFin) query.set("fechaFin", filtrosViajes.fechaFin);
 
-            const res = await fetch(`/api/viajes?${query.toString()}`, { credentials: "same-origin" });
+            const res = await fetch(`/api/viajes?${query.toString()}`, {credentials: "same-origin"});
             if (!res.ok) throw new Error("No se pudieron cargar viajes");
             const pageData = await res.json();
 
@@ -405,90 +474,149 @@ document.addEventListener("DOMContentLoaded", () => {
             const estadoVueltaKey = String(vuelta?.estadoViaje || "").toLowerCase().replaceAll(" ", "_");
             const estadoIdaLabel = String(ida?.estadoViaje || "-").replaceAll("_", " ");
             const estadoVueltaLabel = String(vuelta?.estadoViaje || "-").replaceAll("_", " ");
+            const idaFechaSalida = formatDateOnly(ida?.fechaSalida);
+            const vueltaFechaSalida = formatDateOnly(vuelta?.fechaSalida);
+            const headerEstadoKey = estadoIdaKey || estadoVueltaKey;
+            const headerFecha = ida?.fechaSalida ? idaFechaSalida : (vuelta?.fechaSalida ? vueltaFechaSalida : "-");
 
             return `
-                <button type="button" class="trip-card trip-card-action" data-viaje-id="${escapeHtml(idViaje)}">
-                    <div class="trip-card-header">
-                        <span class="trip-card-kicker">Viaje</span>
-                        <span class="trip-card-title">${escapeHtml(viaje.nombreVieje || "Sin nombre")}</span>
-                    </div>
-                    <div class="trip-card-body">
-                        <div class="trip-legs">
-                            <div class="trip-leg-block">
-                                <div class="trip-leg-title">Ida</div>
-                                <div class="trip-leg-info">Camion: ${escapeHtml(ida?.camionNombre || ida?.camionPlaca || "-")}</div>
-                                <div class="trip-leg-info">Chofer: ${escapeHtml(ida?.conductorNombre || "-")}</div>
-                                <div class="trip-leg-info">Cliente: ${escapeHtml(cliente)}</div>
-                                <div class="trip-leg-info">
-                                    Estado:
-                                    <span class="status-badge ${estadoIdaKey ? `status-${escapeHtml(estadoIdaKey)}` : ""}">
-                                        ${escapeHtml(estadoIdaLabel)}
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="trip-leg-block">
-                                <div class="trip-leg-title">Vuelta</div>
-                                <div class="trip-leg-info">Camion: ${escapeHtml(vuelta?.camionNombre || vuelta?.camionPlaca || "-")}</div>
-                                <div class="trip-leg-info">Chofer: ${escapeHtml(vuelta?.conductorNombre || "-")}</div>
-                                <div class="trip-leg-info">Cliente: ${escapeHtml(cliente)}</div>
-                                <div class="trip-leg-info">
-                                    Estado:
-                                    <span class="status-badge ${estadoVueltaKey ? `status-${escapeHtml(estadoVueltaKey)}` : ""}">
-                                        ${escapeHtml(estadoVueltaLabel)}
-                                    </span>
-                                </div>
-                            </div>
+    <div class="trip-card trip-card-action" role="button" tabindex="0" data-viaje-id="${escapeHtml(idViaje)}">
+        <div class="trip-card-header">
+            <div>
+                <div class="trip-card-kicker">Viaje</div>
+                <div class="trip-card-title">${escapeHtml(viaje.nombreVieje || "Sin nombre")}</div>
+            </div>
+            <div class="trip-card-date">
+                <span>Fecha del viaje</span>
+                <span class="status-badge ${headerEstadoKey ? `status-${escapeHtml(headerEstadoKey)}` : ""}">
+                    ${escapeHtml(headerFecha)}
+                </span>
+            </div>
+        </div>
+        <div class="trip-card-body">
+            <div class="trip-legs">
+                <div class="trip-leg-block">
+                    <div class="trip-leg-main">
+                        <div class="trip-leg-title">Datos del viaje (Ida)</div>
+                        <div class="trip-leg-row">
+                            <span class="trip-leg-label">Camion</span>
+                            <span class="trip-leg-value">${escapeHtml(ida?.camionNombre || ida?.camionPlaca || "-")}</span>
                         </div>
-                        <div class="trip-metrics">
-                            <div class="trip-metric-block">
-                                <div class="trip-metric-title">Ida</div>
-                                <div class="trip-metric-item">
-                                    <span>Ingresos</span>
-                                    <span>${idaIngreso}</span>
-                                </div>
-                                <div class="trip-metric-item">
-                                    <span>Gastos</span>
-                                    <span>${idaGastos}</span>
-                                </div>
-                                <div class="trip-metric-item">
-                                    <span>Ganancia</span>
-                                    <span>${idaGanancia}</span>
-                                </div>
-                            </div>
-                            <div class="trip-metric-block">
-                                <div class="trip-metric-title">Vuelta</div>
-                                <div class="trip-metric-item">
-                                    <span>Ingresos</span>
-                                    <span>${vueltaIngreso}</span>
-                                </div>
-                                <div class="trip-metric-item">
-                                    <span>Gastos</span>
-                                    <span>${vueltaGastos}</span>
-                                </div>
-                                <div class="trip-metric-item">
-                                    <span>Ganancia</span>
-                                    <span>${vueltaGanancia}</span>
-                                </div>
-                            </div>
+                        <div class="trip-leg-row">
+                            <span class="trip-leg-label">Chofer</span>
+                            <span class="trip-leg-value">${escapeHtml(ida?.conductorNombre || "-")}</span>
                         </div>
-                        <div class="trip-total">
-                            <div class="trip-total-title">Total</div>
-                            <div class="trip-metric-item">
-                                <span>Ingresos</span>
-                                <span>${ingresoTotal}</span>
-                            </div>
-                            <div class="trip-metric-item">
-                                <span>Gastos</span>
-                                <span>${gastoTotal}</span>
-                            </div>
-                            <div class="trip-metric-item">
-                                <span>Ganancia</span>
-                                <span>${gananciaTotal}</span>
-                            </div>
+                        <div class="trip-leg-row">
+                            <span class="trip-leg-label">Cliente</span>
+                            <span class="trip-leg-value">${escapeHtml(cliente)}</span>
+                        </div>
+                        <div class="trip-leg-row">
+                            <span class="trip-leg-label">Estado</span>
+                            <span class="status-badge ${estadoIdaKey ? `status-${escapeHtml(estadoIdaKey)}` : ""}">
+                                ${escapeHtml(estadoIdaLabel)}
+                            </span>
+                        </div>
+                        <div class="trip-leg-row">
+                            <span class="trip-leg-label">Salida</span>
+                            <span class="status-badge ${estadoIdaKey ? `status-${escapeHtml(estadoIdaKey)}` : ""}">
+                                ${escapeHtml(idaFechaSalida)}
+                            </span>
                         </div>
                     </div>
-                </button>
-            `;
+                    <div class="trip-leg-stats">
+                        <div class="trip-metric-title">Estadisticas del ida</div>
+                        <div class="trip-metric-item">
+                            <span>Ingresos</span>
+                            <span>${idaIngreso}</span>
+                        </div>
+                        <div class="trip-metric-item">
+                            <span>Gastos</span>
+                            <span>${idaGastos}</span>
+                        </div>
+                        <div class="trip-metric-item">
+                            <span>Ganancia</span>
+                            <span>${idaGanancia}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="trip-leg-block">
+                    <div class="trip-leg-main">
+                        <div class="trip-leg-title">Datos del viaje (Vuelta)</div>
+                        <div class="trip-leg-row">
+                            <span class="trip-leg-label">Camion</span>
+                            <span class="trip-leg-value">${escapeHtml(vuelta?.camionNombre || vuelta?.camionPlaca || "-")}</span>
+                        </div>
+                        <div class="trip-leg-row">
+                            <span class="trip-leg-label">Chofer</span>
+                            <span class="trip-leg-value">${escapeHtml(vuelta?.conductorNombre || "-")}</span>
+                        </div>
+                        <div class="trip-leg-row">
+                            <span class="trip-leg-label">Cliente</span>
+                            <span class="trip-leg-value">${escapeHtml(cliente)}</span>
+                        </div>
+                        <div class="trip-leg-row">
+                            <span class="trip-leg-label">Estado</span>
+                            <span class="status-badge ${estadoVueltaKey ? `status-${escapeHtml(estadoVueltaKey)}` : ""}">
+                                ${escapeHtml(estadoVueltaLabel)}
+                            </span>
+                        </div>
+                        <div class="trip-leg-row">
+                            <span class="trip-leg-label">Salida</span>
+                            <span class="status-badge ${estadoVueltaKey ? `status-${escapeHtml(estadoVueltaKey)}` : ""}">
+                                ${escapeHtml(vueltaFechaSalida)}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="trip-leg-stats">
+                        <div class="trip-metric-title">Estadisticas del vuelta</div>
+                        <div class="trip-metric-item">
+                            <span>Ingresos</span>
+                            <span>${vueltaIngreso}</span>
+                        </div>
+                        <div class="trip-metric-item">
+                            <span>Gastos</span>
+                            <span>${vueltaGastos}</span>
+                        </div>
+                        <div class="trip-metric-item">
+                            <span>Ganancia</span>
+                            <span>${vueltaGanancia}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="trip-total">
+                <div class="trip-total-title">Total</div>
+                <div class="trip-metric-item">
+                    <span>Ingresos</span>
+                    <span>${ingresoTotal}</span>
+                </div>
+                <div class="trip-metric-item">
+                    <span>Gastos</span>
+                    <span>${gastoTotal}</span>
+                </div>
+                <div class="trip-metric-item">
+                    <span>Ganancia</span>
+                    <span>${gananciaTotal}</span>
+                </div>
+
+                <div class="trip-card-actions">
+                    <button type="button" class="btn btn-outline-secondary btn-sm trip-card-action-btn"
+                        data-viaje-action="edit" data-viaje-id="${escapeHtml(idViaje)}">
+                        Actualizar
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm trip-card-action-btn"
+                        data-viaje-action="view" data-viaje-id="${escapeHtml(idViaje)}">
+                        Ver viaje
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        
+    </div>
+`;
         }).join("");
 
         const inicio = paginacionViajes.page * paginacionViajes.size;
@@ -563,7 +691,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!estadosViajeCargados) {
                 await cargarEstadosViaje();
             }
-            const res = await fetch(`/api/viajes/${idViaje}`, { credentials: "same-origin" });
+            const res = await fetch(`/api/viajes/${idViaje}`, {credentials: "same-origin"});
             if (!res.ok) throw new Error("No se pudo cargar el viaje");
             const data = await res.json();
 
@@ -744,6 +872,186 @@ document.addEventListener("DOMContentLoaded", () => {
         const match = tiposGastoCache.find(t => Number(t.id) === Number(idTipo));
         return match?.tipoGasto || `Tipo #${idTipo}`;
     };
+
+    const ensureTiposGastoCache = async () => {
+        if (tiposGastoCargados && tiposGastoCache.length) return;
+        try {
+            const res = await fetch("/api/tipogasto");
+            if (!res.ok) throw new Error("No se pudieron cargar tipos de gasto");
+            const tipos = await res.json();
+            tiposGastoCache = Array.isArray(tipos) ? tipos : [];
+            tiposGastoCache.forEach(tipo => {
+                if (!tipo?.tipoGasto) return;
+                tipoGastoMap[String(tipo.tipoGasto).toLowerCase()] = Number(tipo.id);
+            });
+            tiposGastoCargados = true;
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    async function renderViajeDetalleView(idViaje) {
+        if (!viajeViewBody) return;
+        await ensureTiposGastoCache();
+
+        const res = await fetch(`/api/viajes/${idViaje}`, {credentials: "same-origin"});
+        if (!res.ok) throw new Error("No se pudo cargar el viaje");
+        const data = await res.json();
+
+        const tramos = Array.isArray(data.tramos) ? data.tramos : [];
+        const ida = tramos.find(t => String(t.tipoTramo).toLowerCase() === "ida") || null;
+        const vuelta = tramos.find(t => String(t.tipoTramo).toLowerCase() === "vuelta") || null;
+        const tramoBase = ida || vuelta || {};
+
+        const calcGastos = tramo => (tramo?.gastos || []).reduce((sum, g) => sum + (Number(g?.monto) || 0), 0);
+
+        const ingresoIda = Number(ida?.precioViaje) || 0;
+        const ingresoVuelta = Number(vuelta?.precioViaje) || 0;
+        const gastosIda = calcGastos(ida);
+        const gastosVuelta = calcGastos(vuelta);
+
+        const totalIngresos = ingresoIda + ingresoVuelta;
+        const totalGastos = gastosIda + gastosVuelta;
+        const totalGanancia = totalIngresos - totalGastos;
+
+        const salidaTotal = [ida?.fechaSalida, vuelta?.fechaSalida].map(parseDateSafe).filter(Boolean)
+            .sort((a, b) => a.getTime() - b.getTime())[0] || null;
+        const llegadaTotal = [ida?.fechaEntrada, vuelta?.fechaEntrada].map(parseDateSafe).filter(Boolean)
+            .sort((a, b) => b.getTime() - a.getTime())[0] || null;
+        const duracionTotal = salidaTotal && llegadaTotal ? formatDurationHuman(salidaTotal, llegadaTotal) : "-";
+
+        const boolBadge = v => v
+            ? '<span class="badge bg-success">SI</span>'
+            : '<span class="badge bg-secondary">NO</span>';
+
+        const renderGastosTable = gastos => {
+            const list = Array.isArray(gastos) ? gastos : [];
+            if (!list.length) return '<div class="text-muted">Sin gastos registrados.</div>';
+            const rows = list.map(g => {
+                const tipo = resolveTipoLabel(g.idTipoGasto);
+                const desc = escapeHtml(g.descripcion || "-");
+                const monto = formatMoney(Number(g.monto) || 0);
+                const fecha = escapeHtml(g.fechaGasto || "-");
+                const evidencia = g.evidenciaUrl
+                    ? `<a class="btn btn-outline-secondary btn-sm" href="${escapeHtml(g.evidenciaUrl)}" target="_blank" rel="noopener">Ver</a>`
+                    : "-";
+                return `
+                    <tr>
+                        <td>${escapeHtml(tipo)}</td>
+                        <td>${desc}</td>
+                        <td class="text-end">${monto}</td>
+                        <td>${fecha}</td>
+                        <td class="text-end">${evidencia}</td>
+                    </tr>
+                `;
+            }).join("");
+            return `
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Descripcion</th>
+                                <th class="text-end">Monto</th>
+                                <th>Fecha</th>
+                                <th class="text-end">Evidencia</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+        };
+
+        const renderTramo = (titulo, tramo) => {
+            if (!tramo) {
+                return `
+                    <div class="viaje-view-section">
+                        <div class="viaje-view-section-head">
+                            <div><strong>${escapeHtml(titulo)}</strong></div>
+                            <span class="badge bg-secondary">No registrado</span>
+                        </div>
+                        <div class="viaje-view-section-body">
+                            <div class="text-muted">No hay datos para este tramo.</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const ingreso = Number(tramo.precioViaje) || 0;
+            const gastos = calcGastos(tramo);
+            const ganancia = ingreso - gastos;
+            const salida = formatDateTimeHuman(tramo.fechaSalida);
+            const llegada = formatDateTimeHuman(tramo.fechaEntrada);
+            const duracion = formatDurationHuman(tramo.fechaSalida, tramo.fechaEntrada);
+            const estado = String(tramo.estadoViaje || "-").replaceAll("_", " ");
+            const camion = tramo.camionNombre
+                ? `${tramo.camionNombre}${tramo.camionPlaca ? ` (${tramo.camionPlaca})` : ""}`
+                : (tramo.camionPlaca || "-");
+
+            return `
+                <div class="viaje-view-section">
+                    <div class="viaje-view-section-head">
+                        <div><strong>${escapeHtml(titulo)}</strong></div>
+                        <span class="badge bg-primary">${escapeHtml(estado)}</span>
+                    </div>
+                    <div class="viaje-view-section-body">
+                        <div class="viaje-view-kv mb-3">
+                            <div class="k">Camion</div><div class="v">${escapeHtml(camion)}</div>
+                            <div class="k">Chofer</div><div class="v">${escapeHtml(tramo.conductorNombre || "-")}</div>
+                            <div class="k">Salida</div><div class="v">${escapeHtml(salida)}</div>
+                            <div class="k">Llegada</div><div class="v">${escapeHtml(llegada)}</div>
+                            <div class="k">Duracion</div><div class="v">${escapeHtml(duracion)}</div>
+                            <div class="k">Ingresos</div><div class="v"><strong>${formatMoney(ingreso)}</strong></div>
+                            <div class="k">Gastos</div><div class="v"><strong>${formatMoney(gastos)}</strong></div>
+                            <div class="k">Ganancia</div><div class="v"><strong>${formatMoney(ganancia)}</strong></div>
+                        </div>
+                        <div class="mb-2"><strong>Gastos</strong></div>
+                        ${renderGastosTable(tramo.gastos)}
+                    </div>
+                </div>
+            `;
+        };
+
+        if (viewModalTitle) {
+            const idLabel = data.idViaje || data.id_viaje || idViaje;
+            viewModalTitle.textContent = `Detalle del viaje ${idLabel ? `#${idLabel}` : ""}`.trim();
+        }
+
+        viajeViewBody.innerHTML = `
+            <div class="viaje-view-header">
+                <div>
+                    <h3 class="viaje-view-title">${escapeHtml(data.nombreViaje || data.nombreVieje || "Viaje")}</h3>
+                    <div class="viaje-view-sub">
+                        <span><strong>Cliente:</strong> ${escapeHtml(data.clienteNombre || "-")}</span>
+                        <span class="ms-2"><strong>Pagado:</strong> ${boolBadge(Boolean(tramoBase.pagado))}</span>
+                        <span class="ms-2"><strong>IVA:</strong> ${boolBadge(Boolean(tramoBase.iva))}</span>
+                        <span class="ms-2"><strong>Duracion total:</strong> ${escapeHtml(duracionTotal)}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="viaje-view-totals">
+                <div class="viaje-view-total">
+                    <div>Total generado</div>
+                    <strong>${formatMoney(totalIngresos)}</strong>
+                </div>
+                <div class="viaje-view-total">
+                    <div>Total gastado</div>
+                    <strong>${formatMoney(totalGastos)}</strong>
+                </div>
+                <div class="viaje-view-total">
+                    <div>Ganancia</div>
+                    <strong>${formatMoney(totalGanancia)}</strong>
+                </div>
+            </div>
+
+            <div class="viaje-view-grid">
+                ${renderTramo("Tramo (Ida)", ida)}
+                ${renderTramo("Tramo (Vuelta)", vuelta)}
+            </div>
+        `;
+    }
 
     async function cargarEstadosCamionModal() {
         const selectEstado = document.getElementById("filtroEstadoCamionesViajeModal");
@@ -1187,7 +1495,7 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("vueltaSalida").value = document.getElementById("idaSalida").value;
             document.getElementById("vueltaLlegada").value = document.getElementById("idaLlegada").value;
             document.getElementById("vueltaIngreso").value = document.getElementById("idaIngreso").value;
-            state.vuelta.gastos = state.ida.gastos.map(g => ({ ...g }));
+            state.vuelta.gastos = state.ida.gastos.map(g => ({...g}));
             renderGastos("vuelta");
             actualizarDuraciones();
         }
@@ -1351,7 +1659,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const method = viajeId ? "PUT" : "POST";
 
         try {
-            const headers = { "Content-Type": "application/json" };
+            const headers = {"Content-Type": "application/json"};
             if (csrfToken && csrfHeader) {
                 headers[csrfHeader] = csrfToken;
             }
@@ -1385,8 +1693,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     listaViajes?.addEventListener("click", event => {
+        const actionBtn = event.target.closest("[data-viaje-action]");
+        if (actionBtn) {
+            event.preventDefault();
+            event.stopPropagation();
+            const action = actionBtn.dataset.viajeAction;
+            const viajeId = actionBtn.dataset.viajeId;
+            if (action === "view") {
+                abrirModalVerViaje(viajeId);
+            } else {
+                abrirModal(viajeId);
+            }
+            return;
+        }
         const card = event.target.closest(".trip-card-action");
         if (!card) return;
+        abrirModal(card.dataset.viajeId);
+    });
+
+    // Permite abrir el detalle con teclado cuando la tarjeta es foco (Enter/Espacio).
+    listaViajes?.addEventListener("keydown", event => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        if (event.target.closest?.("[data-viaje-action]")) return;
+        const card = event.target.closest?.(".trip-card-action");
+        if (!card) return;
+        event.preventDefault();
         abrirModal(card.dataset.viajeId);
     });
 
@@ -1444,5 +1775,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     cargarEstadosViaje();
     cargarTiposGasto();
+    const inputInicio = document.getElementById("filtroFechaInicioViajes");
+    const inputFin = document.getElementById("filtroFechaFinViajes");
+    const today = new Date();
+    const addDays = (date, days) => {
+        const copy = new Date(date);
+        copy.setDate(copy.getDate() + days);
+        return copy;
+    };
+    const formatDateInput = date => {
+        const pad = num => String(num).padStart(2, "0");
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    };
+    if (inputInicio && !inputInicio.value) {
+        inputInicio.value = formatDateInput(today);
+        filtrosViajes.fechaInicio = inputInicio.value;
+    }
+    if (inputFin && !inputFin.value) {
+        inputFin.value = formatDateInput(addDays(today, 14));
+        filtrosViajes.fechaFin = inputFin.value;
+    }
     cargarViajes();
 });

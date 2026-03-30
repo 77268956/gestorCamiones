@@ -36,10 +36,10 @@ public interface ViajeRepository extends JpaRepository<Viaje, Long> {
             CAST(vd.estado AS text) <> 'completado'
         )
         AND (
-            :fechaInicio IS NULL OR DATE(vd.fecha_salida) >= :fechaInicio
+            CAST(:fechaInicio AS date) IS NULL OR DATE(vd.fecha_salida) >= CAST(:fechaInicio AS date)
         )
         AND (
-            :fechaFin IS NULL OR DATE(vd.fecha_salida) <= :fechaFin
+            CAST(:fechaFin AS date) IS NULL OR DATE(vd.fecha_salida) <= CAST(:fechaFin AS date)
         )
     """,
             countQuery = """
@@ -64,10 +64,10 @@ public interface ViajeRepository extends JpaRepository<Viaje, Long> {
             CAST(vd.estado AS text) <> 'completado'
         )
         AND (
-            :fechaInicio IS NULL OR DATE(vd.fecha_salida) >= :fechaInicio
+            CAST(:fechaInicio AS date) IS NULL OR DATE(vd.fecha_salida) >= CAST(:fechaInicio AS date)
         )
         AND (
-            :fechaFin IS NULL OR DATE(vd.fecha_salida) <= :fechaFin
+            CAST(:fechaFin AS date) IS NULL OR DATE(vd.fecha_salida) <= CAST(:fechaFin AS date)
         )
     """,
             nativeQuery = true
