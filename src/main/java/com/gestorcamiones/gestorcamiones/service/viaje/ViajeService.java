@@ -137,7 +137,7 @@ public class ViajeService implements IViajeService {
 
         Viaje viaje = guardarViaje(dto, usuario);
 
-        viajeDetallesService.guardarTramos(dto.getTramos(), viaje, usuario);
+        viajeDetallesService.crearTramos(dto.getTramos(), viaje, usuario);
         return dto;
     }
 
@@ -173,10 +173,8 @@ public class ViajeService implements IViajeService {
             viaje.setCliente(cliente);
         }
 
-        viaje.getDetalles().clear();
-
         if (dto.getTramos() != null) {
-            viajeDetallesService.guardarTramos(dto.getTramos(), viaje, usuario);
+            viajeDetallesService.actualizarTramos(dto.getTramos(), viaje, usuario);
         }
 
         viajeRepository.save(viaje);

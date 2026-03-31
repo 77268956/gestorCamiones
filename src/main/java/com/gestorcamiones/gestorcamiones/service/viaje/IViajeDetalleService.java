@@ -7,5 +7,6 @@ import com.gestorcamiones.gestorcamiones.entity.Viaje;
 import java.util.List;
 
 public interface IViajeDetalleService {
-    void guardarTramos(List<TramoDTO> tramosDTO, Viaje viaje, Usuario usuarioAdmin);
+    void crearTramos(List<TramoDTO> tramosDTO, Viaje viaje, Usuario usuarioAdmin);
+    void actualizarTramos(List<TramoDTO> tramosDTO, Viaje viaje, Usuario usuarioAdmin);
 }

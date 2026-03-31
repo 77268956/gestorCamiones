@@ -25,8 +25,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let estadosViajeCargados = false;
 
     const state = {
-        ida: {gastos: [], editIndex: null},
-        vuelta: {gastos: [], editIndex: null}
+        ida: {detalleId: 0, gastos: [], editIndex: null},
+        vuelta: {detalleId: 0, gastos: [], editIndex: null}
     };
 
     const resetFormulario = () => {
@@ -37,6 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         state.ida.gastos = [];
         state.vuelta.gastos = [];
+        state.ida.detalleId = 0;
+        state.vuelta.detalleId = 0;
         renderGastos("ida");
         renderGastos("vuelta");
         actualizarDuraciones();
@@ -314,7 +316,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const gasto = {tipoId, tipoLabel, tipoRaw: rawTipo, descripcion, monto, fecha, evidencia};
+            const existingId = state[tramo].editIndex !== null
+                ? (state[tramo].gastos[state[tramo].editIndex]?.id || 0)
+                : 0;
+            const gasto = {id: existingId, tipoId, tipoLabel, tipoRaw: rawTipo, descripcion, monto, fecha, evidencia};
             if (state[tramo].editIndex !== null) {
                 state[tramo].gastos[state[tramo].editIndex] = gasto;
             } else {
@@ -720,6 +725,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (tramoIda) {
+                state.ida.detalleId = Number(tramoIda.id) || 0;
                 document.getElementById("idaEstado").value = tramoIda.estadoViaje || "";
                 document.getElementById("idaCamionId").value = tramoIda.idCamion || "";
                 const idaCamionLabel = tramoIda.camionNombre
@@ -733,6 +739,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("idaIngreso").value = tramoIda.precioViaje ?? "";
 
                 state.ida.gastos = (tramoIda.gastos || []).map(g => ({
+                    id: Number(g.id) || 0,
                     tipoId: g.idTipoGasto,
                     tipoLabel: resolveTipoLabel(g.idTipoGasto),
                     tipoRaw: g.idTipoGasto ? String(g.idTipoGasto) : "",
@@ -745,6 +752,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (tramoVuelta) {
+                state.vuelta.detalleId = Number(tramoVuelta.id) || 0;
                 document.getElementById("vueltaEstado").value = tramoVuelta.estadoViaje || "";
                 document.getElementById("vueltaCamionId").value = tramoVuelta.idCamion || "";
                 const vueltaCamionLabel = tramoVuelta.camionNombre
@@ -758,6 +766,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("vueltaIngreso").value = tramoVuelta.precioViaje ?? "";
 
                 state.vuelta.gastos = (tramoVuelta.gastos || []).map(g => ({
+                    id: Number(g.id) || 0,
                     tipoId: g.idTipoGasto,
                     tipoLabel: resolveTipoLabel(g.idTipoGasto),
                     tipoRaw: g.idTipoGasto ? String(g.idTipoGasto) : "",
@@ -1602,6 +1611,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const precioViajeRaw = document.getElementById(`${tramo}Ingreso`)?.value;
             const precioViaje = precioViajeRaw ? parseNumber(precioViajeRaw) : null;
             const gastos = state[tramo].gastos.map(g => ({
+                id: Number(g.id) || 0,
                 idTipoGasto: g.tipoId,
                 monto: g.monto,
                 descripcion: g.descripcion || "",
@@ -1613,6 +1623,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!hasData) return null;
 
             return {
+                id: Number(state[tramo].detalleId) || 0,
                 tipoTramo: tramo,
                 idCamion,
                 idConductor,
