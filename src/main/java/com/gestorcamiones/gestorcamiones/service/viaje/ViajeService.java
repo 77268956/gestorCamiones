@@ -94,9 +94,11 @@ public class ViajeService implements IViajeService {
                     vuelta.add(detalleDTO);
                 }
 
+
                 if (detalle.getPrecioViaje() != null) {
                     totalGenetado = totalGenetado.add(detalle.getPrecioViaje());
                 }
+
                 if (detalle.getGastos() != null) {
                     for (GastoViaje gastos: detalle.getGastos()){
                         if (gastos.getMonto() != null) {

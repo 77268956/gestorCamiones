@@ -15,6 +15,8 @@ import com.gestorcamiones.gestorcamiones.repository.ViajesDetallerRepository;
 import com.gestorcamiones.gestorcamiones.service.gasto.GastosViajeServicie;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -66,6 +68,17 @@ public class ViajeDetallesService implements IViajeDetalleService {
     }
 
     private ViajeDetalle guardarDetalle(TramoDTO dto, Viaje viaje) {
+
+        if (camionNoDisponible(dto.getIdCamion(), dto.getFechaSalida(), dto.getFechaEntrada())) {
+            throw new IllegalArgumentException("Camión ya asignado a un viaje");
+        }
+
+        if (choferNoDisponible(dto.getIdConductor(), dto.getFechaSalida(), dto.getFechaEntrada())) {
+            throw new IllegalArgumentException("El contuctor ya esta en un viaje");
+        }
+
+
+
         ViajeDetalle detalle = new ViajeDetalle();
         detalle.setViaje(viaje);
         detalle.setTipoTramo(dto.getTipoTramo());
@@ -86,5 +99,13 @@ public class ViajeDetallesService implements IViajeDetalleService {
         }
         viajesDetallerRepository.save(detalle);
         return detalle;
+    }
+
+    private boolean camionNoDisponible(long idCamion, LocalDateTime fechaSalida, LocalDateTime fechaLlegada){
+        return  camionRepository.camionNoDisponible(idCamion, fechaSalida, fechaLlegada);
+    }
+
+    private boolean choferNoDisponible(long idCamion, LocalDateTime fechaSalida, LocalDateTime fechaLlegada){
+        return  usuarioRepository.choferNoDisponible(idCamion, fechaSalida, fechaLlegada);
     }
 }

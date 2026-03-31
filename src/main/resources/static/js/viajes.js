@@ -92,9 +92,6 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     btnNuevoViaje?.addEventListener("click", () => abrirModal());
-    document.querySelectorAll(".trip-card-action").forEach(card => {
-        card.addEventListener("click", () => abrirModal(card.dataset.viajeId));
-    });
     btnCerrarViaje?.addEventListener("click", cerrarModal);
     modal?.querySelector(".mp-modal-backdrop")?.addEventListener("click", cerrarModal);
 
@@ -328,7 +325,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    document.addEventListener("click", event => {
+    modal?.addEventListener("click", event => {
         const editBtn = event.target.closest("[data-edit]");
         if (editBtn) {
             const tramo = editBtn.dataset.edit;
@@ -382,6 +379,18 @@ document.addEventListener("DOMContentLoaded", () => {
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#39;");
+
+    const safeHref = rawUrl => {
+        const value = String(rawUrl ?? "").trim();
+        if (!value) return "";
+        try {
+            const u = new URL(value, window.location.origin);
+            if (u.protocol !== "http:" && u.protocol !== "https:") return "";
+            return u.href;
+        } catch {
+            return "";
+        }
+    };
 
     const listaViajes = document.getElementById("listaViajes");
     const paginacionViajes = {
@@ -932,8 +941,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 const desc = escapeHtml(g.descripcion || "-");
                 const monto = formatMoney(Number(g.monto) || 0);
                 const fecha = escapeHtml(g.fechaGasto || "-");
-                const evidencia = g.evidenciaUrl
-                    ? `<a class="btn btn-outline-secondary btn-sm" href="${escapeHtml(g.evidenciaUrl)}" target="_blank" rel="noopener">Ver</a>`
+                const href = safeHref(g.evidenciaUrl);
+                const evidencia = href
+                    ? `<a class="btn btn-outline-secondary btn-sm" href="${escapeHtml(href)}" target="_blank" rel="noopener">Ver</a>`
                     : "-";
                 return `
                     <tr>

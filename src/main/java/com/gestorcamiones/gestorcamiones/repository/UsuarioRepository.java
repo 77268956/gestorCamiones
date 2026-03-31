@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
@@ -38,5 +39,30 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Page<Usuario> buscarFiltrados(@Param("texto") String texto,
                                   @Param("estado") EstadoEmpleado estado,
                                   Pageable pageable);
+
+
+    @Query(
+            value = """
+        SELECT EXISTS (
+            SELECT 1
+            FROM viaje_detalle
+            WHERE id_chofer = :idChofer
+              AND deleted_at IS NULL
+              AND estado NOT IN ('cancelado', 'completado')
+              AND (
+                    (:fechaSalida BETWEEN fecha_salida AND COALESCE(fecha_llegada, :fechaSalida))
+                 OR (:fechaLlegada BETWEEN fecha_salida AND COALESCE(fecha_llegada, :fechaLlegada))
+                 OR (fecha_salida BETWEEN :fechaSalida AND :fechaLlegada)
+              )
+        )
+    """,
+            nativeQuery = true
+    )
+    boolean choferNoDisponible(
+            @Param("idChofer") long idChofer,
+            @Param("fechaSalida") LocalDateTime fechaSalida,
+            @Param("fechaLlegada") LocalDateTime fechaLlegada
+    );
+
 }
 
