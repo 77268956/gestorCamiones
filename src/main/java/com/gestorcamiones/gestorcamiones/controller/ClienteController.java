@@ -1,6 +1,7 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
 import com.gestorcamiones.gestorcamiones.dto.cliente.ClienteDTO;
+import com.gestorcamiones.gestorcamiones.security.CustomUserDetails;
 import com.gestorcamiones.gestorcamiones.service.cliente.IClientesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -36,20 +38,26 @@ public class ClienteController {
 
     @PostMapping
     @Operation(summary = "Crear cliente", description = "Registra un nuevo cliente.")
-    public ResponseEntity<ClienteDTO> crear(@Valid @RequestBody ClienteDTO dto) {
-        return ResponseEntity.ok(clientesService.crear(dto));
+    public ResponseEntity<ClienteDTO> crear(
+            @Valid @RequestBody ClienteDTO dto,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(clientesService.crear(dto, userDetails));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Editar cliente", description = "Actualiza los datos de un cliente.")
-    public ResponseEntity<ClienteDTO> editar(@PathVariable Long id, @Valid @RequestBody ClienteDTO dto) {
-        return ResponseEntity.ok(clientesService.editar(id, dto));
+    public ResponseEntity<ClienteDTO> editar(
+            @PathVariable Long id,
+            @Valid @RequestBody ClienteDTO dto,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(clientesService.editar(id, dto, userDetails));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar cliente", description = "Elimina un cliente por su id.")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        clientesService.eliminar(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Long id,
+                                         @AuthenticationPrincipal CustomUserDetails userDetails) {
+        clientesService.eliminar(id, userDetails);
         return ResponseEntity.noContent().build();
     }
 }

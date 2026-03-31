@@ -526,3 +526,16 @@ a:hover      { color: var(--mp-orange); }
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.mp-json-pre {
+    background: rgba(26, 58, 143, 0.04);
+    border: 1px solid var(--mp-border);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    font-size: 0.85rem;
+    color: var(--mp-blue-dark);
+    max-height: 420px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}

@@ -2,6 +2,7 @@ package com.gestorcamiones.gestorcamiones.controller;
 
 import com.gestorcamiones.gestorcamiones.dto.camion.CamionDTO;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCamion;
+import com.gestorcamiones.gestorcamiones.security.CustomUserDetails;
 import com.gestorcamiones.gestorcamiones.service.camion.CamionServicio;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -48,24 +50,26 @@ public class CamionController {
     @PostMapping
     @Operation(summary = "Crear camion", description = "Registra un nuevo camion con los datos enviados en el body.")
     public ResponseEntity<CamionDTO> crearCamion(
-            @Valid @RequestBody CamionDTO dto) {
-
-        return ResponseEntity.ok(camionService.crearCamion(dto));
+            @Valid @RequestBody CamionDTO dto,
+            @AuthenticationPrincipal CustomUserDetails admin) {
+        return ResponseEntity.ok(camionService.crearCamion(dto, admin));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update camion", description = "Update un camion")
     public ResponseEntity<CamionDTO> updateCamion(
             @PathVariable Long id,
-            @Valid @RequestBody CamionDTO dto
+            @Valid @RequestBody CamionDTO dto,
+            @AuthenticationPrincipal CustomUserDetails admin
     ){
-        return ResponseEntity.ok(camionService.editarCamion(id, dto));
+        return ResponseEntity.ok(camionService.editarCamion(id, dto, admin));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar camion", description = "Elimina logicamente un camion por su id.")
-    public ResponseEntity<Void> eliminarCamion(@PathVariable Long id) {
-        camionService.eliminarCamion(id);
+    public ResponseEntity<Void> eliminarCamion(@PathVariable Long id,
+                                               @AuthenticationPrincipal CustomUserDetails admin) {
+        camionService.eliminarCamion(id, admin);
         return ResponseEntity.noContent().build();
     }
 

@@ -130,10 +130,175 @@
             </div>
 
             <div class="tab-pane fade" id="pane-sistema" role="tabpanel" aria-labelledby="tab-sistema" tabindex="0">
-                <div class="audit-placeholder">
-                    <h6>Auditoria de Sistema</h6>
-                    <p class="mb-0">Seccion preparada para eventos tecnicos y de seguridad.</p>
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <div>
+                        <h6 class="mb-1">Auditoria de Sistema</h6>
+                        <p class="mb-0 text-muted small">Eventos tecnicos y de seguridad (CRUD, cambios, etc.).</p>
+                    </div>
                 </div>
+
+                <div class="row g-2 align-items-end mb-3">
+                    <div class="col-12 col-md-2">
+                        <label for="fDesdeSistema" class="form-label mb-1">Desde</label>
+                        <input id="fDesdeSistema" type="datetime-local" class="form-control mp-select">
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <label for="fHastaSistema" class="form-label mb-1">Hasta</label>
+                        <input id="fHastaSistema" type="datetime-local" class="form-control mp-select">
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <label for="fAccionSistema" class="form-label mb-1">Accion</label>
+                        <select id="fAccionSistema" class="form-select mp-select">
+                            <option value="">Todas</option>
+                            <option value="CREATE">CREATE</option>
+                            <option value="UPDATE">UPDATE</option>
+                            <option value="DELETE">DELETE</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <label for="fTablaSistema" class="form-label mb-1">Tabla</label>
+                        <input id="fTablaSistema" type="text" class="form-control mp-select" placeholder="usuarios, camiones...">
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <label for="fBusquedaSistema" class="form-label mb-1">Buscar</label>
+                        <input id="fBusquedaSistema" type="text" class="form-control mp-select" placeholder="id, ip, usuario...">
+                    </div>
+                    <div class="col-12 col-md-1 d-grid">
+                        <button id="btnBuscarAuditoriaSistema" class="btn btn-add" type="button">Filtrar</button>
+                    </div>
+                    <div class="col-12 col-md-1 d-grid">
+                        <button id="btnLimpiarAuditoriaSistema" class="btn btn-outline-secondary" type="button">Limpiar</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table mp-table">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Tabla</th>
+                            <th>ID Registro</th>
+                            <th>Accion</th>
+                            <th>Usuario</th>
+                            <th>ID Usuario</th>
+                            <th>IP</th>
+                            <th>User Agent</th>
+                            <th class="text-center">Info</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaAuditoriaSistema">
+                        <tr>
+                            <td colspan="11" class="text-center">Seleccione la pestana Sistema para cargar la auditoria...</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mp-table-footer d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                    <span id="totalAuditoriaSistema">Mostrando 0 registros</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <button id="btnPrevAuditoriaSistema" class="btn btn-sm btn-outline-secondary" type="button">Anterior</button>
+                        <span id="pageInfoAuditoriaSistema" class="small text-muted">Pagina 0 de 0</span>
+                        <button id="btnNextAuditoriaSistema" class="btn btn-sm btn-outline-secondary" type="button">Siguiente</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAuditoriaSistemaInfo" tabindex="-1" aria-labelledby="modalAuditoriaSistemaInfoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content mp-modal-content">
+            <div class="modal-header mp-modal-header">
+                <h5 class="modal-title" id="modalAuditoriaSistemaInfoLabel">Detalle de auditoria</h5>
+                <button type="button" class="btn-close mp-modal-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12 col-lg-5">
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <tbody>
+                                <tr>
+                                    <th style="width: 140px;">ID</th>
+                                    <td id="audSisInfoId">-</td>
+                                </tr>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <td id="audSisInfoFecha">-</td>
+                                </tr>
+                                <tr>
+                                    <th>Tabla</th>
+                                    <td id="audSisInfoTabla">-</td>
+                                </tr>
+                                <tr>
+                                    <th>ID Registro</th>
+                                    <td id="audSisInfoIdRegistro">-</td>
+                                </tr>
+                                <tr>
+                                    <th>Accion</th>
+                                    <td id="audSisInfoAccion">-</td>
+                                </tr>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <td id="audSisInfoUsuarioNombre">-</td>
+                                </tr>
+                                <tr>
+                                    <th>ID Usuario</th>
+                                    <td id="audSisInfoUsuarioId">-</td>
+                                </tr>
+                                <tr>
+                                    <th>IP</th>
+                                    <td id="audSisInfoIp">-</td>
+                                </tr>
+                                <tr>
+                                    <th>User Agent</th>
+                                    <td class="small text-muted" id="audSisInfoUserAgent">-</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-7">
+                        <div class="accordion" id="audSisInfoAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="audSisInfoAntesHeading">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#audSisInfoAntesCollapse" aria-expanded="true" aria-controls="audSisInfoAntesCollapse">
+                                        Datos antes (JSON)
+                                    </button>
+                                </h2>
+                                <div id="audSisInfoAntesCollapse" class="accordion-collapse collapse show" aria-labelledby="audSisInfoAntesHeading" data-bs-parent="#audSisInfoAccordion">
+                                    <div class="accordion-body">
+                                        <pre id="audSisInfoDatosAntes" class="mp-json-pre mb-0">-</pre>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="audSisInfoDespuesHeading">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#audSisInfoDespuesCollapse" aria-expanded="false" aria-controls="audSisInfoDespuesCollapse">
+                                        Datos despues (JSON)
+                                    </button>
+                                </h2>
+                                <div id="audSisInfoDespuesCollapse" class="accordion-collapse collapse" aria-labelledby="audSisInfoDespuesHeading" data-bs-parent="#audSisInfoAccordion">
+                                    <div class="accordion-body">
+                                        <pre id="audSisInfoDatosDespues" class="mp-json-pre mb-0">-</pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-muted small mb-0 mt-2">Tip: si necesita copiar, seleccione el texto del JSON.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer mp-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>

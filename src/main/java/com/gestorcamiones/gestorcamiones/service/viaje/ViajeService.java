@@ -1,5 +1,8 @@
 package com.gestorcamiones.gestorcamiones.service.viaje;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gestorcamiones.gestorcamiones.dto.auditoria.ViajeAuditoriaDTO;
 import com.gestorcamiones.gestorcamiones.dto.gasto.GastoViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ActualizarViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.CrearViajeDTO;
@@ -8,10 +11,12 @@ import com.gestorcamiones.gestorcamiones.dto.viaje.ListaViajesDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ViajeUpsertDTO;
 import com.gestorcamiones.gestorcamiones.dto.tramo.TramoDTO;
 import com.gestorcamiones.gestorcamiones.entity.*;
+import com.gestorcamiones.gestorcamiones.entity.Enum.AccionAuditoria;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
 import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
 import com.gestorcamiones.gestorcamiones.repository.ClienteRepository;
 import com.gestorcamiones.gestorcamiones.repository.ViajeRepository;
+import com.gestorcamiones.gestorcamiones.service.auditoria.AuditoriaDetalladaService;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,13 +33,17 @@ public class ViajeService implements IViajeService {
     private ViajeRepository viajeRepository;
     private ClienteRepository clienteRepository;
     private ViajeDetallesService viajeDetallesService;
+    private final AuditoriaDetalladaService auditori;
+    private final ObjectMapper objectMapper;
 
     public ViajeService(ViajeRepository viajeRepository,
                         ClienteRepository clienteRepository,
-                        ViajeDetallesService viajeDetallesService) {
+                        ViajeDetallesService viajeDetallesService, AuditoriaDetalladaService auditori, ObjectMapper objectMapper) {
         this.viajeRepository = viajeRepository;
         this.clienteRepository = clienteRepository;
         this.viajeDetallesService = viajeDetallesService;
+        this.auditori = auditori;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -151,18 +160,33 @@ public class ViajeService implements IViajeService {
         viaje.setAdmin(usuario);
         viaje.setCliente(cliente);
         viajeRepository.save(viaje);
+
+        // Auditoría: usar snapshot DTO para evitar serialización del grafo completo (lazy init).
+        JsonNode despuesJson = objectMapper.valueToTree(toAuditoriaDTO(viaje));
+
+        auditori.registrar(
+                "viajes",
+                usuario.getIdUsuarios(),
+                AccionAuditoria.CREATE,
+                usuario.getNombre(),
+                null,
+                despuesJson,
+                viaje.getIdViaje()
+        );
         return viaje;
     }
 
     @Transactional
     @Override
     public ActualizarViajeDTO actualizarViaje(Long idViaje, ActualizarViajeDTO dto, Usuario usuario) {
-        // u
+        // usuaroi admin
         if (usuario == null) {
             throw new IllegalArgumentException("Usuario no autenticado correctamente");
         }
         Viaje viaje = viajeRepository.findById(idViaje)
                 .orElseThrow(() -> new RuntimeException("Viaje no encontrado"));
+
+        JsonNode antesJson = objectMapper.valueToTree(toAuditoriaDTO(viaje));
 
         viaje.setNombreViaje(dto.getNombreViaje());
 
@@ -178,6 +202,17 @@ public class ViajeService implements IViajeService {
         }
 
         viajeRepository.save(viaje);
+
+        JsonNode despuesJson = objectMapper.valueToTree(toAuditoriaDTO(viaje));
+        auditori.registrar(
+                "viajes",
+                usuario.getIdUsuarios(),
+                AccionAuditoria.UPDATE,
+                usuario.getNombre(),
+                antesJson,
+                despuesJson,
+                viaje.getIdViaje()
+        );
         return dto;
     }
 
@@ -283,11 +318,96 @@ public class ViajeService implements IViajeService {
         return dto;
     }
 
-    public void eliminarViaje(Long idViaje) {
+    private ViajeAuditoriaDTO toAuditoriaDTO(Viaje viaje) {
+        ViajeAuditoriaDTO dto = new ViajeAuditoriaDTO();
+        if (viaje == null) {
+            return dto;
+        }
+
+        dto.setIdViaje(viaje.getIdViaje());
+        dto.setNombreViaje(viaje.getNombreViaje());
+
+        if (viaje.getAdmin() != null) {
+            dto.setAdminId(viaje.getAdmin().getIdUsuarios());
+            String nombre = viaje.getAdmin().getNombre() != null ? viaje.getAdmin().getNombre() : "";
+            String apellido = viaje.getAdmin().getApellido() != null ? viaje.getAdmin().getApellido() : "";
+            dto.setAdminNombre((nombre + " " + apellido).trim());
+        }
+
+        if (viaje.getCliente() != null) {
+            dto.setClienteId(viaje.getCliente().getId());
+            dto.setClienteNombre(viaje.getCliente().getNombre());
+        }
+
+        if (viaje.getDetalles() != null) {
+            List<ViajeAuditoriaDTO.TramoAuditoriaDTO> tramos = new ArrayList<>();
+            for (ViajeDetalle detalle : viaje.getDetalles()) {
+                tramos.add(toAuditoriaTramoDTO(detalle));
+            }
+            dto.setTramos(tramos);
+        }
+
+        return dto;
+    }
+
+    private ViajeAuditoriaDTO.TramoAuditoriaDTO toAuditoriaTramoDTO(ViajeDetalle detalle) {
+        ViajeAuditoriaDTO.TramoAuditoriaDTO dto = new ViajeAuditoriaDTO.TramoAuditoriaDTO();
+        if (detalle == null) {
+            return dto;
+        }
+
+        dto.setIdViajeDetalle(detalle.getIdViajeDetalle());
+        dto.setTipoTramo(detalle.getTipoTramo());
+        dto.setEstado(detalle.getEstado());
+        dto.setPagado(detalle.getPagado());
+        dto.setIva(detalle.getIva());
+        dto.setPrecioViaje(detalle.getPrecioViaje());
+        dto.setFechaSalida(detalle.getFechaSalida());
+        dto.setFechaLlegada(detalle.getFechaLlegada());
+
+        if (detalle.getCamion() != null) {
+            dto.setCamionId(detalle.getCamion().getIdCamion());
+            dto.setCamionNombre(detalle.getCamion().getNombre());
+            dto.setCamionPlaca(detalle.getCamion().getPlaca());
+        }
+
+        if (detalle.getChofer() != null) {
+            dto.setChoferId(detalle.getChofer().getIdUsuarios());
+            String nombre = detalle.getChofer().getNombre() != null ? detalle.getChofer().getNombre() : "";
+            String apellido = detalle.getChofer().getApellido() != null ? detalle.getChofer().getApellido() : "";
+            dto.setChoferNombre((nombre + " " + apellido).trim());
+        }
+
+        BigDecimal gastosTotal = BigDecimal.ZERO;
+        if (detalle.getGastos() != null) {
+            for (GastoViaje gasto : detalle.getGastos()) {
+                if (gasto != null && gasto.getMonto() != null) {
+                    gastosTotal = gastosTotal.add(gasto.getMonto());
+                }
+            }
+        }
+        dto.setGastoTotal(gastosTotal);
+
+        return dto;
+    }
+
+    @Transactional
+    public void eliminarViaje(Long idViaje, Usuario usuario) {
 
         Viaje viaje = viajeRepository.findById(idViaje)
                 .orElseThrow(() -> new RuntimeException("Viaje no encontrado"));
 
+        // Auditoría consistente: capturar el "antes" antes de borrar.
+        JsonNode antesJson = objectMapper.valueToTree(toAuditoriaDTO(viaje));
         viajeRepository.delete(viaje);
+        auditori.registrar(
+                "viajes",
+                usuario.getIdUsuarios(),
+                AccionAuditoria.DELETE,
+                usuario.getNombre(),
+                antesJson,
+                null,
+                viaje.getIdViaje()
+        );
     }
 }
