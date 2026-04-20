@@ -13,4 +13,8 @@ public interface TipoGastoMapper {
     TiposgastosDTO toDTO(TipoGasto tipoGasto);
 
     List<TiposgastosDTO> toDTO(List<TipoGasto> lista);
+
+    @Mapping(source = "id", target = "idTipoGasto")
+    @Mapping(source = "tipoGasto", target = "tipoGasto")
+    TipoGasto toEntity(TiposgastosDTO tipoGasto);
 }

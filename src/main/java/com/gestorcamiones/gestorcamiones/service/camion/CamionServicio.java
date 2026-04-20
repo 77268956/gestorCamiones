@@ -44,6 +44,7 @@ public class CamionServicio implements ICamionService {
     public Page<CamionDTO> listarCamiones(Pageable pageable, String texto, EstadoCamion estado) {
         String textoNormalizado = (texto == null || texto.isBlank()) ? null : texto.trim();
         String estadoNormalizado = (estado == null) ? null : estado.name();
+
         List<CamionDTO> filtrados = camionRepository.buscarFiltrados(textoNormalizado, estadoNormalizado)
                 .stream()
                 .map(camionMapper::toDTO)

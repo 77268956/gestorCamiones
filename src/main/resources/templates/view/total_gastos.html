@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title>Tipo Gasto</title>
+    <th:block th:replace="fragments/assets :: globalStyles"></th:block>
+</head>
+
+<style>
+    body { background: var(--mp-gray-bg); }
+
+    .cartaPrincipal{
+        width: min(1200px, calc(100% - 2rem));
+        background: var(--mp-white);
+        margin: 32px auto;
+        border-radius: 18px;
+        padding: 18px;
+        border: 1px solid var(--mp-border);
+        box-shadow: 0 10px 26px rgba(15, 36, 96, 0.08);
+    }
+
+    /* GRID PRINCIPAL */
+    .parent {
+        display: grid;
+        grid-template-columns: 2.5fr 1fr;
+        grid-template-rows: auto 1fr;
+        gap: 20px;
+        align-items: stretch;
+    }
+
+    @media (max-width: 992px) {
+        .parent {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto;
+        }
+
+        .div3, .div4 { grid-column: auto; }
+    }
+
+    /* FILTROS */
+    .div1 {
+        display: flex;
+    }
+
+    .div1 .card-clean {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* BOTON */
+    .div2 {
+        display: flex;
+    }
+
+    .div2 button {
+        width: 100%;
+        height: 100%;
+        border-radius: 15px;
+        font-weight: 600;
+        font-size: 16px;
+    }
+
+    /* TABLA */
+    .div3 {
+        grid-column: 1 / 2;
+    }
+
+    /* SIDEBAR */
+    .div4 {
+        grid-column: 2 / 3;
+        background: white;
+        border-radius: 15px;
+        padding: 15px;
+        border: 1px solid var(--mp-border);
+        box-shadow: 0 8px 22px rgba(15, 36, 96, 0.08);
+    }
+
+    /* CARDS */
+    .card-clean {
+        background: white;
+        border-radius: 15px;
+        padding: 16px;
+        border: 1px solid var(--mp-border);
+        box-shadow: 0 8px 22px rgba(15, 36, 96, 0.08);
+    }
+
+    /* FILTROS */
+    .filters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+    }
+
+    /* BOTONES FILTRO */
+    .filters-actions {
+        display: flex;
+        gap: 6px;
+        align-items: end;
+    }
+
+    .filters-actions button {
+        padding: 6px 10px;
+        font-size: 14px;
+    }
+
+    /* TABLA */
+    .div3 table {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f9fafb;
+    }
+
+    /* SIDEBAR */
+    .sidebar-section {
+        margin-bottom: 20px;
+    }
+
+    .sidebar-section h3 {
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    /* TOTAL */
+    .total-box {
+        background: linear-gradient(135deg, var(--mp-blue-dark), var(--mp-blue));
+        color: white;
+        padding: 15px;
+        border-radius: 12px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: bold;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: 0 10px 24px rgba(15, 36, 96, 0.22);
+    }
+
+    .mp-types-list {
+        border: 1px solid var(--mp-border);
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--mp-white);
+    }
+
+    .mp-types-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--mp-border);
+    }
+
+    .mp-types-row:last-child { border-bottom: 0; }
+
+    .mp-types-name {
+        font-weight: 600;
+        color: var(--mp-blue-dark);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding-right: 12px;
+    }
+
+    .mp-types-actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+</style>
+
+<body>
+
+<div th:replace="fragments/navbar :: navbar"></div>
+
+<div class="cartaPrincipal">
+
+    <div class="parent">
+
+        <!-- FILTROS -->
+        <div class="div1">
+            <div class="card-clean">
+                <div class="filters">
+
+                    <div>
+                        <input id="filtroBusquedaViajes" type="text" class="form-control" placeholder="Cliente, viaje o admin...">
+                    </div>
+
+                    <div>
+                        <input id="filtroFechaInicioViajes" type="date" class="form-control">
+                    </div>
+
+                    <div>
+                        <input id="filtroFechaFinViajes" type="date" class="form-control">
+                    </div>
+
+                    <div>
+                        <select id="filtroTiposGastos" class="form-select">
+                            <option value="" selected>Todos</option>
+                        </select>
+                    </div>
+
+                    <div class="filters-actions">
+                        <button id="btnAplicarFiltrosViajes" type="button" class="btn btn-primary">
+                            Buscar
+                        </button>
+                        <button id="btnLimpiarFiltrosViajes" type="button" class="btn btn-outline-secondary">
+                            Limpiar
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTON -->
+        <div class="div2">
+            <button id="btnAgregarGasto" class="btn btn-primary">
+                + Agregar gasto
+            </button>
+        </div>
+
+        <!-- TABLA -->
+        <div class="div3">
+            <table class="table table-sm mt-3">
+                <thead>
+                <tr>
+                    <th>Tipo gasto</th>
+                    <th>Descripcion</th>
+                    <th>Monto</th>
+                    <th>Fecha pago</th>
+                    <th>Foto</th>
+                    <th>Acciones</th>
+                </tr>
+                </thead>
+                <tbody id="idaGastosBody"></tbody>
+            </table>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="div4">
+
+            <div class="sidebar-section">
+                <h3>Total gastado</h3>
+                <div class="total-box">
+                    $0.00
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Categorías más gastadas</h3>
+                <table class="table table-sm">
+                    <thead>
+                    <tr>
+                        <th>Categoría</th>
+                        <th>Monto</th>
+                    </tr>
+                    </thead>
+                    <tbody id="idaGastosCategoria"></tbody>
+                </table>
+            </div>
+
+            <button id="btnAgregarTipoGasto" class="btn btn-outline-primary w-100" type="button">
+                + Administrar tipos de gasto
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Modal: Tipos de gasto -->
+<div class="modal fade" id="tipoGastoModal" tabindex="-1" aria-labelledby="tipoGastoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content mp-modal-content">
+            <div class="modal-header mp-modal-header">
+                <h5 class="modal-title" id="tipoGastoModalLabel">Tipos de gasto</h5>
+                <button type="button" class="btn-close mp-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="tipoGastoAlert" class="alert alert-danger d-none" role="alert"></div>
+
+                <div class="mp-types-list mb-3" id="tipoGastoList" aria-live="polite">
+                    <div class="mp-types-row">
+                        <div class="mp-types-name">Cargando...</div>
+                    </div>
+                </div>
+
+                <form id="tipoGastoForm" class="d-flex gap-2 align-items-start">
+                    <div class="flex-grow-1">
+                        <label for="tipoGastoNombre" class="form-label mb-1">Nuevo tipo</label>
+                        <input id="tipoGastoNombre" name="tipoGasto" type="text" class="form-control mp-modal-input"
+                               placeholder="Ej: Gasolina" autocomplete="off" required>
+                        <input id="tipoGastoIdEdit" type="hidden" value="">
+                    </div>
+                    <div class="pt-4 d-flex gap-2">
+                        <button id="tipoGastoSubmit" type="submit" class="btn btn-primary">Agregar</button>
+                        <button id="tipoGastoCancel" type="button" class="btn btn-outline-secondary d-none">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block th:replace="fragments/assets :: globalScripts"></th:block>
+<script src="/js/tipoGasto.js"></script>
+
+</body>
+</html>

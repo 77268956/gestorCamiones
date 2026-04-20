@@ -41,3 +41,5 @@ build/
 Thumbs.db
 
 *.sql
+*.csv
+*.json
