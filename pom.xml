@@ -64,6 +64,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Migraciones DB (versionado del esquema) -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
         <!-- Swagger / OpenAPI (estable, no M1) -->
         <dependency>
             <groupId>org.springdoc</groupId>
