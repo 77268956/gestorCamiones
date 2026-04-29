@@ -43,3 +43,6 @@ Thumbs.db
 *.sql
 *.csv
 *.json
+
+# Flyway migrations (deben versionarse en git)
+!src/main/resources/db/migration/*.sql
