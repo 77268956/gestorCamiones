@@ -9,14 +9,13 @@ import org.mapstruct.Mapping;
 public interface ViajeMapper {
 
     @Mapping(target = "idViaje", source = "idViaje")
-    @Mapping(target = "idCliente", source = "cliente.id")
     @Mapping(target = "tramos", ignore = true)
     CrearViajeDTO toCrearViajeDTO(Viaje viaje);
 
     @Mapping(target = "idViaje", source = "idViaje")
     @Mapping(target = "admin", ignore = true)
-    @Mapping(target = "cliente", ignore = true)
     @Mapping(target = "detalles", ignore = true)
+    @Mapping(target = "viajeLotes", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)

@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import java.time.LocalDateTime;
 
@@ -36,6 +35,9 @@ public class Usuario {
     private String telefono;
     private String dui;
 
+    @Column(unique = true)
+    private String correo;
+
     @Column(name = "foto_url")
     private String fotoUrl;
 
@@ -44,10 +46,6 @@ public class Usuario {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_rol", nullable = false)
     private Rol rol;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_camion")
-    private Camion camion;
 
     @OneToOne(mappedBy = "usuarioEntidad", fetch = FetchType.LAZY)
     private Login login;

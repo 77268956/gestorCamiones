@@ -22,6 +22,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Servicio para crear/actualizar tramos de viaje.
+ * Actualizado para V2: sin precioViaje, con campos de ubicacion.
+ */
 @Service
 public class ViajeDetallesService implements IViajeDetalleService {
 
@@ -106,7 +110,13 @@ public class ViajeDetallesService implements IViajeDetalleService {
         detalle.setIva(dto.isIva());
         detalle.setFechaSalida(dto.getFechaSalida());
         detalle.setFechaLlegada(dto.getFechaEntrada());
-        detalle.setPrecioViaje(dto.getPrecioViaje());
+
+        // Ubicación (V2)
+        detalle.setPaisSalida(dto.getPaisSalida());
+        detalle.setPaisDestino(dto.getPaisDestino());
+        detalle.setDireccionSalida(dto.getDireccionSalida());
+        detalle.setDireccionDestino(dto.getDireccionDestino());
+        detalle.setObservaciones(dto.getObservaciones());
 
         if (dto.getIdCamion() > 0) {
             detalle.setCamion(camionRepository.findById(dto.getIdCamion())
@@ -119,7 +129,8 @@ public class ViajeDetallesService implements IViajeDetalleService {
             detalle.setChofer(usuarioRepository.findById(dto.getIdConductor())
                     .orElseThrow(() -> new IllegalArgumentException("Conductor no encontrado")));
         } else {
-            detalle.setChofer(null);
+            // En V2 id_chofer es NOT NULL, el conductor es obligatorio
+            throw new IllegalArgumentException("El conductor es obligatorio");
         }
     }
 

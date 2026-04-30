@@ -112,6 +112,7 @@ public class CamionServicio implements ICamionService {
         camion.setEstadoCamion(dto.getEstadoCamion());
         camion.setModelo(dto.getModelo());
         camion.setComentario(dto.getComentario());
+        camion.setPrecioCompra(dto.getPrecioCompra());
         Camion camionGuardado = camionRepository.save(camion);
 
         JsonNode despuesJson = objectMapper.valueToTree(camionGuardado);

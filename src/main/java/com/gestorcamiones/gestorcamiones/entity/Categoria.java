@@ -10,34 +10,29 @@ import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 
+/**
+ * Categoria para clasificar lotes de carga.
+ * Tabla nueva en la version 2 de la base de datos.
+ */
 @Entity
-@Table(name = "clientes")
+@Table(name = "categoria")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@SQLDelete(sql = "UPDATE clientes SET deleted_at = CURRENT_TIMESTAMP WHERE id_cliente = ?")
+@SQLDelete(sql = "UPDATE categoria SET deleted_at = CURRENT_TIMESTAMP WHERE id_categoria = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class Cliente {
+public class Categoria {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_cliente")
-    private Long id;
+    @Column(name = "id_categoria")
+    private Long idCategoria;
 
     @Column(nullable = false)
     private String nombre;
 
-    private String telefono;
-
-    @Column(name = "direccion")
-    private String direccion;
-
-    @Column(name = "dui_nit", unique = true)
-    private String duiNit;
-
-    @Column(unique = true)
-    private String correo;
+    private String descripcion;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;

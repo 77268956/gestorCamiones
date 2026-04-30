@@ -1,7 +1,5 @@
 package com.gestorcamiones.gestorcamiones.repository;
 
-import com.gestorcamiones.gestorcamiones.dto.viaje.ListaViajesDTO;
-import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
 import com.gestorcamiones.gestorcamiones.entity.Viaje;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,13 +16,11 @@ public interface ViajeRepository extends JpaRepository<Viaje, Long> {
         SELECT DISTINCT v.*
         FROM viaje v
         LEFT JOIN viaje_detalle vd ON vd.id_viaje = v.id_viaje AND vd.deleted_at IS NULL
-        LEFT JOIN clientes c ON c.id_cliente = v.id_cliente AND c.deleted_at IS NULL
         LEFT JOIN usuarios u ON u.id_usuarios = v.id_admin AND u.deleted_at IS NULL
         WHERE v.deleted_at IS NULL
         AND (
             :texto IS NULL OR
             LOWER(v.nombre_viaje) LIKE LOWER(CONCAT('%', :texto, '%')) OR
-            LOWER(c.nombre) LIKE LOWER(CONCAT('%', :texto, '%')) OR
             LOWER(u.nombre) LIKE LOWER(CONCAT('%', :texto, '%'))
         )
         AND (
@@ -46,13 +42,11 @@ public interface ViajeRepository extends JpaRepository<Viaje, Long> {
         SELECT COUNT(DISTINCT v.id_viaje)
         FROM viaje v
         LEFT JOIN viaje_detalle vd ON vd.id_viaje = v.id_viaje AND vd.deleted_at IS NULL
-        LEFT JOIN clientes c ON c.id_cliente = v.id_cliente AND c.deleted_at IS NULL
         LEFT JOIN usuarios u ON u.id_usuarios = v.id_admin AND u.deleted_at IS NULL
         WHERE v.deleted_at IS NULL
         AND (
             :texto IS NULL OR
             LOWER(v.nombre_viaje) LIKE LOWER(CONCAT('%', :texto, '%')) OR
-            LOWER(c.nombre) LIKE LOWER(CONCAT('%', :texto, '%')) OR
             LOWER(u.nombre) LIKE LOWER(CONCAT('%', :texto, '%'))
         )
         AND (

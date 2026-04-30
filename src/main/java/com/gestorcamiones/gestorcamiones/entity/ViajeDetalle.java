@@ -1,8 +1,10 @@
 package com.gestorcamiones.gestorcamiones.entity;
 
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
+import com.gestorcamiones.gestorcamiones.entity.Enum.Pais;
 import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
 import com.gestorcamiones.gestorcamiones.entity.converter.EstadoViajeConverter;
+import com.gestorcamiones.gestorcamiones.entity.converter.PaisConverter;
 import com.gestorcamiones.gestorcamiones.entity.converter.TipoTramoConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -12,7 +14,6 @@ import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -53,7 +54,24 @@ public class ViajeDetalle {
 
     private Boolean iva = false;
 
-    private BigDecimal precioViaje;
+    // 🔹 Ubicación (nuevo en V2)
+
+    @Convert(converter = PaisConverter.class)
+    @Column(name = "pais_salida")
+    private Pais paisSalida;
+
+    @Convert(converter = PaisConverter.class)
+    @Column(name = "pais_destino")
+    private Pais paisDestino;
+
+    @Column(name = "direccion_salida")
+    private String direccionSalida;
+
+    @Column(name = "direccion_destino")
+    private String direccionDestino;
+
+    @Column(name = "observaciones")
+    private String observaciones;
 
     // Fechas
 
@@ -70,7 +88,7 @@ public class ViajeDetalle {
     private Camion camion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_chofer")
+    @JoinColumn(name = "id_chofer", nullable = false)
     private Usuario chofer;
 
     @OneToMany(mappedBy = "viajeDetalle", cascade = CascadeType.ALL)

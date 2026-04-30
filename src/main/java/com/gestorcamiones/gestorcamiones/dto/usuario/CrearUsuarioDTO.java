@@ -17,6 +17,7 @@ public class CrearUsuarioDTO {
     private String apellido;
     private String telefono;
     private String dui;
+    private String correo;
     private EstadoEmpleado estadoEmpleado;
 
     // Login
@@ -25,5 +26,4 @@ public class CrearUsuarioDTO {
 
     // Configuracion
     private Long id_rol;
-    private Long camionId;
 }

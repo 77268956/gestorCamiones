@@ -19,4 +19,5 @@ public class ClienteDTO {
     private String telefono;
     private String direccion;
     private String duiNit;
+    private String correo;
 }

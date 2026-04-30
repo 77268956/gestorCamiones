@@ -1,6 +1,7 @@
 package com.gestorcamiones.gestorcamiones.dto.auditoria;
 
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
+import com.gestorcamiones.gestorcamiones.entity.Enum.Pais;
 import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -15,6 +16,7 @@ import java.util.List;
  * Snapshot "plano" para auditoría de Viaje.
  * Evita serializar el grafo completo de entidades (y LazyInitializationException),
  * especialmente cadenas como Viaje.admin.rol.usuarios.
+ * Actualizado para V2: sin cliente directo, sin precioViaje, con ubicacion.
  */
 @Getter
 @Setter
@@ -27,9 +29,6 @@ public class ViajeAuditoriaDTO {
 
     private Long adminId;
     private String adminNombre;
-
-    private Long clienteId;
-    private String clienteNombre;
 
     private List<TramoAuditoriaDTO> tramos;
 
@@ -45,7 +44,13 @@ public class ViajeAuditoriaDTO {
         private Boolean pagado;
         private Boolean iva;
 
-        private BigDecimal precioViaje;
+        // Ubicación (V2)
+        private Pais paisSalida;
+        private Pais paisDestino;
+        private String direccionSalida;
+        private String direccionDestino;
+        private String observaciones;
+
         private LocalDateTime fechaSalida;
         private LocalDateTime fechaLlegada;
 
@@ -59,4 +64,3 @@ public class ViajeAuditoriaDTO {
         private BigDecimal gastoTotal;
     }
 }
-

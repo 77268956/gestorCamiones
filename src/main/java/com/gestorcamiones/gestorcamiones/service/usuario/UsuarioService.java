@@ -3,14 +3,12 @@ package com.gestorcamiones.gestorcamiones.service.usuario;
 import com.gestorcamiones.gestorcamiones.dto.usuario.CrearUsuarioDTO;
 import com.gestorcamiones.gestorcamiones.dto.usuario.EditarUsuarioDTO;
 import com.gestorcamiones.gestorcamiones.dto.usuario.UsuarioPerfilDTO;
-import com.gestorcamiones.gestorcamiones.entity.Camion;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoCuenta;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoEmpleado;
 import com.gestorcamiones.gestorcamiones.entity.Login;
 import com.gestorcamiones.gestorcamiones.entity.Rol;
 import com.gestorcamiones.gestorcamiones.entity.Usuario;
 import com.gestorcamiones.gestorcamiones.mapper.UsuarioMapper;
-import com.gestorcamiones.gestorcamiones.repository.CamionRepository;
 import com.gestorcamiones.gestorcamiones.repository.LoginRepository;
 import com.gestorcamiones.gestorcamiones.repository.RolRepository;
 import com.gestorcamiones.gestorcamiones.repository.UsuarioRepository;
@@ -22,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * Implementa la logica de negocio para administracion de usuarios y credenciales.
+ * Actualizado para V2: sin relacion directa con camion, campo correo agregado.
  */
 @Service
 public class UsuarioService implements IUsuarioService {
@@ -29,7 +28,6 @@ public class UsuarioService implements IUsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final LoginRepository loginRepository;
     private final RolRepository rolRepository;
-    private final CamionRepository camionRepository;
     private final PasswordEncoder passwordEncoder;
     private final UsuarioMapper usuarioMapper;
 
@@ -37,14 +35,12 @@ public class UsuarioService implements IUsuarioService {
             UsuarioRepository usuarioRepository,
             LoginRepository loginRepository,
             RolRepository rolRepository,
-            CamionRepository camionRepository,
             PasswordEncoder passwordEncoder,
             UsuarioMapper usuarioMapper
     ) {
         this.usuarioRepository = usuarioRepository;
         this.loginRepository = loginRepository;
         this.rolRepository = rolRepository;
-        this.camionRepository = camionRepository;
         this.passwordEncoder = passwordEncoder;
         this.usuarioMapper = usuarioMapper;
     }
@@ -79,20 +75,14 @@ public class UsuarioService implements IUsuarioService {
             throw new IllegalArgumentException("El estado del usuario esta vacio");
         }
 
-        Camion camion = null;
-        if (dto.getCamionId() != null) {
-            camion = camionRepository.findById(dto.getCamionId())
-                    .orElseThrow(() -> new IllegalArgumentException("Camion no encontrado"));
-        }
-
         Usuario usuario = new Usuario();
         usuario.setNombre(dto.getNombre());
         usuario.setApellido(dto.getApellido());
         usuario.setTelefono(dto.getTelefono());
         usuario.setDui(dto.getDui());
+        usuario.setCorreo(dto.getCorreo());
         usuario.setEstadoEmpleado(dto.getEstadoEmpleado());
         usuario.setRol(rol);
-        usuario.setCamion(camion);
 
         Usuario usuarioGuardado = usuarioRepository.save(usuario);
 
@@ -133,17 +123,11 @@ public class UsuarioService implements IUsuarioService {
         usuario.setApellido(dto.getApellido());
         usuario.setTelefono(dto.getTelefono());
         usuario.setDui(dto.getDui());
+        usuario.setCorreo(dto.getCorreo());
         if (dto.getEstadoEmpleado() != null) {
             usuario.setEstadoEmpleado(dto.getEstadoEmpleado());
         }
         usuario.setRol(rol);
-
-        Camion camion = null;
-        if (dto.getCamionId() != null) {
-            camion = camionRepository.findById(dto.getCamionId())
-                    .orElseThrow(() -> new IllegalArgumentException("Camion no encontrado"));
-        }
-        usuario.setCamion(camion);
 
         // cudardar el usuarios
         usuarioRepository.save(usuario);

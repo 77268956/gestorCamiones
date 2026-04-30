@@ -9,6 +9,7 @@ import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -36,6 +37,9 @@ public class Camion {
     private String modelo;
 
     private String comentario;
+
+    @Column(name = "precio_compra", precision = 12, scale = 2)
+    private BigDecimal precioCompra;
 
     @Column(name = "foto_url")
     private String fotoUrl;

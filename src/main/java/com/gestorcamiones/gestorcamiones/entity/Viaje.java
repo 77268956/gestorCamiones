@@ -36,16 +36,15 @@ public class Viaje {
     @JoinColumn(name = "id_admin", nullable = false)
     private Usuario admin;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_cliente", nullable = false)
-    private Cliente cliente;
-
     @OneToMany(
             mappedBy = "viaje",
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
     private List<ViajeDetalle> detalles = new ArrayList<>();
+
+    @OneToMany(mappedBy = "viaje", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ViajeLote> viajeLotes = new ArrayList<>();
 
     // 🔹 Auditoría
 

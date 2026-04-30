@@ -14,7 +14,6 @@ import com.gestorcamiones.gestorcamiones.entity.*;
 import com.gestorcamiones.gestorcamiones.entity.Enum.AccionAuditoria;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
 import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
-import com.gestorcamiones.gestorcamiones.repository.ClienteRepository;
 import com.gestorcamiones.gestorcamiones.repository.ViajeRepository;
 import com.gestorcamiones.gestorcamiones.service.auditoria.AuditoriaDetalladaService;
 import jakarta.transaction.Transactional;
@@ -27,20 +26,24 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Servicio de viajes actualizado para V2.
+ * Ya no hay relacion directa viaje-cliente (se maneja via lotes).
+ * precioViaje fue eliminado de viaje_detalle.
+ */
 @Service
 public class ViajeService implements IViajeService {
 
     private ViajeRepository viajeRepository;
-    private ClienteRepository clienteRepository;
     private ViajeDetallesService viajeDetallesService;
     private final AuditoriaDetalladaService auditori;
     private final ObjectMapper objectMapper;
 
     public ViajeService(ViajeRepository viajeRepository,
-                        ClienteRepository clienteRepository,
-                        ViajeDetallesService viajeDetallesService, AuditoriaDetalladaService auditori, ObjectMapper objectMapper) {
+                        ViajeDetallesService viajeDetallesService,
+                        AuditoriaDetalladaService auditori,
+                        ObjectMapper objectMapper) {
         this.viajeRepository = viajeRepository;
-        this.clienteRepository = clienteRepository;
         this.viajeDetallesService = viajeDetallesService;
         this.auditori = auditori;
         this.objectMapper = objectMapper;
@@ -77,50 +80,34 @@ public class ViajeService implements IViajeService {
                 dto.setId_admin(viaje.getAdmin().getIdUsuarios());
             }
 
-            // cliente
-            if (viaje.getCliente() != null) {
-                dto.setNombreEmpleado(viaje.getCliente().getNombre());
-                dto.setId_chofer(viaje.getCliente().getId());
-            }
-
             // separar IDA y VUELTA
             List<DetalleViajeDTO> ida = new ArrayList<>();
             List<DetalleViajeDTO> vuelta = new ArrayList<>();
 
-            BigDecimal totalGenetado = BigDecimal.ZERO;
-            BigDecimal gananciaTotal = BigDecimal.ZERO;
             BigDecimal gastoTotal = BigDecimal.ZERO;
 
-            int condador =0;
+            int condador = 0;
             for (ViajeDetalle detalle : viaje.getDetalles()) {
 
                 // separar por tipo
                 DetalleViajeDTO detalleDTO = toDetalleDTO(detalle);
                 if (detalle.getTipoTramo() == TipoTramo.ida) {
                     ida.add(detalleDTO);
-
                 } else if (detalle.getTipoTramo() == TipoTramo.vuelta) {
                     vuelta.add(detalleDTO);
                 }
 
-
-                if (detalle.getPrecioViaje() != null) {
-                    totalGenetado = totalGenetado.add(detalle.getPrecioViaje());
-                }
-
                 if (detalle.getGastos() != null) {
-                    for (GastoViaje gastos: detalle.getGastos()){
+                    for (GastoViaje gastos : detalle.getGastos()) {
                         if (gastos.getMonto() != null) {
                             gastoTotal = gastoTotal.add(gastos.getMonto());
                         }
                     }
                 }
-                gananciaTotal = totalGenetado.subtract(gastoTotal);
 
                 if (detalle.getEstado() != EstadoViaje.cancelado && detalle.getEstado() != EstadoViaje.completado) {
-                   dto.setViajesActivos(condador++);
+                    dto.setViajesActivos(condador++);
                 }
-
             }
 
             dto.setListaIDa(ida);
@@ -128,8 +115,6 @@ public class ViajeService implements IViajeService {
 
             dto.setViajesTotales(ida.size() + vuelta.size());
 
-            dto.setIngresoTotal(totalGenetado);
-            dto.setGanaciaTotal(gananciaTotal);
             dto.setGastoTotal(gastoTotal);
 
             return dto;
@@ -152,13 +137,9 @@ public class ViajeService implements IViajeService {
 
     private Viaje guardarViaje(ViajeUpsertDTO dto, Usuario usuario) {
 
-        Cliente cliente = clienteRepository.findById(dto.getIdCliente())
-                .orElseThrow(() -> new IllegalArgumentException("Cliente no encontrado"));
-
         Viaje viaje = new Viaje();
         viaje.setNombreViaje(dto.getNombreViaje());
         viaje.setAdmin(usuario);
-        viaje.setCliente(cliente);
         viajeRepository.save(viaje);
 
         // Auditoría: usar snapshot DTO para evitar serialización del grafo completo (lazy init).
@@ -189,13 +170,7 @@ public class ViajeService implements IViajeService {
         JsonNode antesJson = objectMapper.valueToTree(toAuditoriaDTO(viaje));
 
         viaje.setNombreViaje(dto.getNombreViaje());
-
         viaje.setAdmin(usuario);
-        if (dto.getIdCliente() > 0) {
-            Cliente cliente = clienteRepository.findById(dto.getIdCliente())
-                    .orElseThrow(() -> new IllegalArgumentException("Cliente no encontrado"));
-            viaje.setCliente(cliente);
-        }
 
         if (dto.getTramos() != null) {
             viajeDetallesService.actualizarTramos(dto.getTramos(), viaje, usuario);
@@ -223,10 +198,6 @@ public class ViajeService implements IViajeService {
         ViajeUpsertDTO dto = new ViajeUpsertDTO();
         dto.setIdViaje(viaje.getIdViaje());
         dto.setNombreViaje(viaje.getNombreViaje());
-        if (viaje.getCliente() != null) {
-            dto.setIdCliente(viaje.getCliente().getId());
-            dto.setClienteNombre(viaje.getCliente().getNombre());
-        }
 
         List<TramoDTO> tramos = new ArrayList<>();
         for (ViajeDetalle detalle : viaje.getDetalles()) {
@@ -236,9 +207,15 @@ public class ViajeService implements IViajeService {
             tramo.setEstadoViaje(detalle.getEstado());
             tramo.setPagado(Boolean.TRUE.equals(detalle.getPagado()));
             tramo.setIva(Boolean.TRUE.equals(detalle.getIva()));
-            tramo.setPrecioViaje(detalle.getPrecioViaje());
             tramo.setFechaSalida(detalle.getFechaSalida());
             tramo.setFechaEntrada(detalle.getFechaLlegada());
+
+            // Ubicación (V2)
+            tramo.setPaisSalida(detalle.getPaisSalida());
+            tramo.setPaisDestino(detalle.getPaisDestino());
+            tramo.setDireccionSalida(detalle.getDireccionSalida());
+            tramo.setDireccionDestino(detalle.getDireccionDestino());
+            tramo.setObservaciones(detalle.getObservaciones());
 
             if (detalle.getCamion() != null) {
                 tramo.setIdCamion(detalle.getCamion().getIdCamion());
@@ -287,7 +264,14 @@ public class ViajeService implements IViajeService {
         dto.setEstadoViaje(detalle.getEstado());
         dto.setPagado(detalle.getPagado());
         dto.setIva(detalle.getIva());
-        dto.setPrecioViaje(detalle.getPrecioViaje());
+
+        // Ubicación (V2)
+        dto.setPaisSalida(detalle.getPaisSalida());
+        dto.setPaisDestino(detalle.getPaisDestino());
+        dto.setDireccionSalida(detalle.getDireccionSalida());
+        dto.setDireccionDestino(detalle.getDireccionDestino());
+        dto.setObservaciones(detalle.getObservaciones());
+
         BigDecimal gastosTotal = BigDecimal.ZERO;
         if (detalle.getGastos() != null) {
             for (GastoViaje gasto : detalle.getGastos()) {
@@ -297,11 +281,8 @@ public class ViajeService implements IViajeService {
             }
         }
         dto.setGastoTotal(gastosTotal);
-        if (detalle.getPrecioViaje() != null) {
-            dto.setGananciaTotal(detalle.getPrecioViaje().subtract(gastosTotal));
-        } else {
-            dto.setGananciaTotal(gastosTotal.negate());
-        }
+        dto.setGananciaTotal(gastosTotal.negate());
+
         dto.setFechaSalida(detalle.getFechaSalida());
         dto.setFechaEntrada(detalle.getFechaLlegada());
         if (detalle.getCamion() != null) {
@@ -334,11 +315,6 @@ public class ViajeService implements IViajeService {
             dto.setAdminNombre((nombre + " " + apellido).trim());
         }
 
-        if (viaje.getCliente() != null) {
-            dto.setClienteId(viaje.getCliente().getId());
-            dto.setClienteNombre(viaje.getCliente().getNombre());
-        }
-
         if (viaje.getDetalles() != null) {
             List<ViajeAuditoriaDTO.TramoAuditoriaDTO> tramos = new ArrayList<>();
             for (ViajeDetalle detalle : viaje.getDetalles()) {
@@ -361,7 +337,14 @@ public class ViajeService implements IViajeService {
         dto.setEstado(detalle.getEstado());
         dto.setPagado(detalle.getPagado());
         dto.setIva(detalle.getIva());
-        dto.setPrecioViaje(detalle.getPrecioViaje());
+
+        // Ubicación (V2)
+        dto.setPaisSalida(detalle.getPaisSalida());
+        dto.setPaisDestino(detalle.getPaisDestino());
+        dto.setDireccionSalida(detalle.getDireccionSalida());
+        dto.setDireccionDestino(detalle.getDireccionDestino());
+        dto.setObservaciones(detalle.getObservaciones());
+
         dto.setFechaSalida(detalle.getFechaSalida());
         dto.setFechaLlegada(detalle.getFechaLlegada());
 

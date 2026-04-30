@@ -14,8 +14,5 @@ public interface UsuarioMapper {
     @Mapping(target = "rol", source = "rol.rol")
     @Mapping(target = "rolId", source = "rol.idRol")
     @Mapping(target = "estado", source = "estadoEmpleado")
-    @Mapping(target = "camionId", source = "camion.idCamion")
-    @Mapping(target = "camionPlaca", source = "camion.placa")
-    @Mapping(target = "camionModelo", source = "camion.modelo")
     UsuarioPerfilDTO mapToPerfilDTO(Usuario usuario);
 }
