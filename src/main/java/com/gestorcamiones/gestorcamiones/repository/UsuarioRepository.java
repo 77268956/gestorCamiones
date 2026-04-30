@@ -23,7 +23,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     boolean existsByNombre(String nombre);
 
-    @EntityGraph(attributePaths = {"rol", "login", "camion"})
+    // V2: el usuario ya no tiene relacion con camion. Solo cargamos rol y login.
+    @EntityGraph(attributePaths = {"rol", "login"})
     @Query("""
             select u
             from Usuario u
