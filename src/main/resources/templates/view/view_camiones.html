@@ -47,13 +47,14 @@
                     <th>Placa</th>
                     <th>Modelo</th>
                     <th>Nombre</th>
+                    <th>Precio compra</th>
                     <th>Estado</th>
                     <th class="text-center">Acciones</th>
                 </tr>
                 </thead>
                 <tbody id="tablaCamiones">
                 <tr>
-                    <td colspan="6" class="text-center">Cargando camiones...</td>
+                    <td colspan="7" class="text-center">Cargando camiones...</td>
                 </tr>
                 </tbody>
             </table>
@@ -132,6 +133,11 @@
                                 </select>
                             </div>
 
+                            <div class="col-md-6">
+                                <label for="camionPrecioCompra" class="form-label">Precio de compra</label>
+                                <input type="number" class="form-control mp-modal-input" id="camionPrecioCompra" name="precioCompra" step="0.01" min="0" placeholder="0.00">
+                            </div>
+
                             <div class="col-12">
                                 <label for="camionComentario" class="form-label">Comentarios / Observaciones</label>
                                 <textarea id="camionComentario" name="comentario" class="form-control mp-modal-input" rows="4" placeholder="Detalles tecnicos o notas adicionales..."></textarea>
@@ -168,6 +174,70 @@
             <div class="modal-footer mp-modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button id="btnSubmitCamionModal" type="submit" form="formAgregarCamion" class="btn btn-add">Registrar Camion</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Gastos del camion -->
+<div class="modal fade" id="modalGastosCamion" tabindex="-1" aria-labelledby="modalGastosCamionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content mp-modal-content">
+            <div class="modal-header mp-modal-header">
+                <h5 class="modal-title" id="modalGastosCamionLabel">Gastos del camion</h5>
+                <button type="button" class="btn-close mp-modal-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 align-items-end mb-3">
+                    <input type="hidden" id="gastoCamionIdEdit" value="">
+                    <div class="col-12 col-md-4">
+                        <label class="form-label" for="gastoCamionTipo">Tipo de gasto *</label>
+                        <select id="gastoCamionTipo" class="form-select mp-modal-input" required></select>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <label class="form-label" for="gastoCamionMonto">Monto *</label>
+                        <input id="gastoCamionMonto" type="number" class="form-control mp-modal-input" step="0.01" min="0" placeholder="0.00" required>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label" for="gastoCamionFecha">Fecha</label>
+                        <input id="gastoCamionFecha" type="date" class="form-control mp-modal-input">
+                    </div>
+                    <div class="col-12 col-md-3 d-grid">
+                        <button id="btnAgregarGastoCamion" type="button" class="btn btn-add">Agregar gasto</button>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="gastoCamionDescripcion">Descripcion</label>
+                        <input id="gastoCamionDescripcion" type="text" class="form-control mp-modal-input" placeholder="Ej: Cambio de aceite">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="gastoCamionEvidencia">Evidencia (archivo)</label>
+                        <input id="gastoCamionEvidencia" type="file" class="form-control mp-modal-input" accept="image/*,.pdf">
+                    </div>
+                    <div class="col-12 d-flex justify-content-end">
+                        <button id="btnCancelarEdicionGastoCamion" type="button" class="btn btn-outline-secondary d-none">Cancelar edicion</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table mp-table">
+                        <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Descripcion</th>
+                            <th>Monto</th>
+                            <th>Fecha</th>
+                            <th>Evidencia</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaGastosCamion">
+                        <tr><td colspan="6" class="text-center">Cargando gastos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer mp-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>

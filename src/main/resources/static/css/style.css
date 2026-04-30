@@ -425,6 +425,43 @@ a:hover      { color: var(--mp-orange); }
 }
 .btn-del:hover { background: #fca5a5; color: #7f1d1d; }
 
+.btn-gastos {
+    background: #e0e7ff;
+    color: #1e3a8a;
+    border: none;
+    border-radius: 7px;
+    padding: .28rem .75rem;
+    font-size: .82rem;
+    font-weight: 600;
+    transition: .15s;
+}
+.btn-gastos:hover { background: #c7d2fe; color: #1e3a8a; }
+
+.btn-del-gasto-camion {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: none;
+    border-radius: 7px;
+    padding: .22rem .65rem;
+    font-size: .8rem;
+    font-weight: 600;
+    transition: .15s;
+}
+.btn-del-gasto-camion:hover { background: #fca5a5; color: #7f1d1d; }
+
+.btn-edit-gasto-camion {
+    background: var(--mp-blue);
+    color: var(--mp-white);
+    border: none;
+    border-radius: 7px;
+    padding: .22rem .65rem;
+    font-size: .8rem;
+    font-weight: 600;
+    transition: .15s;
+    margin-right: 6px;
+}
+.btn-edit-gasto-camion:hover { background: var(--mp-blue-light); color: var(--mp-white); }
+
 /* ═══════════════════════════════════════
    FOOTER DE TABLA
 ═══════════════════════════════════════ */
