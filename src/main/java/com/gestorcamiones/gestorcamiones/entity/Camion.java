@@ -6,8 +6,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -45,7 +47,8 @@ public class Camion {
     private String fotoUrl;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "estado", nullable = false, columnDefinition = "estado_camion_enum")
     private EstadoCamion estadoCamion;
 
     @Column(name = "created_at", insertable = false, updatable = false)

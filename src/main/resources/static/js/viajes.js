@@ -29,12 +29,167 @@ document.addEventListener("DOMContentLoaded", () => {
         vuelta: {detalleId: 0, gastos: [], editIndex: null}
     };
 
+    // V2: lotes state
+    let lotesDisponibles = [];
+    let lotesSeleccionados = [];
+    let loteIdsPendientes = [];
+    let paisesCargados = false;
+    let lotesCargados = false;
+
+    const getLoteId = lote => Number(lote?.idLote ?? lote?.id_lote ?? lote?.id);
+
+    const renderLoteSelect = () => {
+        const select = document.getElementById("loteSelect");
+        if (!select) return;
+        const selectedIds = new Set(lotesSeleccionados.map(getLoteId).filter(Boolean));
+        const disponibles = Array.isArray(lotesDisponibles) ? lotesDisponibles : [];
+
+        const current = select.value;
+        select.innerHTML = "";
+
+        const optPlaceholder = document.createElement("option");
+        optPlaceholder.value = "";
+        optPlaceholder.textContent = "Seleccione un lote";
+        select.appendChild(optPlaceholder);
+
+        const opts = disponibles
+            .filter(l => !selectedIds.has(getLoteId(l)))
+
+        if (!opts.length) {
+            const optEmpty = document.createElement("option");
+            optEmpty.value = "";
+            optEmpty.disabled = true;
+            optEmpty.textContent = "No hay lotes disponibles";
+            select.appendChild(optEmpty);
+        } else {
+            opts.forEach(lote => {
+                const id = getLoteId(lote);
+                if (!id) return;
+                const opt = document.createElement("option");
+                opt.value = String(id);
+                const numero = lote?.numeroLote || `Lote #${id}`;
+                const estado = lote?.estado ? ` (${String(lote.estado).replaceAll("_", " ")})` : "";
+                opt.textContent = `${numero}${estado}`;
+                select.appendChild(opt);
+            });
+        }
+
+        if (current) select.value = current;
+    };
+
+    const renderLotesAsociados = () => {
+        const cont = document.getElementById("lotesAsociados");
+        if (!cont) return;
+
+        cont.innerHTML = "";
+        if (!lotesSeleccionados.length) {
+            renderLoteSelect();
+            actualizarResumen();
+            return;
+        }
+
+        lotesSeleccionados.forEach(lote => {
+            const id = getLoteId(lote);
+            const numero = lote?.numeroLote || `Lote #${id || "-"}`;
+            const chip = document.createElement("span");
+            chip.className = "badge bg-primary d-inline-flex align-items-center gap-2";
+            chip.style.cursor = "default";
+            chip.textContent = numero;
+
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "btn btn-sm btn-light";
+            btn.textContent = "x";
+            btn.setAttribute("aria-label", `Quitar ${numero}`);
+            btn.addEventListener("click", () => {
+                lotesSeleccionados = lotesSeleccionados.filter(l => getLoteId(l) !== id);
+                renderLotesAsociados();
+            });
+
+            chip.appendChild(btn);
+            cont.appendChild(chip);
+        });
+
+        renderLoteSelect();
+        actualizarResumen();
+    };
+
+    const syncLotesPendientes = () => {
+        if (!loteIdsPendientes.length) return;
+        const ids = new Set(loteIdsPendientes.map(Number).filter(Boolean));
+        lotesSeleccionados = (Array.isArray(lotesDisponibles) ? lotesDisponibles : [])
+            .filter(l => ids.has(getLoteId(l)));
+        // Si algún id no aparece en la lista, igual lo preservamos para no perderlo al guardar
+        ids.forEach(id => {
+            if (lotesSeleccionados.some(l => getLoteId(l) === id)) return;
+            lotesSeleccionados.push({idLote: id, numeroLote: `Lote #${id}`});
+        });
+        loteIdsPendientes = [];
+        renderLotesAsociados();
+    };
+
+    const cargarLotesDisponibles = async () => {
+        if (lotesCargados) return;
+        try {
+            const res = await fetch("/api/lotes", {credentials: "same-origin"});
+            if (!res.ok) throw new Error("No se pudieron cargar lotes");
+            const contentType = res.headers.get("content-type") || "";
+            if (!contentType.includes("application/json")) {
+                throw new Error("Respuesta invalida al cargar lotes (sesion expirada o endpoint bloqueado)");
+            }
+            const data = await res.json();
+            lotesDisponibles = Array.isArray(data) ? data : [];
+            lotesCargados = true;
+            syncLotesPendientes();
+            renderLoteSelect();
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const cargarPaises = async () => {
+        if (paisesCargados) return;
+        try {
+            const res = await fetch("/api/viajes/paises", {credentials: "same-origin"});
+            if (!res.ok) throw new Error("No se pudieron cargar paises");
+            const paises = await res.json();
+            const ids = ["idaPaisSalida", "idaPaisDestino", "vueltaPaisSalida", "vueltaPaisDestino"];
+            ids.forEach(id => {
+                const select = document.getElementById(id);
+                if (!select) return;
+                const current = select.value;
+                select.innerHTML = '<option value="">Seleccione</option>';
+                (Array.isArray(paises) ? paises : []).forEach(p => {
+                    const opt = document.createElement("option");
+                    opt.value = p;
+                    opt.textContent = p;
+                    select.appendChild(opt);
+                });
+                if (current) select.value = current;
+            });
+            paisesCargados = true;
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    // El selector de lotes se usa como atajo visual (y para accesibilidad).
+    // La asociacion real se hace desde el modal de lotes.
+
     const resetFormulario = () => {
         viajeForm?.reset();
-        ["clienteId", "idaCamionId", "idaChoferId", "vueltaCamionId", "vueltaChoferId"].forEach(id => {
+        ["idaCamionId", "idaChoferId", "vueltaCamionId", "vueltaChoferId"].forEach(id => {
             const input = document.getElementById(id);
             if (input) input.value = "";
         });
+        // Reset location fields
+        ["idaPaisSalida","idaPaisDestino","idaDireccionSalida","idaDireccionDestino","idaObservaciones",
+         "vueltaPaisSalida","vueltaPaisDestino","vueltaDireccionSalida","vueltaDireccionDestino","vueltaObservaciones"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = "";
+        });
+        lotesSeleccionados = [];
+        renderLotesAsociados();
         state.ida.gastos = [];
         state.vuelta.gastos = [];
         state.ida.detalleId = 0;
@@ -42,9 +197,11 @@ document.addEventListener("DOMContentLoaded", () => {
         renderGastos("ida");
         renderGastos("vuelta");
         actualizarDuraciones();
+        const btnEliminar = document.getElementById("btnEliminarViaje");
+        if (btnEliminar) btnEliminar.style.display = "none";
         if (usarMismosDatos) {
             usarMismosDatos.checked = false;
-            const camposVuelta = document.querySelectorAll("#tab-vuelta input, #tab-vuelta select, #tab-vuelta button");
+            const camposVuelta = document.querySelectorAll("#tab-vuelta input, #tab-vuelta select, #tab-vuelta button, #tab-vuelta textarea");
             camposVuelta.forEach(el => {
                 if (!el.classList.contains("tab-button")) el.disabled = false;
             });
@@ -56,6 +213,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (estadoGuardado) estadoGuardado.textContent = "";
         if (!tiposGastoCargados) cargarTiposGasto();
         if (!estadosViajeCargados) cargarEstadosViaje();
+        if (!paisesCargados) cargarPaises();
+        cargarLotesDisponibles();
         if (modalTitle) {
             modalTitle.textContent = viajeId ? "Editar viaje" : "Agregar viaje";
         }
@@ -80,6 +239,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (viajeViewBody) viajeViewBody.innerHTML = "Cargando...";
         if (viewModalTitle) viewModalTitle.textContent = "Detalle del viaje";
         try {
+            // Para mostrar numeros de lote en el detalle, intentamos tener el catalogo cargado.
+            await cargarLotesDisponibles();
             await renderViajeDetalleView(viajeId);
         } catch (error) {
             console.error(error);
@@ -218,37 +379,24 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const actualizarResumen = () => {
-        const ingresoIda = parseNumber(document.getElementById("idaIngreso")?.value);
-        const ingresoVuelta = parseNumber(document.getElementById("vueltaIngreso")?.value);
-        const totalIngresos = ingresoIda + ingresoVuelta;
+        const gastosIda = state.ida.gastos.reduce((sum, g) => sum + g.monto, 0);
+        const gastosVuelta = state.vuelta.gastos.reduce((sum, g) => sum + g.monto, 0);
+        const totalGastos = gastosIda + gastosVuelta;
 
-        const totalGastos = state.ida.gastos.reduce((sum, g) => sum + g.monto, 0)
-            + state.vuelta.gastos.reduce((sum, g) => sum + g.monto, 0);
-
-        const totalGenerado = document.getElementById("totalGenerado");
+        const elGastosIda = document.getElementById("resumenGastosIda");
+        const elGastosVuelta = document.getElementById("resumenGastosVuelta");
         const totalGastado = document.getElementById("totalGastado");
-        const totalGanancia = document.getElementById("totalGanancia");
-        if (totalGenerado) totalGenerado.textContent = formatMoney(totalIngresos);
+        const resumenLotes = document.getElementById("resumenLotes");
+        if (elGastosIda) elGastosIda.textContent = formatMoney(gastosIda);
+        if (elGastosVuelta) elGastosVuelta.textContent = formatMoney(gastosVuelta);
         if (totalGastado) totalGastado.textContent = formatMoney(totalGastos);
-        if (totalGanancia) totalGanancia.textContent = formatMoney(totalIngresos - totalGastos);
+        if (resumenLotes) resumenLotes.textContent = String(lotesSeleccionados.length);
 
         const idaTotal = document.getElementById("idaTotalGastos");
         const vueltaTotal = document.getElementById("vueltaTotalGastos");
-        if (idaTotal) {
-            idaTotal.textContent = formatMoney(
-                state.ida.gastos.reduce((sum, g) => sum + g.monto, 0)
-            );
-        }
-        if (vueltaTotal) {
-            vueltaTotal.textContent = formatMoney(
-                state.vuelta.gastos.reduce((sum, g) => sum + g.monto, 0)
-            );
-        }
+        if (idaTotal) idaTotal.textContent = formatMoney(gastosIda);
+        if (vueltaTotal) vueltaTotal.textContent = formatMoney(gastosVuelta);
     };
-
-    ["idaIngreso", "vueltaIngreso"].forEach(id => {
-        document.getElementById(id)?.addEventListener("input", actualizarResumen);
-    });
 
     const renderGastos = tramo => {
         const tbody = document.getElementById(`${tramo}GastosBody`);
@@ -362,16 +510,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const modalBuscarCamion = document.getElementById("modalBuscarCamionViaje");
     const modalBuscarCliente = document.getElementById("modalBuscarClienteViaje");
     const modalBuscarChofer = document.getElementById("modalBuscarChoferViaje");
+    const modalBuscarLote = document.getElementById("modalBuscarLoteViaje");
 
     const paginacionCamionesModal = {page: 0, size: 10, totalPages: 1, totalElements: 0, sort: "idCamion,desc"};
     const filtrosCamionesModal = {q: "", estado: ""};
     let camionesModalCache = [];
     let debounceCamionesModal = null;
 
-    const paginacionClientesModal = {page: 0, size: 10, totalPages: 1, totalElements: 0};
-    const filtrosClientesModal = {q: ""};
-    let clientesModalCache = [];
-    let debounceClientesModal = null;
+
 
     const paginacionChoferesModal = {page: 0, size: 10, totalPages: 1, totalElements: 0};
     const filtrosChoferesModal = {q: "", estado: ""};
@@ -463,23 +609,10 @@ document.addEventListener("DOMContentLoaded", () => {
         listaViajes.innerHTML = viajesCache.map(viaje => {
             const ida = Array.isArray(viaje.listaIDa) ? viaje.listaIDa[0] : null;
             const vuelta = Array.isArray(viaje.listaVuelta) ? viaje.listaVuelta[0] : null;
-            const cliente = viaje.nombreEmpleado || "-";
-            const ingresoNumero = parseNumber(viaje.ingresoTotal);
             const gastoNumero = parseNumber(viaje.gastoTotal);
-            const gananciaNumero = parseNumber(viaje.ganaciaTotal);
-            const ingresoTotal = formatMoney(ingresoNumero);
             const gastoTotal = formatMoney(gastoNumero);
-            const gananciaTotal = formatMoney(gananciaNumero);
-            const idaIngreso = formatMoney(parseNumber(ida?.precioViaje));
-            const vueltaIngreso = formatMoney(parseNumber(vuelta?.precioViaje));
-            const idaGastos = formatMoney(parseNumber(ida?.gastoTotal));
-            const vueltaGastos = formatMoney(parseNumber(vuelta?.gastoTotal));
-            const idaGanancia = formatMoney(parseNumber(ida?.gananciaTotal));
-            const vueltaGanancia = formatMoney(parseNumber(vuelta?.gananciaTotal));
             const idViaje = viaje.id_viaje ?? viaje.idViaje ?? "";
-            ingresosPagina += ingresoNumero;
             gastosPagina += gastoNumero;
-            gananciaPagina += gananciaNumero;
             if (isActivo(ida) || isActivo(vuelta)) {
                 activosPagina += 1;
             }
@@ -488,10 +621,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const estadoVueltaKey = String(vuelta?.estadoViaje || "").toLowerCase().replaceAll(" ", "_");
             const estadoIdaLabel = String(ida?.estadoViaje || "-").replaceAll("_", " ");
             const estadoVueltaLabel = String(vuelta?.estadoViaje || "-").replaceAll("_", " ");
-            const idaFechaSalida = formatDateOnly(ida?.fechaSalida);
-            const vueltaFechaSalida = formatDateOnly(vuelta?.fechaSalida);
+            const idaFechaSalida = formatDateTimeHuman(ida?.fechaSalida);
+            const idaFechaLlegada = formatDateTimeHuman(ida?.fechaEntrada);
+            const vueltaFechaSalida = formatDateTimeHuman(vuelta?.fechaSalida);
+            const vueltaFechaLlegada = formatDateTimeHuman(vuelta?.fechaEntrada);
             const headerEstadoKey = estadoIdaKey || estadoVueltaKey;
             const headerFecha = ida?.fechaSalida ? idaFechaSalida : (vuelta?.fechaSalida ? vueltaFechaSalida : "-");
+
+            const lotes = Array.isArray(viaje.lotes) ? viaje.lotes : [];
+            const totalLotes = Number(viaje.totalLotes ?? lotes.length) || lotes.length;
+            const lotesTransito = lotes.filter(l => String(l?.estado || "").toLowerCase() === "en_transito").length;
 
             return `
     <div class="trip-card trip-card-action" role="button" tabindex="0" data-viaje-id="${escapeHtml(idViaje)}">
@@ -501,7 +640,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="trip-card-title">${escapeHtml(viaje.nombreVieje || "Sin nombre")}</div>
             </div>
             <div class="trip-card-date">
-                <span>Fecha del viaje</span>
+                <span>Salida</span>
                 <span class="status-badge ${headerEstadoKey ? `status-${escapeHtml(headerEstadoKey)}` : ""}">
                     ${escapeHtml(headerFecha)}
                 </span>
@@ -521,10 +660,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             <span class="trip-leg-value">${escapeHtml(ida?.conductorNombre || "-")}</span>
                         </div>
                         <div class="trip-leg-row">
-                            <span class="trip-leg-label">Cliente</span>
-                            <span class="trip-leg-value">${escapeHtml(cliente)}</span>
-                        </div>
-                        <div class="trip-leg-row">
                             <span class="trip-leg-label">Estado</span>
                             <span class="status-badge ${estadoIdaKey ? `status-${escapeHtml(estadoIdaKey)}` : ""}">
                                 ${escapeHtml(estadoIdaLabel)}
@@ -536,20 +671,19 @@ document.addEventListener("DOMContentLoaded", () => {
                                 ${escapeHtml(idaFechaSalida)}
                             </span>
                         </div>
+                        <div class="trip-leg-row">
+                            <span class="trip-leg-label">Llegada</span>
+                            <span class="trip-leg-value">${escapeHtml(idaFechaLlegada)}</span>
+                        </div>
+                        <div class="trip-leg-row">
+                            <span class="trip-leg-label">Ruta</span>
+                            <span class="trip-leg-value">${escapeHtml([ida?.paisSalida, ida?.paisDestino].filter(Boolean).join(" → ") || "-")}</span>
+                        </div>
                     </div>
                     <div class="trip-leg-stats">
-                        <div class="trip-metric-title">Estadisticas del ida</div>
-                        <div class="trip-metric-item">
-                            <span>Ingresos</span>
-                            <span>${idaIngreso}</span>
-                        </div>
                         <div class="trip-metric-item">
                             <span>Gastos</span>
-                            <span>${idaGastos}</span>
-                        </div>
-                        <div class="trip-metric-item">
-                            <span>Ganancia</span>
-                            <span>${idaGanancia}</span>
+                            <span>${formatMoney(parseNumber(ida?.gastoTotal))}</span>
                         </div>
                     </div>
                 </div>
@@ -566,10 +700,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             <span class="trip-leg-value">${escapeHtml(vuelta?.conductorNombre || "-")}</span>
                         </div>
                         <div class="trip-leg-row">
-                            <span class="trip-leg-label">Cliente</span>
-                            <span class="trip-leg-value">${escapeHtml(cliente)}</span>
-                        </div>
-                        <div class="trip-leg-row">
                             <span class="trip-leg-label">Estado</span>
                             <span class="status-badge ${estadoVueltaKey ? `status-${escapeHtml(estadoVueltaKey)}` : ""}">
                                 ${escapeHtml(estadoVueltaLabel)}
@@ -581,20 +711,19 @@ document.addEventListener("DOMContentLoaded", () => {
                                 ${escapeHtml(vueltaFechaSalida)}
                             </span>
                         </div>
+                        <div class="trip-leg-row">
+                            <span class="trip-leg-label">Llegada</span>
+                            <span class="trip-leg-value">${escapeHtml(vueltaFechaLlegada)}</span>
+                        </div>
+                        <div class="trip-leg-row">
+                            <span class="trip-leg-label">Ruta</span>
+                            <span class="trip-leg-value">${escapeHtml([vuelta?.paisSalida, vuelta?.paisDestino].filter(Boolean).join(" → ") || "-")}</span>
+                        </div>
                     </div>
                     <div class="trip-leg-stats">
-                        <div class="trip-metric-title">Estadisticas del vuelta</div>
-                        <div class="trip-metric-item">
-                            <span>Ingresos</span>
-                            <span>${vueltaIngreso}</span>
-                        </div>
                         <div class="trip-metric-item">
                             <span>Gastos</span>
-                            <span>${vueltaGastos}</span>
-                        </div>
-                        <div class="trip-metric-item">
-                            <span>Ganancia</span>
-                            <span>${vueltaGanancia}</span>
+                            <span>${formatMoney(parseNumber(vuelta?.gastoTotal))}</span>
                         </div>
                     </div>
                 </div>
@@ -603,16 +732,16 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="trip-total">
                 <div class="trip-total-title">Total</div>
                 <div class="trip-metric-item">
-                    <span>Ingresos</span>
-                    <span>${ingresoTotal}</span>
-                </div>
-                <div class="trip-metric-item">
                     <span>Gastos</span>
                     <span>${gastoTotal}</span>
                 </div>
                 <div class="trip-metric-item">
-                    <span>Ganancia</span>
-                    <span>${gananciaTotal}</span>
+                    <span>Lotes</span>
+                    <span>${escapeHtml(String(totalLotes))}</span>
+                </div>
+                <div class="trip-metric-item">
+                    <span>Lotes en transito</span>
+                    <span>${escapeHtml(String(lotesTransito))}</span>
                 </div>
 
                 <div class="trip-card-actions">
@@ -643,10 +772,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const metricGastos = document.getElementById("metricGastos");
         const metricGanancia = document.getElementById("metricGanancia");
         const metricActivos = document.getElementById("metricActivos");
-        if (metricIngresos) metricIngresos.textContent = formatMoney(ingresosPagina);
         if (metricGastos) metricGastos.textContent = formatMoney(gastosPagina);
-        if (metricGanancia) metricGanancia.textContent = formatMoney(gananciaPagina);
         if (metricActivos) metricActivos.textContent = String(activosPagina);
+        const metricLotes = document.getElementById("metricLotes");
+        if (metricLotes) {
+            const lotesTransitoPagina = viajesCache.reduce((sum, v) => {
+                const lotes = Array.isArray(v?.lotes) ? v.lotes : [];
+                return sum + lotes.filter(l => String(l?.estado || "").toLowerCase() === "en_transito").length;
+            }, 0);
+            metricLotes.textContent = String(lotesTransitoPagina);
+        }
     }
 
     function actualizarPaginacionViajes() {
@@ -678,6 +813,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const abrirModalCliente = () => {
+        if (!modalBuscarCliente) return;
         focusReturnTarget = document.getElementById("clienteInput");
         const modalInstance = bootstrap.Modal.getOrCreateInstance(modalBuscarCliente);
         modalInstance.show();
@@ -693,6 +829,114 @@ document.addEventListener("DOMContentLoaded", () => {
         const modalInstance = bootstrap.Modal.getOrCreateInstance(modalBuscarChofer);
         modalInstance.show();
     };
+
+    const abrirModalLotes = async () => {
+        if (!modalBuscarLote) return;
+        await cargarLotesDisponibles();
+        await cargarEstadosLoteModal();
+        renderLotesViajeModal();
+        bootstrap.Modal.getOrCreateInstance(modalBuscarLote).show();
+    };
+
+    // El usuario espera que el boton "+ Agregar" abra el modal de lotes.
+    document.getElementById("btnAgregarLote")?.addEventListener("click", abrirModalLotes);
+    document.getElementById("btnNuevoLoteDesdeViaje")?.addEventListener("click", () => {
+        window.location.href = "/lotes";
+    });
+
+    const filtrosLotesModal = {q: "", estado: ""};
+    let debounceLotesModal = null;
+
+    const cargarEstadosLoteModal = async () => {
+        const select = document.getElementById("filtroEstadoLotesViajeModal");
+        if (!select) return;
+        try {
+            const res = await fetch("/api/lotes/estados", {credentials: "same-origin"});
+            if (!res.ok) throw new Error("No se pudieron cargar estados de lote");
+            const data = await res.json();
+            const current = select.value;
+            select.innerHTML = '<option value="" selected>Todos los estados</option>';
+            (Array.isArray(data) ? data : []).forEach(v => {
+                const opt = document.createElement("option");
+                opt.value = v;
+                opt.textContent = String(v).replaceAll("_", " ");
+                select.appendChild(opt);
+            });
+            if (current) select.value = current;
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const getLotesFiltradosModal = () => {
+        const q = filtrosLotesModal.q.trim().toLowerCase();
+        const estado = filtrosLotesModal.estado.trim().toLowerCase();
+        return (Array.isArray(lotesDisponibles) ? lotesDisponibles : []).filter(l => {
+            if (estado && String(l?.estado || "").toLowerCase() !== estado) return false;
+            if (!q) return true;
+            const numero = String(l?.numeroLote || "").toLowerCase();
+            const enc = String(l?.nombreEncargado || "").toLowerCase();
+            const desc = String(l?.descripcion || "").toLowerCase();
+            return numero.includes(q) || enc.includes(q) || desc.includes(q);
+        });
+    };
+
+    const renderLotesViajeModal = () => {
+        const tbody = document.getElementById("tablaLotesViaje");
+        if (!tbody) return;
+        const list = getLotesFiltradosModal();
+        if (!list.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay lotes</td></tr>';
+            return;
+        }
+        tbody.innerHTML = list.map(l => {
+            const id = getLoteId(l);
+            const numero = l?.numeroLote || `Lote #${id}`;
+            const estado = String(l?.estado || "-").replaceAll("_", " ");
+            const cat = l?.categoriaNombre || "-";
+            const rem = l?.remitenteNombre || "-";
+            const dest = l?.destinatarioNombre || "-";
+            const ya = lotesSeleccionados.some(x => getLoteId(x) === id);
+            const btn = ya
+                ? '<button type="button" class="btn btn-outline-secondary btn-sm" disabled>Agregado</button>'
+                : `<button type="button" class="btn btn-primary btn-sm" data-select-lote="${escapeHtml(String(id))}">Agregar</button>`;
+            return `
+                <tr>
+                    <td>${escapeHtml(String(id))}</td>
+                    <td>${escapeHtml(numero)}</td>
+                    <td>${escapeHtml(estado)}</td>
+                    <td>${escapeHtml(cat)}</td>
+                    <td>${escapeHtml(rem)}</td>
+                    <td>${escapeHtml(dest)}</td>
+                    <td class="text-end">${btn}</td>
+                </tr>
+            `;
+        }).join("");
+    };
+
+    document.getElementById("tablaLotesViaje")?.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-select-lote]");
+        if (!btn) return;
+        const id = Number(btn.dataset.selectLote);
+        if (!id) return;
+        if (lotesSeleccionados.some(l => getLoteId(l) === id)) return;
+        const match = lotesDisponibles.find(l => getLoteId(l) === id);
+        lotesSeleccionados.push(match || {idLote: id, numeroLote: `Lote #${id}`});
+        renderLotesAsociados();
+        renderLotesViajeModal();
+    });
+
+    document.getElementById("filtroBusquedaLotesViajeModal")?.addEventListener("input", (event) => {
+        clearTimeout(debounceLotesModal);
+        debounceLotesModal = setTimeout(() => {
+            filtrosLotesModal.q = event.target.value || "";
+            renderLotesViajeModal();
+        }, 250);
+    });
+    document.getElementById("filtroEstadoLotesViajeModal")?.addEventListener("change", (event) => {
+        filtrosLotesModal.estado = event.target.value || "";
+        renderLotesViajeModal();
+    });
 
     async function cargarViajeDetalle(idViaje) {
         if (!viajeForm) return;
@@ -712,8 +956,14 @@ document.addEventListener("DOMContentLoaded", () => {
             resetFormulario();
 
             document.getElementById("nombreViaje").value = data.nombreViaje || "";
-            document.getElementById("clienteId").value = data.idCliente || "";
-            document.getElementById("clienteInput").value = data.clienteNombre || "";
+
+            // V2: lotes asociados
+            loteIdsPendientes = Array.isArray(data.loteIds) ? data.loteIds.map(Number).filter(Boolean) : [];
+            if (lotesCargados) {
+                syncLotesPendientes();
+            } else {
+                renderLotesAsociados();
+            }
 
             const tramos = Array.isArray(data.tramos) ? data.tramos : [];
             const tramoIda = tramos.find(t => String(t.tipoTramo).toLowerCase() === "ida");
@@ -736,7 +986,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("idaChoferInput").value = tramoIda.conductorNombre || "";
                 document.getElementById("idaSalida").value = formatDateTimeLocal(tramoIda.fechaSalida);
                 document.getElementById("idaLlegada").value = formatDateTimeLocal(tramoIda.fechaEntrada);
-                document.getElementById("idaIngreso").value = tramoIda.precioViaje ?? "";
+
+                // Ubicacion (V2)
+                document.getElementById("idaPaisSalida").value = tramoIda.paisSalida || "";
+                document.getElementById("idaPaisDestino").value = tramoIda.paisDestino || "";
+                document.getElementById("idaDireccionSalida").value = tramoIda.direccionSalida || "";
+                document.getElementById("idaDireccionDestino").value = tramoIda.direccionDestino || "";
+                document.getElementById("idaObservaciones").value = tramoIda.observaciones || "";
 
                 state.ida.gastos = (tramoIda.gastos || []).map(g => ({
                     id: Number(g.id) || 0,
@@ -763,7 +1019,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("vueltaChoferInput").value = tramoVuelta.conductorNombre || "";
                 document.getElementById("vueltaSalida").value = formatDateTimeLocal(tramoVuelta.fechaSalida);
                 document.getElementById("vueltaLlegada").value = formatDateTimeLocal(tramoVuelta.fechaEntrada);
-                document.getElementById("vueltaIngreso").value = tramoVuelta.precioViaje ?? "";
+
+                // Ubicacion (V2)
+                document.getElementById("vueltaPaisSalida").value = tramoVuelta.paisSalida || "";
+                document.getElementById("vueltaPaisDestino").value = tramoVuelta.paisDestino || "";
+                document.getElementById("vueltaDireccionSalida").value = tramoVuelta.direccionSalida || "";
+                document.getElementById("vueltaDireccionDestino").value = tramoVuelta.direccionDestino || "";
+                document.getElementById("vueltaObservaciones").value = tramoVuelta.observaciones || "";
 
                 state.vuelta.gastos = (tramoVuelta.gastos || []).map(g => ({
                     id: Number(g.id) || 0,
@@ -923,14 +1185,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const calcGastos = tramo => (tramo?.gastos || []).reduce((sum, g) => sum + (Number(g?.monto) || 0), 0);
 
-        const ingresoIda = Number(ida?.precioViaje) || 0;
-        const ingresoVuelta = Number(vuelta?.precioViaje) || 0;
         const gastosIda = calcGastos(ida);
         const gastosVuelta = calcGastos(vuelta);
 
-        const totalIngresos = ingresoIda + ingresoVuelta;
         const totalGastos = gastosIda + gastosVuelta;
-        const totalGanancia = totalIngresos - totalGastos;
+
+        const loteIds = Array.isArray(data.loteIds) ? data.loteIds.map(Number).filter(Boolean) : [];
+        const lotesLabel = loteIds.length
+            ? loteIds
+                .map(id => {
+                    const match = lotesDisponibles.find(l => getLoteId(l) === id);
+                    return match?.numeroLote || `#${id}`;
+                })
+                .join(", ")
+            : "-";
 
         const salidaTotal = [ida?.fechaSalida, vuelta?.fechaSalida].map(parseDateSafe).filter(Boolean)
             .sort((a, b) => a.getTime() - b.getTime())[0] || null;
@@ -997,9 +1265,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
             }
 
-            const ingreso = Number(tramo.precioViaje) || 0;
             const gastos = calcGastos(tramo);
-            const ganancia = ingreso - gastos;
             const salida = formatDateTimeHuman(tramo.fechaSalida);
             const llegada = formatDateTimeHuman(tramo.fechaEntrada);
             const duracion = formatDurationHuman(tramo.fechaSalida, tramo.fechaEntrada);
@@ -1021,9 +1287,11 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="k">Salida</div><div class="v">${escapeHtml(salida)}</div>
                             <div class="k">Llegada</div><div class="v">${escapeHtml(llegada)}</div>
                             <div class="k">Duracion</div><div class="v">${escapeHtml(duracion)}</div>
-                            <div class="k">Ingresos</div><div class="v"><strong>${formatMoney(ingreso)}</strong></div>
                             <div class="k">Gastos</div><div class="v"><strong>${formatMoney(gastos)}</strong></div>
-                            <div class="k">Ganancia</div><div class="v"><strong>${formatMoney(ganancia)}</strong></div>
+                            <div class="k">Ruta</div><div class="v">${escapeHtml([tramo.paisSalida, tramo.paisDestino].filter(Boolean).join(" → ") || "-")}</div>
+                            <div class="k">Dir. salida</div><div class="v">${escapeHtml(tramo.direccionSalida || "-")}</div>
+                            <div class="k">Dir. destino</div><div class="v">${escapeHtml(tramo.direccionDestino || "-")}</div>
+                            <div class="k">Obs.</div><div class="v">${escapeHtml(tramo.observaciones || "-")}</div>
                         </div>
                         <div class="mb-2"><strong>Gastos</strong></div>
                         ${renderGastosTable(tramo.gastos)}
@@ -1042,26 +1310,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div>
                     <h3 class="viaje-view-title">${escapeHtml(data.nombreViaje || data.nombreVieje || "Viaje")}</h3>
                     <div class="viaje-view-sub">
-                        <span><strong>Cliente:</strong> ${escapeHtml(data.clienteNombre || "-")}</span>
                         <span class="ms-2"><strong>Pagado:</strong> ${boolBadge(Boolean(tramoBase.pagado))}</span>
                         <span class="ms-2"><strong>IVA:</strong> ${boolBadge(Boolean(tramoBase.iva))}</span>
                         <span class="ms-2"><strong>Duracion total:</strong> ${escapeHtml(duracionTotal)}</span>
+                        <span class="ms-2"><strong>Lotes:</strong> ${escapeHtml(lotesLabel)}</span>
                     </div>
                 </div>
             </div>
 
             <div class="viaje-view-totals">
                 <div class="viaje-view-total">
-                    <div>Total generado</div>
-                    <strong>${formatMoney(totalIngresos)}</strong>
-                </div>
-                <div class="viaje-view-total">
                     <div>Total gastado</div>
                     <strong>${formatMoney(totalGastos)}</strong>
                 </div>
                 <div class="viaje-view-total">
-                    <div>Ganancia</div>
-                    <strong>${formatMoney(totalGanancia)}</strong>
+                    <div>Total lotes</div>
+                    <strong>${escapeHtml(String(loteIds.length))}</strong>
                 </div>
             </div>
 
@@ -1513,7 +1777,14 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("vueltaChoferId").value = document.getElementById("idaChoferId").value;
             document.getElementById("vueltaSalida").value = document.getElementById("idaSalida").value;
             document.getElementById("vueltaLlegada").value = document.getElementById("idaLlegada").value;
-            document.getElementById("vueltaIngreso").value = document.getElementById("idaIngreso").value;
+
+            // Ubicacion (V2)
+            document.getElementById("vueltaPaisSalida").value = document.getElementById("idaPaisSalida").value;
+            document.getElementById("vueltaPaisDestino").value = document.getElementById("idaPaisDestino").value;
+            document.getElementById("vueltaDireccionSalida").value = document.getElementById("idaDireccionSalida").value;
+            document.getElementById("vueltaDireccionDestino").value = document.getElementById("idaDireccionDestino").value;
+            document.getElementById("vueltaObservaciones").value = document.getElementById("idaObservaciones").value;
+
             state.vuelta.gastos = state.ida.gastos.map(g => ({...g}));
             renderGastos("vuelta");
             actualizarDuraciones();
@@ -1524,7 +1795,6 @@ document.addEventListener("DOMContentLoaded", () => {
         let valido = true;
         const requeridos = [
             "nombreViaje",
-            "clienteInput",
             "idaCamionInput",
             "idaChoferInput",
             "idaSalida",
@@ -1540,11 +1810,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 input.classList.remove("is-invalid");
             }
         });
-        const clienteId = document.getElementById("clienteId");
-        if (clienteId && !clienteId.value) {
-            document.getElementById("clienteInput")?.classList.add("is-invalid");
-            valido = false;
-        }
         const idaCamion = document.getElementById("idaCamionId")?.value;
         const idaChofer = document.getElementById("idaChoferId")?.value;
         if (!idaCamion) {
@@ -1567,8 +1832,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "vueltaCamionId",
             "vueltaChoferId",
             "vueltaSalida",
-            "vueltaLlegada",
-            "vueltaIngreso"
+            "vueltaLlegada"
         ];
         const vueltaTieneDatos = vueltaInputs.some(id => {
             const el = document.getElementById(id);
@@ -1608,8 +1872,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const idConductor = getId(`${tramo}ChoferId`, `${tramo}ChoferInput`);
             const fechaSalida = normalizeDateTime(document.getElementById(`${tramo}Salida`)?.value);
             const fechaEntrada = normalizeDateTime(document.getElementById(`${tramo}Llegada`)?.value);
-            const precioViajeRaw = document.getElementById(`${tramo}Ingreso`)?.value;
-            const precioViaje = precioViajeRaw ? parseNumber(precioViajeRaw) : null;
+
+            // Ubicacion (V2)
+            const paisSalida = document.getElementById(`${tramo}PaisSalida`)?.value || null;
+            const paisDestino = document.getElementById(`${tramo}PaisDestino`)?.value || null;
+            const direccionSalida = document.getElementById(`${tramo}DireccionSalida`)?.value || "";
+            const direccionDestino = document.getElementById(`${tramo}DireccionDestino`)?.value || "";
+            const observaciones = document.getElementById(`${tramo}Observaciones`)?.value || "";
+
             const gastos = state[tramo].gastos.map(g => ({
                 id: Number(g.id) || 0,
                 idTipoGasto: g.tipoId,
@@ -1619,7 +1889,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 fechaGasto: g.fecha || null
             }));
 
-            const hasData = Boolean(idCamion || idConductor || fechaSalida || fechaEntrada || gastos.length || precioViaje);
+            const hasData = Boolean(
+                idCamion || idConductor || fechaSalida || fechaEntrada || gastos.length ||
+                paisSalida || paisDestino || direccionSalida || direccionDestino || observaciones
+            );
             if (!hasData) return null;
 
             return {
@@ -1630,9 +1903,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 estadoViaje: tramo === "ida" ? estadoIda : estadoVuelta,
                 pagado,
                 iva,
-                precioViaje,
                 fechaSalida,
                 fechaEntrada,
+                paisSalida,
+                paisDestino,
+                direccionSalida,
+                direccionDestino,
+                observaciones,
                 gastos
             };
         };
@@ -1642,7 +1919,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!tramoIda) {
             return {
                 nombreViaje: document.getElementById("nombreViaje")?.value || "",
-                idCliente: Number(document.getElementById("clienteId")?.value) || null,
+                loteIds: lotesSeleccionados.map(getLoteId).filter(Boolean),
                 tramos: []
             };
         }
@@ -1652,7 +1929,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         return {
             nombreViaje: document.getElementById("nombreViaje")?.value || "",
-            idCliente: Number(document.getElementById("clienteId")?.value) || null,
+            loteIds: lotesSeleccionados.map(getLoteId).filter(Boolean),
             tramos
         };
     };
@@ -1691,8 +1968,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify(payload)
             });
             if (!res.ok) {
-                const errorText = await res.text().catch(() => "");
-                throw new Error(errorText || "Error al guardar");
+                const contentType = res.headers.get("content-type") || "";
+                if (contentType.includes("application/json")) {
+                    const err = await res.json().catch(() => null);
+                    const msg = err?.message || err?.error || JSON.stringify(err) || "Error al guardar";
+                    throw new Error(msg);
+                } else {
+                    const errorText = await res.text().catch(() => "");
+                    throw new Error(errorText || "Error al guardar");
+                }
             }
             if (estadoGuardado) {
                 estadoGuardado.textContent = "Guardado correctamente";

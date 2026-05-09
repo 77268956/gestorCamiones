@@ -23,9 +23,9 @@ final class SecurePasswordGenerator {
 //    private static final String SYMBOL = "!@#$%&.";
 
     // solo para pruebas
-    private static final String UPPER = "ABC";
-    private static final String LOWER = "abc";
-    private static final String DIGIT = "123";
+    private static final String UPPER = "A";
+    private static final String LOWER = "b";
+    private static final String DIGIT = "1";
     private static final String SYMBOL = ".";
 
     private SecurePasswordGenerator() {}

@@ -9,6 +9,10 @@ import lombok.Setter;
 
 import java.util.List;
 
+/**
+ * DTO base para crear/actualizar viajes (V2).
+ * Ya no lleva idCliente. Los lotes se asocian vía loteIds.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,4 +24,7 @@ public class ViajeUpsertDTO {
     private String nombreViaje;
 
     private List<TramoDTO> tramos;
+
+    // V2: IDs de lotes a asociar con este viaje
+    private List<Long> loteIds;
 }

@@ -19,13 +19,13 @@ public interface ViajeRepository extends JpaRepository<Viaje, Long> {
         LEFT JOIN usuarios u ON u.id_usuarios = v.id_admin AND u.deleted_at IS NULL
         WHERE v.deleted_at IS NULL
         AND (
-            :texto IS NULL OR
-            LOWER(v.nombre_viaje) LIKE LOWER(CONCAT('%', :texto, '%')) OR
-            LOWER(u.nombre) LIKE LOWER(CONCAT('%', :texto, '%'))
+            CAST(:texto AS TEXT) IS NULL OR
+            LOWER(v.nombre_viaje) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%')) OR
+            LOWER(u.nombre) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
         )
         AND (
-            :estado IS NULL OR
-            CAST(vd.estado AS text) = :estado
+            CAST(:estado AS TEXT) IS NULL OR
+            CAST(vd.estado AS text) = CAST(:estado AS TEXT)
         )
         AND (
             :excluirCompletados = false OR
@@ -45,13 +45,13 @@ public interface ViajeRepository extends JpaRepository<Viaje, Long> {
         LEFT JOIN usuarios u ON u.id_usuarios = v.id_admin AND u.deleted_at IS NULL
         WHERE v.deleted_at IS NULL
         AND (
-            :texto IS NULL OR
-            LOWER(v.nombre_viaje) LIKE LOWER(CONCAT('%', :texto, '%')) OR
-            LOWER(u.nombre) LIKE LOWER(CONCAT('%', :texto, '%'))
+            CAST(:texto AS TEXT) IS NULL OR
+            LOWER(v.nombre_viaje) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%')) OR
+            LOWER(u.nombre) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
         )
         AND (
-            :estado IS NULL OR
-            CAST(vd.estado AS text) = :estado
+            CAST(:estado AS TEXT) IS NULL OR
+            CAST(vd.estado AS text) = CAST(:estado AS TEXT)
         )
         AND (
             :excluirCompletados = false OR

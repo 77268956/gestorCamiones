@@ -6,8 +6,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -36,7 +38,8 @@ public class Login {
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_cuenta", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "estado_cuenta", nullable = false, columnDefinition = "estado_cuenta_enum")
     private EstadoCuenta estadoCuenta;
 
     @OneToOne(fetch = FetchType.LAZY)

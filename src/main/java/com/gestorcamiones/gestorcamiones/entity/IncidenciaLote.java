@@ -7,8 +7,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -39,8 +41,9 @@ public class IncidenciaLote {
     @JoinColumn(name = "id_viaje_detalle", nullable = false)
     private ViajeDetalle viajeDetalle;
 
-    @Convert(converter = TipoIncidenciaConverter.class)
-    @Column(name = "tipo_incidencia", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "tipo_incidencia", nullable = false, columnDefinition = "tipo_incidencia_enum")
     private TipoIncidencia tipoIncidencia;
 
     private String descripcion;

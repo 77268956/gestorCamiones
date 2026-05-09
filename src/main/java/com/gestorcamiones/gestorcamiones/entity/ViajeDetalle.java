@@ -41,11 +41,11 @@ public class ViajeDetalle {
     // 🔹 Enums
 
     @Convert(converter = TipoTramoConverter.class)
-    @Column(name = "tipo_tramo", nullable = false)
+    @Column(name = "tipo_tramo", nullable = false, columnDefinition = "tipo_tramo_enum")
     private TipoTramo tipoTramo;
 
     @Convert(converter = EstadoViajeConverter.class)
-    @Column(name = "estado", nullable = false)
+    @Column(name = "estado", nullable = false, columnDefinition = "estado_viaje_enum")
     private EstadoViaje estado;
 
     //Flags
@@ -57,11 +57,11 @@ public class ViajeDetalle {
     // 🔹 Ubicación (nuevo en V2)
 
     @Convert(converter = PaisConverter.class)
-    @Column(name = "pais_salida")
+    @Column(name = "pais_salida", columnDefinition = "paises_enum")
     private Pais paisSalida;
 
     @Convert(converter = PaisConverter.class)
-    @Column(name = "pais_destino")
+    @Column(name = "pais_destino", columnDefinition = "paises_enum")
     private Pais paisDestino;
 
     @Column(name = "direccion_salida")

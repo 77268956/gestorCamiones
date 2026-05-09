@@ -98,6 +98,9 @@ public class ViewController {
     @GetMapping("/viajes")
     public String viajes() { return "/view/Viajes"; }
 
+    @GetMapping("/lotes")
+    public String lotes() { return "/view/lotes"; }
+
     @GetMapping("/gastos")
     public String total_gastos() { return "/view/total_gastos"; }
 }

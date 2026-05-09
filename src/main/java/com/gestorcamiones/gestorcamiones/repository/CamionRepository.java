@@ -22,11 +22,11 @@ public interface CamionRepository  extends JpaRepository<Camion, Long> {
                 SELECT c.*
                 FROM camion c
                 WHERE c.deleted_at IS NULL
-                  AND (:texto IS NULL
-                       OR CAST(c.nombre AS TEXT) ILIKE CONCAT('%', :texto, '%')
-                       OR CAST(c.modelo AS TEXT) ILIKE CONCAT('%', :texto, '%')
-                       OR CAST(c.placa AS TEXT) ILIKE CONCAT('%', :texto, '%'))
-                  AND (:estado IS NULL OR c.estado = :estado)
+                  AND (CAST(:texto AS TEXT) IS NULL
+                       OR CAST(c.nombre AS TEXT) ILIKE CONCAT('%', CAST(:texto AS TEXT), '%')
+                       OR CAST(c.modelo AS TEXT) ILIKE CONCAT('%', CAST(:texto AS TEXT), '%')
+                       OR CAST(c.placa AS TEXT) ILIKE CONCAT('%', CAST(:texto AS TEXT), '%'))
+                  AND (CAST(:estado AS TEXT) IS NULL OR c.estado = CAST(:estado AS TEXT))
                 ORDER BY c.id_camion DESC
                 """,
             nativeQuery = true

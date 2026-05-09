@@ -11,6 +11,10 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * DTO con información de un tramo (viaje_detalle) para la lista de viajes.
+ * V2: sin precioViaje ni gananciaTotal.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -29,7 +33,6 @@ public class DetalleViajeDTO {
     private Boolean pagado;
     private Boolean iva;
     private BigDecimal gastoTotal;
-    private BigDecimal gananciaTotal;
 
     // Ubicación (V2)
     private Pais paisSalida;

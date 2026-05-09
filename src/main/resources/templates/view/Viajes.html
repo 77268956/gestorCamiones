@@ -614,20 +614,16 @@
 
     <div class="metrics">
         <div class="metric">
-            <div id="metricIngresos">$0.00</div>
-            <small>Ingresos</small>
-        </div>
-        <div class="metric">
             <div id="metricGastos">$0.00</div>
-            <small>Gastos</small>
-        </div>
-        <div class="metric">
-            <div id="metricGanancia">$0.00</div>
-            <small>Ganancia</small>
+            <small>Gastos totales</small>
         </div>
         <div class="metric">
             <div id="metricActivos">0</div>
-            <small>Activos</small>
+            <small>Tramos activos</small>
+        </div>
+        <div class="metric">
+            <div id="metricLotes">0</div>
+            <small>Lotes en transito</small>
         </div>
     </div>
 
@@ -706,20 +702,12 @@
                                 <div class="invalid-feedback">Este campo es requerido.</div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Cliente</label>
-                                <div class="input-group">
-                                    <input id="clienteInput" list="clientesList" type="text" class="form-control" required readonly>
-                                    <input id="clienteId" type="hidden">
-                                    <button id="btnBuscarCliente" class="btn btn-outline-secondary" type="button">
-                                        Buscar
-                                    </button>
+                                <label class="form-label">Lotes asociados</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <select id="loteSelect" class="form-select"></select>
+                                    <button id="btnAgregarLote" class="btn btn-primary" type="button">+ Agregar</button>
                                 </div>
-                                <datalist id="clientesList">
-                                    <option value="AgroLogistica" data-id="1"></option>
-                                    <option value="Grupo Alimentos" data-id="2"></option>
-                                    <option value="Textiles Mayas" data-id="3"></option>
-                                </datalist>
-                                <div class="invalid-feedback">Selecciona un cliente.</div>
+                                <div id="lotesAsociados" class="mt-2 d-flex flex-wrap gap-2"></div>
                             </div>
                             <div class="d-flex gap-3 align-items-center mb-3">
                                 <div class="form-check">
@@ -772,7 +760,7 @@
                                         <label class="form-label">Chofer</label>
                                         <div class="input-group">
                                             <input id="idaChoferInput" list="choferesList" type="text" class="form-control" required readonly>
-                                            <input id="idaChoferId" type="hidden">bo
+                                            <input id="idaChoferId" type="hidden">
                                             <button id="btnBuscarChoferIda" class="btn btn-outline-secondary" type="button">
                                                 Buscar
                                             </button>
@@ -799,14 +787,30 @@
                                         <div id="idaDuracion" class="form-control form-control-sm trip-readonly">-</div>
                                     </div>
                                     <div>
-                                        <label class="form-label">Ingreso del tramo</label>
-                                        <input id="idaIngreso" type="number" min="0" step="0.01" class="form-control">
-                                    </div>
-                                    <div>
                                         <label class="form-label">Estado del tramo</label>
                                         <select id="idaEstado" class="form-select">
                                             <option value="" selected>Seleccione un estado</option>
                                         </select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Pais salida</label>
+                                        <select id="idaPaisSalida" class="form-select"><option value="">Seleccione</option></select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Pais destino</label>
+                                        <select id="idaPaisDestino" class="form-select"><option value="">Seleccione</option></select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Direccion salida</label>
+                                        <input id="idaDireccionSalida" type="text" class="form-control">
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Direccion destino</label>
+                                        <input id="idaDireccionDestino" type="text" class="form-control">
+                                    </div>
+                                    <div style="grid-column: 1 / -1;">
+                                        <label class="form-label">Observaciones</label>
+                                        <textarea id="idaObservaciones" class="form-control" rows="2"></textarea>
                                     </div>
                                 </div>
 
@@ -908,14 +912,30 @@
                                         <div id="vueltaDuracion" class="form-control form-control-sm trip-readonly">-</div>
                                     </div>
                                     <div>
-                                        <label class="form-label">Ingreso del tramo</label>
-                                        <input id="vueltaIngreso" type="number" min="0" step="0.01" class="form-control">
-                                    </div>
-                                    <div>
                                         <label class="form-label">Estado del tramo</label>
                                         <select id="vueltaEstado" class="form-select">
                                             <option value="" selected>Seleccione un estado</option>
                                         </select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Pais salida</label>
+                                        <select id="vueltaPaisSalida" class="form-select"><option value="">Seleccione</option></select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Pais destino</label>
+                                        <select id="vueltaPaisDestino" class="form-select"><option value="">Seleccione</option></select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Direccion salida</label>
+                                        <input id="vueltaDireccionSalida" type="text" class="form-control">
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Direccion destino</label>
+                                        <input id="vueltaDireccionDestino" type="text" class="form-control">
+                                    </div>
+                                    <div style="grid-column: 1 / -1;">
+                                        <label class="form-label">Observaciones</label>
+                                        <textarea id="vueltaObservaciones" class="form-control" rows="2"></textarea>
                                     </div>
                                 </div>
 
@@ -984,22 +1004,27 @@
                         <h6 class="section-title">Resumen general</h6>
                         <div class="resumen-grid">
                             <div class="resumen-card">
-                                <div>Total generado</div>
-                                <strong id="totalGenerado">$0.00</strong>
+                                <div>Total gastos (ida)</div>
+                                <strong id="resumenGastosIda">$0.00</strong>
+                            </div>
+                            <div class="resumen-card">
+                                <div>Total gastos (vuelta)</div>
+                                <strong id="resumenGastosVuelta">$0.00</strong>
                             </div>
                             <div class="resumen-card">
                                 <div>Total gastado</div>
                                 <strong id="totalGastado">$0.00</strong>
                             </div>
                             <div class="resumen-card">
-                                <div>Ganancia</div>
-                                <strong id="totalGanancia">$0.00</strong>
+                                <div>Lotes asociados</div>
+                                <strong id="resumenLotes">0</strong>
                             </div>
                         </div>
                     </section>
 
                     <div class="form-actions">
                         <button type="submit" id="btnGuardarViaje" class="btn btn-primary">Guardar viaje</button>
+                        <button type="button" id="btnEliminarViaje" class="btn btn-danger" style="display:none;">Eliminar viaje</button>
                         <span id="estadoGuardado" class="estado-guardado"></span>
                     </div>
                 </form>
@@ -1082,61 +1107,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalBuscarClienteViaje" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content mp-modal-content">
-                <div class="modal-header mp-modal-header">
-                    <h5 class="modal-title">Seleccionar Cliente</h5>
-                    <button type="button" class="btn-close mp-modal-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-2 mb-3">
-                        <div class="col-12 col-md-9">
-                            <div class="input-group">
-                                <span class="input-group-text">Buscar</span>
-                                <input id="filtroBusquedaClientesViajeModal" type="text" class="form-control" placeholder="Buscar nombre o documento...">
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-3 d-grid">
-                            <button id="btnLimpiarFiltrosClientesViajeModal" type="button" class="btn btn-outline-secondary">Limpiar</button>
-                        </div>
-                    </div>
-                    <table class="table mp-table">
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Nombre</th>
-                            <th>Telefono</th>
-                            <th>Dui/Nit</th>
-                            <th>Accion</th>
-                        </tr>
-                        </thead>
-                        <tbody id="tablaClientesViaje">
-                        <tr>
-                            <td colspan="5" class="text-center">Cargando clientes...</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <span id="totalClientesViajeModal">Mostrando 0 clientes</span>
-                        <nav aria-label="Paginacion de clientes">
-                            <ul class="pagination pagination-sm mb-0">
-                                <li class="page-item disabled">
-                                    <button id="btnPrevClientesViajeModal" class="page-link" type="button">Anterior</button>
-                                </li>
-                                <li class="page-item disabled">
-                                    <span id="paginaActualClientesViajeModal" class="page-link">1 / 1</span>
-                                </li>
-                                <li class="page-item disabled">
-                                    <button id="btnNextClientesViajeModal" class="page-link" type="button">Siguiente</button>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Modal de cliente removido en V2: los clientes se manejan a través de lotes -->
 
     <div class="modal fade" id="modalBuscarChoferViaje" tabindex="-1">
         <div class="modal-dialog modal-xl">
@@ -1194,6 +1165,54 @@
                             </ul>
                         </nav>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalBuscarLoteViaje" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content mp-modal-content">
+                <div class="modal-header mp-modal-header">
+                    <h5 class="modal-title">Seleccionar Lote</h5>
+                    <button type="button" class="btn-close mp-modal-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-12 col-md-7">
+                            <div class="input-group">
+                                <span class="input-group-text">Buscar</span>
+                                <input id="filtroBusquedaLotesViajeModal" type="text" class="form-control" placeholder="Numero, encargado o descripcion...">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <select id="filtroEstadoLotesViajeModal" class="form-select mp-select">
+                                <option value="" selected>Todos los estados</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2 d-grid">
+                            <button id="btnNuevoLoteDesdeViaje" type="button" class="btn btn-primary">Nuevo lote</button>
+                        </div>
+                    </div>
+
+                    <table class="table mp-table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Numero</th>
+                            <th>Estado</th>
+                            <th>Categoria</th>
+                            <th>Remitente</th>
+                            <th>Destinatario</th>
+                            <th>Accion</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaLotesViaje">
+                        <tr>
+                            <td colspan="7" class="text-center">Cargando lotes...</td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

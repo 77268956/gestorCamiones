@@ -7,8 +7,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -39,8 +41,8 @@ public class Lote {
     @Column(name = "numero_lote", unique = true)
     private String numeroLote;
 
-    @Convert(converter = EstadoLoteConverter.class)
-    @Column(name = "estado", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado", nullable = false, columnDefinition = "estado_lote_enum")
     private EstadoLote estado;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -52,7 +54,7 @@ public class Lote {
     private Cliente clienteRemitente;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_cliente_destinatario", nullable = false)
+    @JoinColumn(name = "id_cliente_destinatario")
     private Cliente clienteDestinatario;
 
     @Column(name = "nombre_encargado")

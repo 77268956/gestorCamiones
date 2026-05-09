@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gestorcamiones.gestorcamiones.dto.auditoria.ViajeAuditoriaDTO;
 import com.gestorcamiones.gestorcamiones.dto.gasto.GastoViajeDTO;
+import com.gestorcamiones.gestorcamiones.dto.lote.LoteResumenDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ActualizarViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.CrearViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.DetalleViajeDTO;
@@ -14,6 +15,8 @@ import com.gestorcamiones.gestorcamiones.entity.*;
 import com.gestorcamiones.gestorcamiones.entity.Enum.AccionAuditoria;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
 import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
+import com.gestorcamiones.gestorcamiones.repository.LoteRepository;
+import com.gestorcamiones.gestorcamiones.repository.ViajeLoteRepository;
 import com.gestorcamiones.gestorcamiones.repository.ViajeRepository;
 import com.gestorcamiones.gestorcamiones.service.auditoria.AuditoriaDetalladaService;
 import jakarta.transaction.Transactional;
@@ -25,26 +28,34 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * Servicio de viajes actualizado para V2.
- * Ya no hay relacion directa viaje-cliente (se maneja via lotes).
+ * Servicio de viajes para V2.
+ * Ya no hay relación directa viaje-cliente (se maneja vía lotes).
  * precioViaje fue eliminado de viaje_detalle.
+ * Los clientes se asocian indirectamente: viaje → viaje_lote → lote → cliente.
  */
 @Service
 public class ViajeService implements IViajeService {
 
     private ViajeRepository viajeRepository;
     private ViajeDetallesService viajeDetallesService;
+    private final ViajeLoteRepository viajeLoteRepository;
+    private final LoteRepository loteRepository;
     private final AuditoriaDetalladaService auditori;
     private final ObjectMapper objectMapper;
 
     public ViajeService(ViajeRepository viajeRepository,
                         ViajeDetallesService viajeDetallesService,
+                        ViajeLoteRepository viajeLoteRepository,
+                        LoteRepository loteRepository,
                         AuditoriaDetalladaService auditori,
                         ObjectMapper objectMapper) {
         this.viajeRepository = viajeRepository;
         this.viajeDetallesService = viajeDetallesService;
+        this.viajeLoteRepository = viajeLoteRepository;
+        this.loteRepository = loteRepository;
         this.auditori = auditori;
         this.objectMapper = objectMapper;
     }
@@ -86,7 +97,7 @@ public class ViajeService implements IViajeService {
 
             BigDecimal gastoTotal = BigDecimal.ZERO;
 
-            int condador = 0;
+            int contador = 0;
             for (ViajeDetalle detalle : viaje.getDetalles()) {
 
                 // separar por tipo
@@ -106,16 +117,29 @@ public class ViajeService implements IViajeService {
                 }
 
                 if (detalle.getEstado() != EstadoViaje.cancelado && detalle.getEstado() != EstadoViaje.completado) {
-                    dto.setViajesActivos(condador++);
+                    contador++;
                 }
             }
 
+            dto.setViajesActivos(contador);
             dto.setListaIDa(ida);
             dto.setListaVuelta(vuelta);
 
             dto.setViajesTotales(ida.size() + vuelta.size());
 
             dto.setGastoTotal(gastoTotal);
+
+            // V2: Lotes asociados al viaje
+            List<LoteResumenDTO> lotesDTO = new ArrayList<>();
+            if (viaje.getViajeLotes() != null) {
+                for (ViajeLote vl : viaje.getViajeLotes()) {
+                    if (vl.getLote() != null) {
+                        lotesDTO.add(toLoteResumenDTO(vl.getLote()));
+                    }
+                }
+            }
+            dto.setLotes(lotesDTO);
+            dto.setTotalLotes(lotesDTO.size());
 
             return dto;
         });
@@ -132,6 +156,10 @@ public class ViajeService implements IViajeService {
         Viaje viaje = guardarViaje(dto, usuario);
 
         viajeDetallesService.crearTramos(dto.getTramos(), viaje, usuario);
+
+        // V2: Asociar lotes al viaje
+        syncLotes(viaje, dto.getLoteIds());
+
         return dto;
     }
 
@@ -160,7 +188,7 @@ public class ViajeService implements IViajeService {
     @Transactional
     @Override
     public ActualizarViajeDTO actualizarViaje(Long idViaje, ActualizarViajeDTO dto, Usuario usuario) {
-        // usuaroi admin
+        // usuario admin
         if (usuario == null) {
             throw new IllegalArgumentException("Usuario no autenticado correctamente");
         }
@@ -175,6 +203,9 @@ public class ViajeService implements IViajeService {
         if (dto.getTramos() != null) {
             viajeDetallesService.actualizarTramos(dto.getTramos(), viaje, usuario);
         }
+
+        // V2: Sincronizar lotes
+        syncLotes(viaje, dto.getLoteIds());
 
         viajeRepository.save(viaje);
 
@@ -253,7 +284,46 @@ public class ViajeService implements IViajeService {
             tramos.add(tramo);
         }
         dto.setTramos(tramos);
+
+        // V2: Incluir IDs de lotes asociados
+        List<Long> loteIds = new ArrayList<>();
+        if (viaje.getViajeLotes() != null) {
+            for (ViajeLote vl : viaje.getViajeLotes()) {
+                if (vl.getLote() != null) {
+                    loteIds.add(vl.getLote().getIdLote());
+                }
+            }
+        }
+        dto.setLoteIds(loteIds);
+
         return dto;
+    }
+
+    /**
+     * Sincroniza la relación M:N viaje-lote.
+     * Elimina las asociaciones actuales y crea las nuevas.
+     */
+    @Transactional
+    protected void syncLotes(Viaje viaje, List<Long> loteIds) {
+        if (loteIds == null) return;
+
+        // Limpiar asociaciones existentes
+        viaje.getViajeLotes().clear();
+        viajeLoteRepository.deleteByViaje_IdViaje(viaje.getIdViaje());
+        viajeLoteRepository.flush();
+
+        if (loteIds.isEmpty()) return;
+
+        // Buscar lotes válidos
+        List<Lote> lotes = loteRepository.findAllByIdLoteInAndDeletedAtIsNull(loteIds);
+
+        for (Lote lote : lotes) {
+            ViajeLote vl = new ViajeLote();
+            vl.setViaje(viaje);
+            vl.setLote(lote);
+            viajeLoteRepository.save(vl);
+            viaje.getViajeLotes().add(vl);
+        }
     }
 
     private DetalleViajeDTO toDetalleDTO(ViajeDetalle detalle) {
@@ -281,7 +351,6 @@ public class ViajeService implements IViajeService {
             }
         }
         dto.setGastoTotal(gastosTotal);
-        dto.setGananciaTotal(gastosTotal.negate());
 
         dto.setFechaSalida(detalle.getFechaSalida());
         dto.setFechaEntrada(detalle.getFechaLlegada());
@@ -295,6 +364,31 @@ public class ViajeService implements IViajeService {
             String nombre = detalle.getChofer().getNombre() != null ? detalle.getChofer().getNombre() : "";
             String apellido = detalle.getChofer().getApellido() != null ? detalle.getChofer().getApellido() : "";
             dto.setConductorNombre((nombre + " " + apellido).trim());
+        }
+        return dto;
+    }
+
+    /**
+     * Convierte un Lote a su DTO resumido para la vista de viajes.
+     */
+    private LoteResumenDTO toLoteResumenDTO(Lote lote) {
+        LoteResumenDTO dto = new LoteResumenDTO();
+        dto.setIdLote(lote.getIdLote());
+        dto.setNumeroLote(lote.getNumeroLote());
+        dto.setEstado(lote.getEstado() != null ? lote.getEstado().getDbValue() : null);
+        dto.setNombreEncargado(lote.getNombreEncargado());
+        dto.setPeso(lote.getPeso());
+        dto.setValorDeclarado(lote.getValorDeclarado());
+        dto.setDescripcion(lote.getDescripcion());
+
+        if (lote.getCategoria() != null) {
+            dto.setCategoriaNombre(lote.getCategoria().getNombre());
+        }
+        if (lote.getClienteRemitente() != null) {
+            dto.setRemitenteNombre(lote.getClienteRemitente().getNombre());
+        }
+        if (lote.getClienteDestinatario() != null) {
+            dto.setDestinatarioNombre(lote.getClienteDestinatario().getNombre());
         }
         return dto;
     }

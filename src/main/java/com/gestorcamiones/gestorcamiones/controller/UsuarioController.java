@@ -45,7 +45,7 @@ public class UsuarioController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) EstadoEmpleado estado
     ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "idUsuarios"));
+        Pageable pageable = PageRequest.of(page, size);
         return usuarioService.listarUsuarios(pageable, q, estado);
     }
 

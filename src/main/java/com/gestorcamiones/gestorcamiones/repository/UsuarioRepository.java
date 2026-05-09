@@ -24,21 +24,37 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     boolean existsByNombre(String nombre);
 
     // V2: el usuario ya no tiene relacion con camion. Solo cargamos rol y login.
-    @EntityGraph(attributePaths = {"rol", "login"})
-    @Query("""
-            select u
-            from Usuario u
-            left join u.login l
-            where (:texto is null
-                   or lower(u.nombre) like lower(concat('%', :texto, '%'))
-                   or lower(u.apellido) like lower(concat('%', :texto, '%'))
-                   or lower(u.telefono) like lower(concat('%', :texto, '%'))
-                   or lower(u.dui) like lower(concat('%', :texto, '%'))
-                   or lower(l.email) like lower(concat('%', :texto, '%')))
-              and (:estado is null or u.estadoEmpleado = :estado)
-            """)
+    // @EntityGraph(attributePaths = {"rol", "login"})
+    @Query(value = """
+            SELECT DISTINCT u.*
+            FROM usuarios u
+            LEFT JOIN login l ON l.id_usuario = u.id_usuarios
+            WHERE u.deleted_at IS NULL
+              AND (CAST(:texto AS TEXT) IS NULL
+                   OR LOWER(u.nombre) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(u.apellido) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(u.telefono) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(u.dui) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(l.email) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%')))
+              AND (CAST(:estado AS TEXT) IS NULL OR CAST(u.estado_empleado AS TEXT) = CAST(:estado AS TEXT))
+            ORDER BY u.id_usuarios DESC
+            """,
+            countQuery = """
+            SELECT COUNT(DISTINCT u.id_usuarios)
+            FROM usuarios u
+            LEFT JOIN login l ON l.id_usuario = u.id_usuarios
+            WHERE u.deleted_at IS NULL
+              AND (CAST(:texto AS TEXT) IS NULL
+                   OR LOWER(u.nombre) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(u.apellido) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(u.telefono) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(u.dui) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(l.email) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%')))
+              AND (CAST(:estado AS TEXT) IS NULL OR CAST(u.estado_empleado AS TEXT) = CAST(:estado AS TEXT))
+            """,
+            nativeQuery = true)
     Page<Usuario> buscarFiltrados(@Param("texto") String texto,
-                                  @Param("estado") EstadoEmpleado estado,
+                                  @Param("estado") Object estado,
                                   Pageable pageable);
 
 
