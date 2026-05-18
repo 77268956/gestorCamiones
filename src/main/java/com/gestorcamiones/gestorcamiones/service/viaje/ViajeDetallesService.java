@@ -102,6 +102,14 @@ public class ViajeDetallesService implements IViajeDetalleService {
     private void aplicarTramo(ViajeDetalle detalle, TramoDTO dto, Long idDetalleExistente) {
         if (dto == null) return;
 
+        // Validar que las fechas sean coherentes
+        if (dto.getFechaSalida() != null && dto.getFechaEntrada() != null) {
+            if (!dto.getFechaSalida().isBefore(dto.getFechaEntrada())) {
+                throw new IllegalArgumentException(
+                    "La fecha de salida debe ser anterior a la fecha de llegada (" + dto.getTipoTramo() + ")");
+            }
+        }
+
         validarDisponibilidad(dto.getIdCamion(), dto.getIdConductor(), dto.getFechaSalida(), dto.getFechaEntrada(), idDetalleExistente);
 
         detalle.setTipoTramo(dto.getTipoTramo());

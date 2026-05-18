@@ -153,6 +153,9 @@ public class ViajeService implements IViajeService {
             throw new IllegalArgumentException("Usuario no autenticado correctamente");
         }
 
+        validarNombreViaje(dto.getNombreViaje());
+        validarTramosNoDuplicados(dto.getTramos());
+
         Viaje viaje = guardarViaje(dto, usuario);
 
         viajeDetallesService.crearTramos(dto.getTramos(), viaje, usuario);
@@ -199,6 +202,9 @@ public class ViajeService implements IViajeService {
 
         viaje.setNombreViaje(dto.getNombreViaje());
         viaje.setAdmin(usuario);
+
+        validarNombreViaje(dto.getNombreViaje());
+        validarTramosNoDuplicados(dto.getTramos());
 
         if (dto.getTramos() != null) {
             viajeDetallesService.actualizarTramos(dto.getTramos(), viaje, usuario);
@@ -323,6 +329,35 @@ public class ViajeService implements IViajeService {
             vl.setLote(lote);
             viajeLoteRepository.save(vl);
             viaje.getViajeLotes().add(vl);
+        }
+    }
+
+    /**
+     * Valida que el nombre del viaje no esté vacío y tenga longitud mínima.
+     */
+    private void validarNombreViaje(String nombre) {
+        if (nombre == null || nombre.trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre del viaje es obligatorio");
+        }
+        if (nombre.trim().length() < 3) {
+            throw new IllegalArgumentException("El nombre del viaje debe tener al menos 3 caracteres");
+        }
+        if (nombre.trim().length() > 100) {
+            throw new IllegalArgumentException("El nombre del viaje no puede exceder 100 caracteres");
+        }
+    }
+
+    /**
+     * Valida que no se envíen dos tramos del mismo tipo (ej: dos idas).
+     */
+    private void validarTramosNoDuplicados(List<TramoDTO> tramos) {
+        if (tramos == null || tramos.size() <= 1) return;
+        java.util.Set<TipoTramo> tipos = new java.util.HashSet<>();
+        for (TramoDTO t : tramos) {
+            if (t.getTipoTramo() != null && !tipos.add(t.getTipoTramo())) {
+                throw new IllegalArgumentException(
+                    "No se pueden tener dos tramos del mismo tipo: " + t.getTipoTramo());
+            }
         }
     }
 

@@ -26,4 +26,5 @@ public class LoteResumenDTO {
     private BigDecimal peso;
     private BigDecimal valorDeclarado;
     private String descripcion;
+    private boolean asignado;
 }

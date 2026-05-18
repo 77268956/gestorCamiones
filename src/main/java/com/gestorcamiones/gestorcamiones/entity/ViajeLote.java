@@ -33,6 +33,10 @@ public class ViajeLote {
     @JoinColumn(name = "id_lote", nullable = false)
     private Lote lote;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_tramo", columnDefinition = "tipo_tramo_enum")
+    private com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo tipoTramo;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 }

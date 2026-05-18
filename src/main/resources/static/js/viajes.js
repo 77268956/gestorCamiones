@@ -33,49 +33,86 @@ document.addEventListener("DOMContentLoaded", () => {
     let lotesDisponibles = [];
     let lotesSeleccionados = [];
     let loteIdsPendientes = [];
+    let loteIdsIniciales = new Set();
     let paisesCargados = false;
     let lotesCargados = false;
+    let editLoteCurrentData = null;
 
     const getLoteId = lote => Number(lote?.idLote ?? lote?.id_lote ?? lote?.id);
 
-    const renderLoteSelect = () => {
-        const select = document.getElementById("loteSelect");
-        if (!select) return;
+    let modalBusquedaLotesInstancia = null;
+
+    const renderTablaBusquedaLotes = (filtro = "") => {
+        const tbody = document.getElementById("tablaModalBusquedaLotes");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+
         const selectedIds = new Set(lotesSeleccionados.map(getLoteId).filter(Boolean));
         const disponibles = Array.isArray(lotesDisponibles) ? lotesDisponibles : [];
 
-        const current = select.value;
-        select.innerHTML = "";
-
-        const optPlaceholder = document.createElement("option");
-        optPlaceholder.value = "";
-        optPlaceholder.textContent = "Seleccione un lote";
-        select.appendChild(optPlaceholder);
-
         const opts = disponibles
             .filter(l => !selectedIds.has(getLoteId(l)))
+            .filter(l => !l.asignado || loteIdsIniciales.has(getLoteId(l)))
+            .filter(l => {
+                if (!filtro) return true;
+                const f = filtro.toLowerCase();
+                const num = (l.numeroLote || "").toLowerCase();
+                const enc = (l.nombreEncargado || "").toLowerCase();
+                return num.includes(f) || enc.includes(f);
+            });
 
         if (!opts.length) {
-            const optEmpty = document.createElement("option");
-            optEmpty.value = "";
-            optEmpty.disabled = true;
-            optEmpty.textContent = "No hay lotes disponibles";
-            select.appendChild(optEmpty);
-        } else {
-            opts.forEach(lote => {
-                const id = getLoteId(lote);
-                if (!id) return;
-                const opt = document.createElement("option");
-                opt.value = String(id);
-                const numero = lote?.numeroLote || `Lote #${id}`;
-                const estado = lote?.estado ? ` (${String(lote.estado).replaceAll("_", " ")})` : "";
-                opt.textContent = `${numero}${estado}`;
-                select.appendChild(opt);
-            });
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay lotes disponibles que coincidan.</td></tr>';
+            return;
         }
 
-        if (current) select.value = current;
+        opts.forEach(lote => {
+            const id = getLoteId(lote);
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td>${lote.numeroLote || '-'}</td>
+                <td><span class="badge bg-secondary">${String(lote.estado || "").replaceAll("_", " ")}</span></td>
+                <td>${lote.nombreEncargado || '-'}</td>
+                <td>$${Number(lote.valorDeclarado || 0).toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-sm btn-success btn-seleccionar-lote" data-id="${id}">Seleccionar</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll('.btn-seleccionar-lote').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = Number(e.target.dataset.id);
+                const lote = lotesDisponibles.find(l => getLoteId(l) === id);
+                if (lote) {
+                    lotesSeleccionados.push(lote);
+                    renderLotesAsociados();
+                    modalBusquedaLotesInstancia?.hide();
+                }
+            });
+        });
     };
+
+    document.getElementById("btnAbrirModalBusquedaLotes")?.addEventListener("click", () => {
+        const modalEl = document.getElementById("modalBusquedaLotes");
+        if (!modalEl) return;
+        if (!modalBusquedaLotesInstancia) {
+            modalBusquedaLotesInstancia = new bootstrap.Modal(modalEl);
+        }
+        document.getElementById("filtroModalLotes").value = "";
+        renderTablaBusquedaLotes("");
+        modalBusquedaLotesInstancia.show();
+    });
+
+    document.getElementById("btnCerrarModalBusquedaLotes")?.addEventListener("click", () => {
+        modalBusquedaLotesInstancia?.hide();
+    });
+
+    document.getElementById("filtroModalLotes")?.addEventListener("input", (e) => {
+        renderTablaBusquedaLotes(e.target.value);
+    });
 
     const renderLotesAsociados = () => {
         const cont = document.getElementById("lotesAsociados");
@@ -83,7 +120,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         cont.innerHTML = "";
         if (!lotesSeleccionados.length) {
-            renderLoteSelect();
             actualizarResumen();
             return;
         }
@@ -91,28 +127,139 @@ document.addEventListener("DOMContentLoaded", () => {
         lotesSeleccionados.forEach(lote => {
             const id = getLoteId(lote);
             const numero = lote?.numeroLote || `Lote #${id || "-"}`;
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "d-inline-flex flex-column gap-1";
+
             const chip = document.createElement("span");
             chip.className = "badge bg-primary d-inline-flex align-items-center gap-2";
             chip.style.cursor = "default";
             chip.textContent = numero;
 
-            const btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "btn btn-sm btn-light";
-            btn.textContent = "x";
-            btn.setAttribute("aria-label", `Quitar ${numero}`);
-            btn.addEventListener("click", () => {
+            const btnEdit = document.createElement("button");
+            btnEdit.type = "button";
+            btnEdit.className = "btn btn-sm btn-info text-white p-0 px-1";
+            btnEdit.style.fontSize = "10px";
+            btnEdit.innerHTML = "&#9998;"; // Pencil icon
+            btnEdit.title = "Editar Lote";
+            btnEdit.addEventListener("click", () => {
+                abrirFormularioLote(id);
+            });
+
+            const btnRemove = document.createElement("button");
+            btnRemove.type = "button";
+            btnRemove.className = "btn btn-sm btn-light p-0 px-1";
+            btnRemove.style.fontSize = "10px";
+            btnRemove.textContent = "x";
+            btnRemove.setAttribute("aria-label", `Quitar ${numero}`);
+            btnRemove.addEventListener("click", () => {
                 lotesSeleccionados = lotesSeleccionados.filter(l => getLoteId(l) !== id);
                 renderLotesAsociados();
             });
 
-            chip.appendChild(btn);
-            cont.appendChild(chip);
+            chip.appendChild(btnEdit);
+            chip.appendChild(btnRemove);
+            wrapper.appendChild(chip);
+            cont.appendChild(wrapper);
         });
 
-        renderLoteSelect();
         actualizarResumen();
     };
+
+    const abrirFormularioLote = async (idLote) => {
+        try {
+            const res = await fetch(`/api/lotes/${idLote}`, {credentials: "same-origin"});
+            if (!res.ok) throw new Error("No se pudo cargar el lote para editar");
+            editLoteCurrentData = await res.json();
+
+            document.getElementById("editLoteId").value = idLote;
+            document.getElementById("editLoteNumero").value = editLoteCurrentData.numeroLote || "";
+            document.getElementById("editLotePeso").value = editLoteCurrentData.peso || 0;
+            document.getElementById("editLoteValor").value = editLoteCurrentData.valorDeclarado || 0;
+            document.getElementById("editLoteEncargado").value = editLoteCurrentData.nombreEncargado || "";
+            document.getElementById("editLoteDescripcion").value = editLoteCurrentData.descripcion || "";
+
+            const estadoSelect = document.getElementById("editLoteEstado");
+            if (estadoSelect) {
+                // Fetch states if empty
+                if (estadoSelect.options.length <= 1) {
+                    const estRes = await fetch("/api/lotes/estados");
+                    if (estRes.ok) {
+                        const estados = await estRes.json();
+                        estadoSelect.innerHTML = '<option value="">Seleccione</option>';
+                        estados.forEach(e => {
+                            const opt = document.createElement("option");
+                            opt.value = e;
+                            opt.textContent = e.replaceAll("_", " ");
+                            estadoSelect.appendChild(opt);
+                        });
+                    }
+                }
+                estadoSelect.value = editLoteCurrentData.estado || "";
+            }
+
+            document.getElementById("loteEditFormContainer").style.display = "block";
+        } catch(error) {
+            console.error(error);
+            alert("Error al cargar la información del lote para editar.");
+        }
+    };
+
+    document.getElementById("btnCerrarLoteEdit")?.addEventListener("click", () => {
+        document.getElementById("loteEditFormContainer").style.display = "none";
+        editLoteCurrentData = null;
+    });
+
+    document.getElementById("btnGuardarLoteEdit")?.addEventListener("click", async () => {
+        if (!editLoteCurrentData) return;
+        const idLote = document.getElementById("editLoteId").value;
+        const btn = document.getElementById("btnGuardarLoteEdit");
+        btn.disabled = true;
+        btn.textContent = "Guardando...";
+
+        try {
+            editLoteCurrentData.estado = document.getElementById("editLoteEstado").value;
+            editLoteCurrentData.peso = parseFloat(document.getElementById("editLotePeso").value) || 0;
+            editLoteCurrentData.valorDeclarado = parseFloat(document.getElementById("editLoteValor").value) || 0;
+            editLoteCurrentData.nombreEncargado = document.getElementById("editLoteEncargado").value;
+            editLoteCurrentData.descripcion = document.getElementById("editLoteDescripcion").value;
+
+            const res = await fetch(`/api/lotes/${idLote}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(csrfHeader && csrfToken ? {[csrfHeader]: csrfToken} : {})
+                },
+                body: JSON.stringify(editLoteCurrentData)
+            });
+
+            if (!res.ok) throw new Error("Error al guardar lote");
+
+            const updatedLote = await res.json();
+
+            // Update in lists
+            const listIndex = lotesDisponibles.findIndex(l => getLoteId(l) === Number(idLote));
+            if (listIndex >= 0) lotesDisponibles[listIndex] = updatedLote;
+
+            const selIndex = lotesSeleccionados.findIndex(l => getLoteId(l) === Number(idLote));
+            if (selIndex >= 0) {
+                // Merge data
+                lotesSeleccionados[selIndex] = {...lotesSeleccionados[selIndex], ...updatedLote};
+            }
+
+            document.getElementById("loteEditFormContainer").style.display = "none";
+            editLoteCurrentData = null;
+            renderLotesAsociados(); // This triggers actualizarResumen
+            alert("Lote actualizado con éxito.");
+
+        } catch(error) {
+            console.error(error);
+            alert("Ocurrió un error al guardar el lote.");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Guardar Lote";
+        }
+    });
 
     const syncLotesPendientes = () => {
         if (!loteIdsPendientes.length) return;
@@ -141,7 +288,6 @@ document.addEventListener("DOMContentLoaded", () => {
             lotesDisponibles = Array.isArray(data) ? data : [];
             lotesCargados = true;
             syncLotesPendientes();
-            renderLoteSelect();
         } catch (error) {
             console.error(error);
         }
@@ -211,6 +357,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const abrirModal = viajeId => {
         modal?.classList.add("is-open");
         if (estadoGuardado) estadoGuardado.textContent = "";
+        // Limpiar estados de validacion previos
+        modal?.querySelectorAll(".is-invalid").forEach(el => el.classList.remove("is-invalid"));
         if (!tiposGastoCargados) cargarTiposGasto();
         if (!estadosViajeCargados) cargarEstadosViaje();
         if (!paisesCargados) cargarPaises();
@@ -218,12 +366,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (modalTitle) {
             modalTitle.textContent = viajeId ? "Editar viaje" : "Agregar viaje";
         }
+        const btnEliminar = document.getElementById("btnEliminarViaje");
         if (viajeForm) {
             if (viajeId) {
                 viajeForm.dataset.viajeId = viajeId;
+                if (btnEliminar) btnEliminar.style.display = "inline-block";
                 cargarViajeDetalle(viajeId);
             } else {
                 delete viajeForm.dataset.viajeId;
+                if (btnEliminar) btnEliminar.style.display = "none";
                 resetFormulario();
             }
         }
@@ -383,20 +534,58 @@ document.addEventListener("DOMContentLoaded", () => {
         const gastosVuelta = state.vuelta.gastos.reduce((sum, g) => sum + g.monto, 0);
         const totalGastos = gastosIda + gastosVuelta;
 
+        let valorLotes = 0;
+        lotesSeleccionados.forEach(lote => {
+            const valor = parseFloat(lote.valorDeclarado || lote.valor_declarado) || 0;
+            valorLotes += valor;
+        });
+
+        const ivaCheckbox = document.getElementById("ivaActivoResumen");
+        // Force default to checked if not initialized
+        if (ivaCheckbox && ivaCheckbox.getAttribute('data-init') !== 'true') {
+            ivaCheckbox.checked = true;
+            ivaCheckbox.setAttribute('data-init', 'true');
+        }
+
+        const ivaActivo = ivaCheckbox?.checked ?? true;
+        const ivaPorcentajeElement = document.getElementById("ivaPorcentaje");
+        if (ivaPorcentajeElement) ivaPorcentajeElement.disabled = !ivaActivo;
+
+        const ivaPorcentaje = parseFloat(ivaPorcentajeElement?.value) || 13;
+
+        const ivaMonto = ivaActivo ? (valorLotes * (ivaPorcentaje / 100)) : 0;
+        const gananciaNeta = valorLotes - totalGastos - ivaMonto;
+
         const elGastosIda = document.getElementById("resumenGastosIda");
         const elGastosVuelta = document.getElementById("resumenGastosVuelta");
         const totalGastado = document.getElementById("totalGastado");
         const resumenLotes = document.getElementById("resumenLotes");
+        const elValorLotes = document.getElementById("resumenValorLotes");
+        const elIva = document.getElementById("resumenIVA");
+        const elGanancia = document.getElementById("resumenGanancia");
+
         if (elGastosIda) elGastosIda.textContent = formatMoney(gastosIda);
         if (elGastosVuelta) elGastosVuelta.textContent = formatMoney(gastosVuelta);
         if (totalGastado) totalGastado.textContent = formatMoney(totalGastos);
         if (resumenLotes) resumenLotes.textContent = String(lotesSeleccionados.length);
+        if (elValorLotes) elValorLotes.textContent = formatMoney(valorLotes);
+        if (elIva) elIva.textContent = formatMoney(ivaMonto);
+        if (elGanancia) elGanancia.textContent = formatMoney(gananciaNeta);
 
         const idaTotal = document.getElementById("idaTotalGastos");
         const vueltaTotal = document.getElementById("vueltaTotalGastos");
         if (idaTotal) idaTotal.textContent = formatMoney(gastosIda);
         if (vueltaTotal) vueltaTotal.textContent = formatMoney(gastosVuelta);
     };
+
+    // Listeners para actualizar resumen cuando cambia el IVA
+    document.getElementById("ivaActivoResumen")?.addEventListener("change", function() {
+        const inputIva = document.getElementById("ivaPorcentaje");
+        if (inputIva) inputIva.disabled = !this.checked;
+        actualizarResumen();
+    });
+
+    document.getElementById("ivaPorcentaje")?.addEventListener("input", actualizarResumen);
 
     const renderGastos = tramo => {
         const tbody = document.getElementById(`${tramo}GastosBody`);
@@ -460,8 +649,18 @@ document.addEventListener("DOMContentLoaded", () => {
             const evidenciaInput = form.querySelector("[data-gasto-evidencia]");
             const evidencia = evidenciaInput.files[0]?.name || "";
 
-            if (!tipoId || monto <= 0) {
+            if (!tipoId) {
+                tipoSelect.classList.add("is-invalid");
                 return;
+            } else {
+                tipoSelect.classList.remove("is-invalid");
+            }
+            const montoInput = form.querySelector("[data-gasto-monto]");
+            if (monto <= 0) {
+                montoInput.classList.add("is-invalid");
+                return;
+            } else {
+                montoInput.classList.remove("is-invalid");
             }
 
             const existingId = state[tramo].editIndex !== null
@@ -517,7 +716,10 @@ document.addEventListener("DOMContentLoaded", () => {
     let camionesModalCache = [];
     let debounceCamionesModal = null;
 
-
+    const paginacionClientesModal = {page: 0, size: 10, totalPages: 1, totalElements: 0};
+    const filtrosClientesModal = {q: ""};
+    let clientesModalCache = [];
+    let debounceClientesModal = null;
 
     const paginacionChoferesModal = {page: 0, size: 10, totalPages: 1, totalElements: 0};
     const filtrosChoferesModal = {q: "", estado: ""};
@@ -632,135 +834,76 @@ document.addEventListener("DOMContentLoaded", () => {
             const totalLotes = Number(viaje.totalLotes ?? lotes.length) || lotes.length;
             const lotesTransito = lotes.filter(l => String(l?.estado || "").toLowerCase() === "en_transito").length;
 
+            let valorTotalLotes = 0;
+            lotes.forEach(l => {
+                valorTotalLotes += parseFloat(l.valorDeclarado || l.valor_declarado) || 0;
+            });
+            const ivaCalculado = valorTotalLotes * 0.13; // default 13% for card view
+            const gananciaCalculada = valorTotalLotes - gastoNumero - ivaCalculado;
+
+            ingresosPagina += valorTotalLotes;
+            gananciaPagina += gananciaCalculada;
+
+
+            const hasIda = !!ida;
+            const hasVuelta = !!vuelta;
+            const ruta = [ida?.paisSalida, ida?.paisDestino, vuelta?.paisDestino].filter(Boolean).join(" → ") || "-";
+
+            // Determine main status badge
+            let mainStatusLabel = estadoIdaLabel;
+            let mainStatusClass = estadoIdaKey ? `status-${escapeHtml(estadoIdaKey)}` : "";
+            if (estadoIdaKey === "completado" && hasVuelta) {
+                mainStatusLabel = estadoVueltaLabel;
+                mainStatusClass = estadoVueltaKey ? `status-${escapeHtml(estadoVueltaKey)}` : "";
+            }
+
             return `
-    <div class="trip-card trip-card-action" role="button" tabindex="0" data-viaje-id="${escapeHtml(idViaje)}">
-        <div class="trip-card-header">
-            <div>
-                <div class="trip-card-kicker">Viaje</div>
-                <div class="trip-card-title">${escapeHtml(viaje.nombreVieje || "Sin nombre")}</div>
-            </div>
-            <div class="trip-card-date">
-                <span>Salida</span>
-                <span class="status-badge ${headerEstadoKey ? `status-${escapeHtml(headerEstadoKey)}` : ""}">
-                    ${escapeHtml(headerFecha)}
+    <tr class="align-middle" data-viaje-id="${escapeHtml(idViaje)}">
+        <td class="px-3">
+            <div class="fw-bold text-primary mb-1">${escapeHtml(viaje.nombreVieje || "Sin nombre")}</div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="status-badge ${mainStatusClass}" style="font-size: 0.7rem; padding: 2px 6px;">
+                    ${escapeHtml(mainStatusLabel)}
                 </span>
             </div>
-        </div>
-        <div class="trip-card-body">
-            <div class="trip-legs">
-                <div class="trip-leg-block">
-                    <div class="trip-leg-main">
-                        <div class="trip-leg-title">Datos del viaje (Ida)</div>
-                        <div class="trip-leg-row">
-                            <span class="trip-leg-label">Camion</span>
-                            <span class="trip-leg-value">${escapeHtml(ida?.camionNombre || ida?.camionPlaca || "-")}</span>
-                        </div>
-                        <div class="trip-leg-row">
-                            <span class="trip-leg-label">Chofer</span>
-                            <span class="trip-leg-value">${escapeHtml(ida?.conductorNombre || "-")}</span>
-                        </div>
-                        <div class="trip-leg-row">
-                            <span class="trip-leg-label">Estado</span>
-                            <span class="status-badge ${estadoIdaKey ? `status-${escapeHtml(estadoIdaKey)}` : ""}">
-                                ${escapeHtml(estadoIdaLabel)}
-                            </span>
-                        </div>
-                        <div class="trip-leg-row">
-                            <span class="trip-leg-label">Salida</span>
-                            <span class="status-badge ${estadoIdaKey ? `status-${escapeHtml(estadoIdaKey)}` : ""}">
-                                ${escapeHtml(idaFechaSalida)}
-                            </span>
-                        </div>
-                        <div class="trip-leg-row">
-                            <span class="trip-leg-label">Llegada</span>
-                            <span class="trip-leg-value">${escapeHtml(idaFechaLlegada)}</span>
-                        </div>
-                        <div class="trip-leg-row">
-                            <span class="trip-leg-label">Ruta</span>
-                            <span class="trip-leg-value">${escapeHtml([ida?.paisSalida, ida?.paisDestino].filter(Boolean).join(" → ") || "-")}</span>
-                        </div>
-                    </div>
-                    <div class="trip-leg-stats">
-                        <div class="trip-metric-item">
-                            <span>Gastos</span>
-                            <span>${formatMoney(parseNumber(ida?.gastoTotal))}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="trip-leg-block">
-                    <div class="trip-leg-main">
-                        <div class="trip-leg-title">Datos del viaje (Vuelta)</div>
-                        <div class="trip-leg-row">
-                            <span class="trip-leg-label">Camion</span>
-                            <span class="trip-leg-value">${escapeHtml(vuelta?.camionNombre || vuelta?.camionPlaca || "-")}</span>
-                        </div>
-                        <div class="trip-leg-row">
-                            <span class="trip-leg-label">Chofer</span>
-                            <span class="trip-leg-value">${escapeHtml(vuelta?.conductorNombre || "-")}</span>
-                        </div>
-                        <div class="trip-leg-row">
-                            <span class="trip-leg-label">Estado</span>
-                            <span class="status-badge ${estadoVueltaKey ? `status-${escapeHtml(estadoVueltaKey)}` : ""}">
-                                ${escapeHtml(estadoVueltaLabel)}
-                            </span>
-                        </div>
-                        <div class="trip-leg-row">
-                            <span class="trip-leg-label">Salida</span>
-                            <span class="status-badge ${estadoVueltaKey ? `status-${escapeHtml(estadoVueltaKey)}` : ""}">
-                                ${escapeHtml(vueltaFechaSalida)}
-                            </span>
-                        </div>
-                        <div class="trip-leg-row">
-                            <span class="trip-leg-label">Llegada</span>
-                            <span class="trip-leg-value">${escapeHtml(vueltaFechaLlegada)}</span>
-                        </div>
-                        <div class="trip-leg-row">
-                            <span class="trip-leg-label">Ruta</span>
-                            <span class="trip-leg-value">${escapeHtml([vuelta?.paisSalida, vuelta?.paisDestino].filter(Boolean).join(" → ") || "-")}</span>
-                        </div>
-                    </div>
-                    <div class="trip-leg-stats">
-                        <div class="trip-metric-item">
-                            <span>Gastos</span>
-                            <span>${formatMoney(parseNumber(vuelta?.gastoTotal))}</span>
-                        </div>
-                    </div>
-                </div>
+        </td>
+        <td class="px-3">
+            <div class="text-secondary small mb-1"><i class="fas fa-truck text-muted me-1"></i> Ida: ${escapeHtml(idaFechaSalida)}</div>
+            ${hasVuelta ? `<div class="text-secondary small"><i class="fas fa-undo text-muted me-1"></i> Vta: ${escapeHtml(vueltaFechaSalida)}</div>` : ''}
+        </td>
+        <td class="px-3">
+            <div class="small fw-medium text-dark">${escapeHtml(ruta)}</div>
+            <div class="small text-muted mt-1">
+                ${hasIda ? `<span title="Chofer Ida">${escapeHtml(ida?.conductorNombre || "-")}</span>` : ''}
             </div>
-
-            <div class="trip-total">
-                <div class="trip-total-title">Total</div>
-                <div class="trip-metric-item">
-                    <span>Gastos</span>
-                    <span>${gastoTotal}</span>
-                </div>
-                <div class="trip-metric-item">
-                    <span>Lotes</span>
-                    <span>${escapeHtml(String(totalLotes))}</span>
-                </div>
-                <div class="trip-metric-item">
-                    <span>Lotes en transito</span>
-                    <span>${escapeHtml(String(lotesTransito))}</span>
-                </div>
-
-                <div class="trip-card-actions">
-                    <button type="button" class="btn btn-outline-secondary btn-sm trip-card-action-btn"
-                        data-viaje-action="edit" data-viaje-id="${escapeHtml(idViaje)}">
-                        Actualizar
-                    </button>
-                    <button type="button" class="btn btn-primary btn-sm trip-card-action-btn"
-                        data-viaje-action="view" data-viaje-id="${escapeHtml(idViaje)}">
-                        Ver viaje
-                    </button>
-                </div>
+        </td>
+        <td class="px-3 text-center">
+            <div class="fw-bold fs-6">${escapeHtml(String(totalLotes))}</div>
+            <div class="small text-muted">${escapeHtml(String(lotesTransito))} en tránsito</div>
+        </td>
+        <td class="px-3 text-end">
+            <div class="fw-bold text-success" title="Ganancia Neta">${formatMoney(gananciaCalculada)}</div>
+            <div class="small text-muted mt-1" title="Gastos">-${gastoTotal}</div>
+        </td>
+        <td class="px-3 text-center">
+            <div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-light border trip-card-action-btn" title="Editar Viaje"
+                    data-viaje-action="edit" data-viaje-id="${escapeHtml(idViaje)}">
+                    <i class="fas fa-edit text-primary"></i>
+                </button>
+                <button type="button" class="btn btn-light border trip-card-action-btn" title="Ver Detalles"
+                    data-viaje-action="view" data-viaje-id="${escapeHtml(idViaje)}">
+                    <i class="fas fa-eye text-secondary"></i>
+                </button>
             </div>
-        </div>
-
-        
-    </div>
+        </td>
+    </tr>
 `;
         }).join("");
+
+        if (viajesCache.length === 0) {
+            listaViajes.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No se encontraron viajes.</td></tr>`;
+        }
 
         const inicio = paginacionViajes.page * paginacionViajes.size;
         const fin = inicio + viajesCache.length;
@@ -835,13 +978,140 @@ document.addEventListener("DOMContentLoaded", () => {
         await cargarLotesDisponibles();
         await cargarEstadosLoteModal();
         renderLotesViajeModal();
+        // Ocultar el formulario inline si estaba abierto
+        const inlineForm = document.getElementById("nuevoLoteInlineForm");
+        if (inlineForm) inlineForm.style.display = "none";
         bootstrap.Modal.getOrCreateInstance(modalBuscarLote).show();
     };
+
+    // Crear lote inline desde el modal de lotes (sin salir del viaje)
+    let categoriasLoteCache = [];
+    let categoriasLoteCargadas = false;
+
+    const cargarCategoriasLote = async () => {
+        if (categoriasLoteCargadas) return;
+        try {
+            const res = await fetch("/api/categorias", {credentials: "same-origin"});
+            if (!res.ok) throw new Error("No se pudieron cargar categorias");
+            categoriasLoteCache = await res.json();
+            categoriasLoteCargadas = true;
+        } catch (e) { console.error(e); }
+    };
+
+    const abrirFormularioNuevoLote = async () => {
+        await cargarCategoriasLote();
+        await cargarEstadosLoteModal();
+        const container = document.getElementById("nuevoLoteInlineForm");
+        if (!container) return;
+
+        // Cargar categorias en el select
+        const catSelect = container.querySelector("[data-lote-categoria]");
+        if (catSelect && categoriasLoteCache.length) {
+            catSelect.innerHTML = '<option value="">Seleccione categoria</option>';
+            categoriasLoteCache.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c.id || c.idCategoria;
+                opt.textContent = c.nombre;
+                catSelect.appendChild(opt);
+            });
+        }
+
+        // Cargar estados de lote
+        const estadoSelect = container.querySelector("[data-lote-estado]");
+        if (estadoSelect) {
+            try {
+                const res = await fetch("/api/lotes/estados", {credentials: "same-origin"});
+                if (res.ok) {
+                    const estados = await res.json();
+                    estadoSelect.innerHTML = '<option value="">Seleccione estado</option>';
+                    (Array.isArray(estados) ? estados : []).forEach(e => {
+                        const opt = document.createElement("option");
+                        opt.value = e;
+                        opt.textContent = String(e).replaceAll("_", " ");
+                        estadoSelect.appendChild(opt);
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        container.style.display = "block";
+        container.querySelector("[data-lote-numero]")?.focus();
+    };
+
+    // Handler para guardar lote inline
+    document.getElementById("btnGuardarLoteInline")?.addEventListener("click", async () => {
+        const container = document.getElementById("nuevoLoteInlineForm");
+        if (!container) return;
+
+        const numero = container.querySelector("[data-lote-numero]")?.value?.trim();
+        const estado = container.querySelector("[data-lote-estado]")?.value;
+        const idCategoria = container.querySelector("[data-lote-categoria]")?.value;
+        const idClienteRemitente = container.querySelector("[data-lote-remitente]")?.value;
+        const descripcion = container.querySelector("[data-lote-descripcion]")?.value || "";
+        const peso = container.querySelector("[data-lote-peso]")?.value || null;
+        const valorDeclarado = container.querySelector("[data-lote-valor]")?.value || null;
+
+        // Validar campos obligatorios
+        let valid = true;
+        if (!numero) { container.querySelector("[data-lote-numero]")?.classList.add("is-invalid"); valid = false; }
+        else { container.querySelector("[data-lote-numero]")?.classList.remove("is-invalid"); }
+        if (!estado) { container.querySelector("[data-lote-estado]")?.classList.add("is-invalid"); valid = false; }
+        else { container.querySelector("[data-lote-estado]")?.classList.remove("is-invalid"); }
+        if (!idCategoria) { container.querySelector("[data-lote-categoria]")?.classList.add("is-invalid"); valid = false; }
+        else { container.querySelector("[data-lote-categoria]")?.classList.remove("is-invalid"); }
+        if (!idClienteRemitente) { container.querySelector("[data-lote-remitente]")?.classList.add("is-invalid"); valid = false; }
+        else { container.querySelector("[data-lote-remitente]")?.classList.remove("is-invalid"); }
+        if (!valid) return;
+
+        try {
+            const headers = {"Content-Type": "application/json"};
+            if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+            const body = {
+                numeroLote: numero,
+                estado,
+                idCategoria: Number(idCategoria),
+                idClienteRemitente: Number(idClienteRemitente),
+                descripcion,
+                peso: peso ? Number(peso) : null,
+                valorDeclarado: valorDeclarado ? Number(valorDeclarado) : null
+            };
+            const res = await fetch("/api/lotes", {
+                method: "POST", headers, credentials: "same-origin",
+                body: JSON.stringify(body)
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => null);
+                throw new Error(err?.message || "Error al crear lote");
+            }
+            const nuevoLote = await res.json();
+            // Agregar el nuevo lote a la lista y seleccionarlo automaticamente
+            lotesDisponibles.unshift(nuevoLote);
+            lotesSeleccionados.push(nuevoLote);
+            renderLotesAsociados();
+            renderLotesViajeModal();
+            // Limpiar y cerrar formulario inline
+            container.style.display = "none";
+            container.querySelectorAll("input, select, textarea").forEach(el => {
+                if (el.tagName === "SELECT") el.selectedIndex = 0;
+                else el.value = "";
+                el.classList.remove("is-invalid");
+            });
+            alert("Lote creado y asociado al viaje");
+        } catch (error) {
+            console.error(error);
+            alert(`Error: ${error.message}`);
+        }
+    });
+
+    document.getElementById("btnCancelarLoteInline")?.addEventListener("click", () => {
+        const container = document.getElementById("nuevoLoteInlineForm");
+        if (container) container.style.display = "none";
+    });
 
     // El usuario espera que el boton "+ Agregar" abra el modal de lotes.
     document.getElementById("btnAgregarLote")?.addEventListener("click", abrirModalLotes);
     document.getElementById("btnNuevoLoteDesdeViaje")?.addEventListener("click", () => {
-        window.location.href = "/lotes";
+        abrirFormularioNuevoLote();
     });
 
     const filtrosLotesModal = {q: "", estado: ""};
@@ -959,6 +1229,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // V2: lotes asociados
             loteIdsPendientes = Array.isArray(data.loteIds) ? data.loteIds.map(Number).filter(Boolean) : [];
+            loteIdsIniciales = new Set(loteIdsPendientes);
             if (lotesCargados) {
                 syncLotesPendientes();
             } else {
@@ -1793,41 +2064,77 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const validarFormulario = () => {
         let valido = true;
+        const errores = [];
         const requeridos = [
-            "nombreViaje",
-            "idaCamionInput",
-            "idaChoferInput",
-            "idaSalida",
-            "idaLlegada"
+            {id: "nombreViaje", label: "Nombre del viaje"},
+            {id: "idaCamionInput", label: "Camion (ida)"},
+            {id: "idaChoferInput", label: "Chofer (ida)"},
+            {id: "idaSalida", label: "Fecha salida (ida)"},
+            {id: "idaLlegada", label: "Fecha llegada (ida)"}
         ];
-        requeridos.forEach(id => {
+        requeridos.forEach(({id, label}) => {
             const input = document.getElementById(id);
             if (!input) return;
-            if (!input.value) {
+            if (!input.value || !input.value.trim()) {
                 input.classList.add("is-invalid");
+                errores.push(label);
                 valido = false;
             } else {
                 input.classList.remove("is-invalid");
             }
         });
+
+        // Validar nombre de viaje longitud
+        const nombreViaje = document.getElementById("nombreViaje");
+        if (nombreViaje && nombreViaje.value.trim()) {
+            if (nombreViaje.value.trim().length < 3) {
+                nombreViaje.classList.add("is-invalid");
+                errores.push("El nombre del viaje debe tener al menos 3 caracteres");
+                valido = false;
+            } else if (nombreViaje.value.trim().length > 100) {
+                nombreViaje.classList.add("is-invalid");
+                errores.push("El nombre del viaje no puede exceder 100 caracteres");
+                valido = false;
+            }
+        }
+
         const idaCamion = document.getElementById("idaCamionId")?.value;
         const idaChofer = document.getElementById("idaChoferId")?.value;
         if (!idaCamion) {
             document.getElementById("idaCamionInput")?.classList.add("is-invalid");
+            if (!errores.includes("Camion (ida)")) errores.push("Selecciona un camion para ida");
             valido = false;
         }
         if (!idaChofer) {
             document.getElementById("idaChoferInput")?.classList.add("is-invalid");
+            if (!errores.includes("Chofer (ida)")) errores.push("Selecciona un chofer para ida");
             valido = false;
         }
+
+        // Validar fechas: salida debe ser antes de llegada
+        const idaSalida = document.getElementById("idaSalida")?.value;
+        const idaLlegada = document.getElementById("idaLlegada")?.value;
+        if (idaSalida && idaLlegada) {
+            const dSalida = new Date(idaSalida);
+            const dLlegada = new Date(idaLlegada);
+            if (dSalida >= dLlegada) {
+                document.getElementById("idaSalida")?.classList.add("is-invalid");
+                document.getElementById("idaLlegada")?.classList.add("is-invalid");
+                errores.push("La fecha de salida (ida) debe ser anterior a la de llegada");
+                valido = false;
+            }
+        }
+
         const idaEstado = document.getElementById("idaEstado");
         if (idaEstado && !idaEstado.value) {
             idaEstado.classList.add("is-invalid");
+            errores.push("Selecciona un estado para el tramo de ida");
             valido = false;
         } else if (idaEstado) {
             idaEstado.classList.remove("is-invalid");
         }
 
+        // Validar vuelta si tiene datos
         const vueltaInputs = [
             "vueltaCamionId",
             "vueltaChoferId",
@@ -1839,16 +2146,54 @@ document.addEventListener("DOMContentLoaded", () => {
             return Boolean(el?.value);
         }) || state.vuelta.gastos.length > 0;
 
-        const vueltaEstado = document.getElementById("vueltaEstado");
         if (vueltaTieneDatos) {
+            // Validar fechas vuelta
+            const vueltaSalida = document.getElementById("vueltaSalida")?.value;
+            const vueltaLlegada = document.getElementById("vueltaLlegada")?.value;
+            if (vueltaSalida && vueltaLlegada) {
+                const dSalida = new Date(vueltaSalida);
+                const dLlegada = new Date(vueltaLlegada);
+                if (dSalida >= dLlegada) {
+                    document.getElementById("vueltaSalida")?.classList.add("is-invalid");
+                    document.getElementById("vueltaLlegada")?.classList.add("is-invalid");
+                    errores.push("La fecha de salida (vuelta) debe ser anterior a la de llegada");
+                    valido = false;
+                }
+            }
+
+            const vueltaEstado = document.getElementById("vueltaEstado");
             if (vueltaEstado && !vueltaEstado.value) {
                 vueltaEstado.classList.add("is-invalid");
+                errores.push("Selecciona un estado para el tramo de vuelta");
                 valido = false;
             } else if (vueltaEstado) {
                 vueltaEstado.classList.remove("is-invalid");
             }
-        } else if (vueltaEstado) {
-            vueltaEstado.classList.remove("is-invalid");
+
+            // Validar camion/chofer vuelta si hay datos parciales
+            const vueltaCamion = document.getElementById("vueltaCamionId")?.value;
+            const vueltaChofer = document.getElementById("vueltaChoferId")?.value;
+            if (!vueltaCamion) {
+                document.getElementById("vueltaCamionInput")?.classList.add("is-invalid");
+                errores.push("Selecciona un camion para vuelta");
+                valido = false;
+            }
+            if (!vueltaChofer) {
+                document.getElementById("vueltaChoferInput")?.classList.add("is-invalid");
+                errores.push("Selecciona un chofer para vuelta");
+                valido = false;
+            }
+        } else {
+            const vueltaEstado = document.getElementById("vueltaEstado");
+            if (vueltaEstado) vueltaEstado.classList.remove("is-invalid");
+        }
+
+        // Mostrar resumen de errores
+        if (!valido && estadoGuardado) {
+            estadoGuardado.textContent = errores.length <= 2
+                ? errores.join(". ")
+                : `${errores.length} campos con errores. Revisa el formulario.`;
+            estadoGuardado.className = "estado-guardado error";
         }
         return valido;
     };
@@ -1897,7 +2242,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             return {
                 id: Number(state[tramo].detalleId) || 0,
-                tipoTramo: tramo,
+                tipoTramo: String(tramo).toLowerCase(),
                 idCamion,
                 idConductor,
                 estadoViaje: tramo === "ida" ? estadoIda : estadoVuelta,
@@ -1927,21 +2272,44 @@ document.addEventListener("DOMContentLoaded", () => {
         const tramoVuelta = buildTramo("vuelta");
         if (tramoVuelta) tramos.push(tramoVuelta);
 
+        const viajeId = viajeForm?.dataset.viajeId;
         return {
+            id_vieje: Number(viajeId) || 0,
             nombreViaje: document.getElementById("nombreViaje")?.value || "",
             loteIds: lotesSeleccionados.map(getLoteId).filter(Boolean),
             tramos
         };
     };
 
+    // Eliminar viaje handler
+    document.getElementById("btnEliminarViaje")?.addEventListener("click", async () => {
+        const viajeId = viajeForm?.dataset.viajeId;
+        if (!viajeId) return;
+        if (!confirm("¿Estas seguro de eliminar este viaje? Esta accion no se puede deshacer.")) return;
+        try {
+            const headers = {};
+            if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+            const res = await fetch(`/api/viajes/${viajeId}`, {
+                method: "DELETE",
+                headers,
+                credentials: "same-origin"
+            });
+            if (!res.ok) throw new Error("Error al eliminar");
+            cerrarModal();
+            alert("Viaje eliminado correctamente");
+            cargarViajes(paginacionViajes.page);
+        } catch (error) {
+            console.error(error);
+            alert(`Error al eliminar: ${error.message}`);
+        }
+    });
+
     viajeForm?.addEventListener("submit", async event => {
         event.preventDefault();
         if (estadoGuardado) estadoGuardado.textContent = "";
+        // Clear previous invalid states
+        modal?.querySelectorAll(".is-invalid").forEach(el => el.classList.remove("is-invalid"));
         if (!validarFormulario()) {
-            if (estadoGuardado) {
-                estadoGuardado.textContent = "Faltan campos requeridos.";
-                estadoGuardado.className = "estado-guardado error";
-            }
             return;
         }
 
@@ -1983,15 +2351,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 estadoGuardado.className = "estado-guardado ok";
             }
             cerrarModal();
-            alert("Guardado correctamente");
             cargarViajes(paginacionViajes.page);
         } catch (error) {
             console.error(error);
+            const msg = error.message || "Verifica los datos e intenta de nuevo";
             if (estadoGuardado) {
-                estadoGuardado.textContent = "Error al guardar";
+                estadoGuardado.textContent = msg;
                 estadoGuardado.className = "estado-guardado error";
             }
-            alert(`Error al guardar: ${error.message || "verifica los datos"}`);
         } finally {
             if (btnGuardarViaje) btnGuardarViaje.disabled = false;
         }

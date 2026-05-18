@@ -47,12 +47,14 @@ public class LoteController {
     @Transactional(readOnly = true)
     public List<LoteResumenDTO> listarLotes(
             @RequestParam(required = false) String q,
-            @RequestParam(required = false) String estado
+            @RequestParam(required = false) String estado,
+            @RequestParam(defaultValue = "false") boolean disponibles
     ) {
         String qNorm = q != null ? q.trim().toLowerCase(Locale.ROOT) : "";
         String estadoNorm = estado != null ? estado.trim().toLowerCase(Locale.ROOT) : "";
 
         return loteRepository.findAllByDeletedAtIsNull().stream()
+                .filter(l -> !disponibles || l.getViajeLotes().isEmpty())
                 .filter(l -> {
                     if (qNorm.isEmpty()) return true;
                     return containsIgnoreCase(l.getNumeroLote(), qNorm)
@@ -73,6 +75,23 @@ public class LoteController {
     @GetMapping("/estados")
     public List<String> listarEstados() {
         return List.of(EstadoLote.values()).stream().map(EstadoLote::getDbValue).toList();
+    }
+
+    @GetMapping("/{id}")
+    @Transactional(readOnly = true)
+    public LoteUpsertDTO obtenerLote(@PathVariable Long id) {
+        Lote lote = loteRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Lote no encontrado"));
+        LoteUpsertDTO dto = new LoteUpsertDTO();
+        dto.setNumeroLote(lote.getNumeroLote());
+        dto.setEstado(lote.getEstado() != null ? lote.getEstado().getDbValue() : null);
+        dto.setIdCategoria(lote.getCategoria() != null ? lote.getCategoria().getIdCategoria() : null);
+        dto.setIdClienteRemitente(lote.getClienteRemitente() != null ? lote.getClienteRemitente().getId() : null);
+        dto.setIdClienteDestinatario(lote.getClienteDestinatario() != null ? lote.getClienteDestinatario().getId() : null);
+        dto.setNombreEncargado(lote.getNombreEncargado());
+        dto.setPeso(lote.getPeso());
+        dto.setDescripcion(lote.getDescripcion());
+        dto.setValorDeclarado(lote.getValorDeclarado());
+        return dto;
     }
 
     @PostMapping
@@ -155,6 +174,7 @@ public class LoteController {
         dto.setPeso(lote.getPeso());
         dto.setValorDeclarado(lote.getValorDeclarado());
         dto.setDescripcion(lote.getDescripcion());
+        dto.setAsignado(!lote.getViajeLotes().isEmpty());
 
         if (lote.getCategoria() != null) {
             dto.setCategoriaNombre(lote.getCategoria().getNombre());
