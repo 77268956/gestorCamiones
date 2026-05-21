@@ -48,7 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/lotes/**").hasRole("ADMIN")
                         .requestMatchers("/api/categorias/**").hasRole("ADMIN")
                         .requestMatchers("/viajes", "/viajes/**", "/api/viajes/**").hasRole("ADMIN")
-                        .requestMatchers("/gastos", "/gastos/**", "/api/tipogasto/**").hasRole("ADMIN")
+                        .requestMatchers("/gastos", "/gastos/**", "/api/tipogasto/**", "/api/gastos-generales/**").hasRole("ADMIN")
                         .requestMatchers("/dashboard", "/practica").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated()
                 )

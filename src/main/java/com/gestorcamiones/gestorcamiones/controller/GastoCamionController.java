@@ -50,7 +50,7 @@ public class GastoCamionController {
             @RequestParam("monto") BigDecimal monto,
             @RequestParam(value = "descripcion", required = false) String descripcion,
             @RequestParam(value = "fechaGasto", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaGasto,
-            @RequestPart(value = "evidencia", required = false) MultipartFile evidencia,
+            @RequestParam(value = "evidencia", required = false) MultipartFile evidencia,
             @AuthenticationPrincipal CustomUserDetails admin
     ) {
         GastoCamionDTO dto = new GastoCamionDTO();
@@ -81,7 +81,7 @@ public class GastoCamionController {
             @RequestParam("monto") BigDecimal monto,
             @RequestParam(value = "descripcion", required = false) String descripcion,
             @RequestParam(value = "fechaGasto", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaGasto,
-            @RequestPart(value = "evidencia", required = false) MultipartFile evidencia,
+            @RequestParam(value = "evidencia", required = false) MultipartFile evidencia,
             @AuthenticationPrincipal CustomUserDetails admin
     ) {
         GastoCamionDTO dto = new GastoCamionDTO();
