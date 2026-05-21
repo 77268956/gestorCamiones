@@ -101,6 +101,13 @@
             cacheTipos = Array.isArray(data) ? data : [];
             renderTipos(cacheTipos);
             renderSelectFiltro(cacheTipos);
+
+            // Notificar a otras vistas/scripts (ej: gastosGenerales.js) para refrescar selects en tiempo real.
+            try {
+                window.dispatchEvent(new CustomEvent("tiposgasto:updated", { detail: { tipos: cacheTipos } }));
+            } catch (_) {
+                // noop
+            }
         } catch (e) {
             console.error(e);
             setAlert(e?.message || "Error cargando tipos de gasto");

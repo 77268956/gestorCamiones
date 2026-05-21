@@ -102,6 +102,15 @@
         });
     };
 
+    // Tiempo real: cuando se crea/edita/elimina un tipo de gasto desde tipoGasto.js,
+    // refrescar el select del modal de "Nuevo gasto" sin recargar la pagina.
+    window.addEventListener("tiposgasto:updated", (ev) => {
+        const tipos = ev?.detail?.tipos;
+        if (!Array.isArray(tipos)) return;
+        cacheTipos = tipos;
+        renderSelectTiposGasto();
+    });
+
     const renderGastos = (gastos) => {
         if (!gastos || !gastos.length) {
             tbodyGastos.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No hay gastos en este periodo.</td></tr>`;
@@ -233,8 +242,10 @@
 
     if (btnBuscar) btnBuscar.addEventListener("click", () => cargarGastos(0));
     if (btnLimpiar) btnLimpiar.addEventListener("click", () => {
-        if (inputFiltroInicio) inputFiltroInicio.value = "";
-        if (inputFiltroFin) inputFiltroFin.value = "";
+        // No dejar fechas en blanco: al limpiar, volver a poner el mes actual.
+        const { inicio, fin } = rangoMesActual();
+        if (inputFiltroInicio) inputFiltroInicio.value = inicio;
+        if (inputFiltroFin) inputFiltroFin.value = fin;
         if (selectFiltroTipo) selectFiltroTipo.value = "";
         if (byId("filtroBusquedaViajes")) byId("filtroBusquedaViajes").value = "";
         cargarGastos(0);
@@ -343,11 +354,7 @@
                 
                 if (gastoModal) gastoModal.hide();
                 
-                // Después de guardar, siempre recargar la primera página y limpiar filtros para garantizar visibilidad
-                if (inputFiltroInicio) inputFiltroInicio.value = "";
-                if (inputFiltroFin) inputFiltroFin.value = "";
-                if (selectFiltroTipo) selectFiltroTipo.value = "";
-                if (byId("filtroBusquedaViajes")) byId("filtroBusquedaViajes").value = "";
+                // Después de guardar, recargar sin borrar las fechas del filtro.
                 cargarGastos(0);
             } catch (e) {
                 console.error(e);
