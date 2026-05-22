@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -48,4 +49,41 @@ public interface GastosGeneralesRepository extends JpaRepository<GastosGenerales
     List<Long> findIdsByFechaGastoBetween(@Param("startDate") LocalDate startDate,
                                           @Param("endDate")   LocalDate endDate,
                                           Pageable pageable);
+
+    // ── Dashboard queries ────────────────────────────────────────────────────
+
+    /** Suma total de gastos generales en un mes/año. */
+    @Query(value = """
+        SELECT COALESCE(SUM(g.monto), 0)
+        FROM gastos_generales g
+        WHERE g.deleted_at IS NULL
+          AND EXTRACT(MONTH FROM g.fecha_gasto) = :mes
+          AND EXTRACT(YEAR  FROM g.fecha_gasto) = :ano
+    """, nativeQuery = true)
+    BigDecimal sumMontoByMes(@Param("mes") int mes, @Param("ano") int ano);
+
+    /** Suma gastos generales agrupados por mes del año. */
+    @Query(value = """
+        SELECT EXTRACT(MONTH FROM g.fecha_gasto) AS mes,
+               COALESCE(SUM(g.monto), 0)         AS total
+        FROM gastos_generales g
+        WHERE g.deleted_at IS NULL
+          AND EXTRACT(YEAR FROM g.fecha_gasto) = :ano
+        GROUP BY mes
+        ORDER BY mes
+    """, nativeQuery = true)
+    List<Object[]> sumMontoByMesAgrupado(@Param("ano") int ano);
+
+    /** Detalle de gastos generales de un mes: tipo + suma. */
+    @Query(value = """
+        SELECT tg.tipo_gasto AS tipo, COALESCE(SUM(g.monto), 0) AS total
+        FROM gastos_generales g
+        JOIN tipo_gasto tg ON tg.id_tipo_gasto = g.id_tipo_gasto
+        WHERE g.deleted_at IS NULL
+          AND EXTRACT(MONTH FROM g.fecha_gasto) = :mes
+          AND EXTRACT(YEAR  FROM g.fecha_gasto) = :ano
+        GROUP BY tg.tipo_gasto
+        ORDER BY total DESC
+    """, nativeQuery = true)
+    List<Object[]> detalleByTipoMes(@Param("mes") int mes, @Param("ano") int ano);
 }

@@ -1,6 +1,8 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
+import com.gestorcamiones.gestorcamiones.dto.DashboardResumenDTO;
 import com.gestorcamiones.gestorcamiones.security.CustomUserDetails;
+import com.gestorcamiones.gestorcamiones.service.dashboard.DashboardService;
 import com.gestorcamiones.gestorcamiones.service.usuario.UsuarioService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.security.core.Authentication;
@@ -9,15 +11,21 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.LocalDate;
+
 /**
- * Controlador MVC para vistas web (login, dashboard y modulos).
+ * Controlador MVC para vistas web (login, dashboard, reportes y módulos).
  */
 @Controller
 public class ViewController {
-    private final UsuarioService usuarioService;
 
-    public ViewController(UsuarioService usuarioService) {
-        this.usuarioService = usuarioService;
+    private final UsuarioService    usuarioService;
+    private final DashboardService  dashboardService;
+
+    public ViewController(UsuarioService usuarioService,
+                          DashboardService dashboardService) {
+        this.usuarioService   = usuarioService;
+        this.dashboardService = dashboardService;
     }
 
     @GetMapping("/")
@@ -27,7 +35,7 @@ public class ViewController {
 
     @GetMapping("/login")
     public String login(
-            @RequestParam(value = "error", required = false) String error,
+            @RequestParam(value = "error",  required = false) String error,
             @RequestParam(value = "logout", required = false) String logout,
             HttpSession session,
             Model model) {
@@ -37,11 +45,11 @@ public class ViewController {
             model.addAttribute("error", sessionError);
             session.removeAttribute("error");
         } else if (error != null) {
-            model.addAttribute("error", "Usuario o contrasena incorrectos");
+            model.addAttribute("error", "Usuario o contraseña incorrectos");
         }
 
         if (logout != null) {
-            model.addAttribute("message", "Sesion cerrada correctamente");
+            model.addAttribute("message", "Sesión cerrada correctamente");
         }
 
         return "index";
@@ -49,13 +57,40 @@ public class ViewController {
 
     @GetMapping("/dashboard")
     public String dashboard(Authentication authentication, Model model) {
+        // Nombre de usuario
         String nombreUsuario = authentication.getName();
         Object principal = authentication.getPrincipal();
         if (principal instanceof CustomUserDetails customUserDetails) {
             nombreUsuario = customUserDetails.getUsername();
         }
         model.addAttribute("nombreUsuario", nombreUsuario);
+
+        // Datos del dashboard (mes y año actuales)
+        int mes = LocalDate.now().getMonthValue();
+        int ano = LocalDate.now().getYear();
+        DashboardResumenDTO resumen = dashboardService.getDashboardResumen(mes, ano);
+        model.addAttribute("resumen", resumen);
+        model.addAttribute("anoActual", ano);
+        model.addAttribute("mesActual", mes);
+
         return "view/dashboard";
+    }
+
+    @GetMapping("/reportes")
+    public String reportes(Authentication authentication, Model model) {
+        String nombreUsuario = authentication.getName();
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof CustomUserDetails customUserDetails) {
+            nombreUsuario = customUserDetails.getUsername();
+        }
+        model.addAttribute("nombreUsuario", nombreUsuario);
+
+        int mes = LocalDate.now().getMonthValue();
+        int ano = LocalDate.now().getYear();
+        model.addAttribute("mesActual", mes);
+        model.addAttribute("anoActual", ano);
+
+        return "view/reportes";
     }
 
     @GetMapping("/usuarios")
