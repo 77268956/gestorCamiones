@@ -86,10 +86,11 @@
                     <th>Peso</th>
                     <th>Valor</th>
                     <th>Encargado</th>
+                    <th class="text-center">Acciones</th>
                 </tr>
                 </thead>
                 <tbody id="tablaLotesBody">
-                <tr><td colspan="9" class="text-center">Cargando lotes...</td></tr>
+                <tr><td colspan="10" class="text-center">Cargando lotes...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -104,11 +105,12 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content mp-modal-content">
                 <div class="modal-header mp-modal-header">
-                    <h5 class="modal-title">Nuevo lote</h5>
+                    <h5 class="modal-title" id="modalNuevoLoteLabel">Nuevo lote</h5>
                     <button type="button" class="btn-close mp-modal-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="formNuevoLote" class="row g-3" novalidate>
+                        <input type="hidden" id="nuevoLoteId">
                         <div class="col-12 col-md-6">
                             <label class="form-label">Numero de lote</label>
                             <input id="nuevoNumeroLote" type="text" class="form-control" required>

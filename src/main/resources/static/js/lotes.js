@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const filtros = {q: "", estado: ""};
     let cache = [];
     let debounce = null;
+    let loteEditandoId = null;
 
     const escapeHtml = text => String(text ?? "")
         .replaceAll("&", "&amp;")
@@ -28,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const render = () => {
         if (!tbody) return;
         if (!cache.length) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No hay lotes</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No hay lotes</td></tr>';
             if (total) total.textContent = "Mostrando 0 lotes";
             return;
         }
@@ -55,6 +56,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td>${escapeHtml(peso)}</td>
                     <td>${escapeHtml(valor)}</td>
                     <td>${escapeHtml(encargado)}</td>
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn-edit" type="button" data-lote-id="${id}">Editar</button>
+                            <button class="btn-del" type="button" data-lote-id="${id}">Eliminar</button>
+                        </div>
+                    </td>
                 </tr>
             `;
         }).join("");
@@ -64,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const cargar = async () => {
         if (!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center">Cargando lotes...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center">Cargando lotes...</td></tr>';
         try {
             const qs = new URLSearchParams();
             if (filtros.q) qs.set("q", filtros.q);
@@ -76,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
             render();
         } catch (e) {
             console.error(e);
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error al cargar lotes</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error al cargar lotes</td></tr>';
             if (total) total.textContent = "Mostrando 0 lotes";
         }
     };
@@ -312,11 +319,134 @@ document.addEventListener("DOMContentLoaded", () => {
         bootstrap.Modal.getInstance(modalSeleccionCliente)?.hide();
     });
 
-    btnNuevo?.addEventListener("click", async () => {
-        if (!modalNuevo) return;
+    const prepararModalAgregar = async () => {
+        loteEditandoId = null;
+        const tituloModal = document.getElementById("modalNuevoLoteLabel");
+        const botonSubmit = document.getElementById("btnGuardarLote");
+        if (tituloModal) tituloModal.textContent = "Nuevo lote";
+        if (botonSubmit) botonSubmit.textContent = "Guardar";
+        formNuevo?.reset();
+        const hiddenId = document.getElementById("nuevoLoteId");
+        if (hiddenId) hiddenId.value = "";
         if (estadoGuardar) estadoGuardar.textContent = "";
+
+        // Reset selects
+        const remitenteSelect = document.getElementById("nuevoRemitente");
+        if (remitenteSelect) remitenteSelect.innerHTML = '<option value="" selected>Seleccione</option>';
+        const destinatarioSelect = document.getElementById("nuevoDestinatario");
+        if (destinatarioSelect) destinatarioSelect.innerHTML = '<option value="" selected>Seleccione</option>';
+
         await cargarEstadosLote();
         await cargarCategorias();
+    };
+
+    const prepararModalEdicion = async (id) => {
+        const tituloModal = document.getElementById("modalNuevoLoteLabel");
+        const botonSubmit = document.getElementById("btnGuardarLote");
+        if (tituloModal) tituloModal.textContent = "Editar lote";
+        if (botonSubmit) botonSubmit.textContent = "Guardar cambios";
+        if (estadoGuardar) estadoGuardar.textContent = "Cargando datos...";
+
+        loteEditandoId = id;
+        const hiddenId = document.getElementById("nuevoLoteId");
+        if (hiddenId) hiddenId.value = String(id);
+
+        try {
+            await cargarEstadosLote();
+            await cargarCategorias();
+
+            const res = await fetch(`/api/lotes/${id}`, {credentials: "same-origin"});
+            if (!res.ok) throw new Error("No se pudo cargar la información del lote");
+            const lote = await res.json();
+
+            const loteResumen = cache.find(l => (l.idLote ?? l.id) === id);
+
+            document.getElementById("nuevoNumeroLote").value = lote.numeroLote ?? "";
+            document.getElementById("nuevoEstadoLote").value = lote.estado ?? "";
+            document.getElementById("nuevoCategoria").value = lote.idCategoria ?? "";
+            document.getElementById("nuevoEncargado").value = lote.nombreEncargado ?? "";
+            document.getElementById("nuevoPeso").value = lote.peso ?? "";
+            document.getElementById("nuevoValor").value = lote.valorDeclarado ?? "";
+            document.getElementById("nuevoDescripcion").value = lote.descripcion ?? "";
+
+            // Cargar remitente
+            if (lote.idClienteRemitente) {
+                const remitenteNombre = loteResumen?.remitenteNombre || `Cliente #${lote.idClienteRemitente}`;
+                upsertSelectOption(document.getElementById("nuevoRemitente"), lote.idClienteRemitente, `${remitenteNombre} (#${lote.idClienteRemitente})`);
+                document.getElementById("nuevoRemitenteQ").value = loteResumen?.remitenteNombre || "";
+            } else {
+                document.getElementById("nuevoRemitente").value = "";
+                document.getElementById("nuevoRemitenteQ").value = "";
+            }
+
+            // Cargar destinatario
+            if (lote.idClienteDestinatario) {
+                const destinatarioNombre = loteResumen?.destinatarioNombre || `Cliente #${lote.idClienteDestinatario}`;
+                upsertSelectOption(document.getElementById("nuevoDestinatario"), lote.idClienteDestinatario, `${destinatarioNombre} (#${lote.idClienteDestinatario})`);
+                document.getElementById("nuevoDestinatarioQ").value = loteResumen?.destinatarioNombre || "";
+            } else {
+                document.getElementById("nuevoDestinatario").value = "";
+                document.getElementById("nuevoDestinatarioQ").value = "";
+            }
+
+            if (estadoGuardar) estadoGuardar.textContent = "";
+            bootstrap.Modal.getOrCreateInstance(modalNuevo).show();
+        } catch (e) {
+            console.error(e);
+            alert(e.message || "Error al cargar datos del lote");
+            if (estadoGuardar) estadoGuardar.textContent = "Error al cargar datos";
+        }
+    };
+
+    const eliminarLote = async (id) => {
+        const loteResumen = cache.find(l => (l.idLote ?? l.id) === id);
+        const numLote = loteResumen?.numeroLote || `#${id}`;
+        const confirmar = window.confirm(`¿Está seguro de eliminar el lote ${numLote}?`);
+        if (!confirmar) return;
+
+        try {
+            const headers = {};
+            if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+            const res = await fetch(`/api/lotes/${id}`, {
+                method: "DELETE",
+                headers,
+                credentials: "same-origin"
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => null);
+                throw new Error(err?.message || "No se pudo eliminar el lote");
+            }
+            alert("Lote eliminado correctamente");
+            await cargar();
+        } catch (e) {
+            console.error(e);
+            alert("Error al eliminar lote: " + e.message);
+        }
+    };
+
+    const manejarAccionesTabla = async (event) => {
+        const botonEditar = event.target.closest(".btn-edit");
+        if (botonEditar) {
+            const id = Number(botonEditar.getAttribute("data-lote-id"));
+            if (!Number.isInteger(id)) return;
+            await prepararModalEdicion(id);
+            return;
+        }
+
+        const botonEliminar = event.target.closest(".btn-del");
+        if (botonEliminar) {
+            const id = Number(botonEliminar.getAttribute("data-lote-id"));
+            if (!Number.isInteger(id)) return;
+            await eliminarLote(id);
+            return;
+        }
+    };
+
+    tbody?.addEventListener("click", manejarAccionesTabla);
+
+    btnNuevo?.addEventListener("click", async () => {
+        if (!modalNuevo) return;
+        await prepararModalAgregar();
         bootstrap.Modal.getOrCreateInstance(modalNuevo).show();
     });
 
@@ -378,8 +508,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const headers = {"Content-Type": "application/json"};
             if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
-            const res = await fetch("/api/lotes", {
-                method: "POST",
+            
+            const enEdicion = loteEditandoId !== null;
+            const url = enEdicion ? `/api/lotes/${loteEditandoId}` : "/api/lotes";
+            const method = enEdicion ? "PUT" : "POST";
+
+            const res = await fetch(url, {
+                method,
                 headers,
                 credentials: "same-origin",
                 body: JSON.stringify(payload)
@@ -391,6 +526,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (estadoGuardar) estadoGuardar.textContent = "Guardado";
             bootstrap.Modal.getInstance(modalNuevo)?.hide();
             await cargar();
+            alert(enEdicion ? "Lote actualizado correctamente" : "Lote registrado correctamente");
         } catch (e) {
             console.error(e);
             if (estadoGuardar) estadoGuardar.textContent = e.message || "Error al guardar";

@@ -10,7 +10,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface IUsuarioService {
 
-    Page<UsuarioPerfilDTO> listarUsuarios(Pageable pageable, String texto, EstadoEmpleado estado);
+    Page<UsuarioPerfilDTO> listarUsuarios(Pageable pageable, String texto, EstadoEmpleado estado, boolean excluirAsignados, Long viajeIdActual);
 
     UsuarioPerfilDTO obtenerPerfil(Long id);
 

@@ -324,6 +324,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const resetFormulario = () => {
         viajeForm?.reset();
+        const ivaCheckbox = document.getElementById("ivaActivoResumen");
+        if (ivaCheckbox) {
+            ivaCheckbox.checked = true;
+            ivaCheckbox.removeAttribute('data-init');
+            const ivaPorcentajeElement = document.getElementById("ivaPorcentaje");
+            if (ivaPorcentajeElement) ivaPorcentajeElement.disabled = false;
+        }
         ["idaCamionId", "idaChoferId", "vueltaCamionId", "vueltaChoferId"].forEach(id => {
             const input = document.getElementById(id);
             if (input) input.value = "";
@@ -1242,7 +1249,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const tramoBase = tramoIda || tramoVuelta;
             if (tramoBase) {
                 document.getElementById("pagadoGeneral").checked = Boolean(tramoBase.pagado);
-                document.getElementById("ivaGeneral").checked = Boolean(tramoBase.iva);
+                const ivaCheckbox = document.getElementById("ivaActivoResumen");
+                if (ivaCheckbox) {
+                    ivaCheckbox.checked = Boolean(tramoBase.iva);
+                    ivaCheckbox.setAttribute('data-init', 'true');
+                    const ivaPorcentajeElement = document.getElementById("ivaPorcentaje");
+                    if (ivaPorcentajeElement) ivaPorcentajeElement.disabled = !tramoBase.iva;
+                }
             }
 
             if (tramoIda) {
@@ -1641,6 +1654,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (filtrosCamionesModal.q) query.set("q", filtrosCamionesModal.q);
             if (filtrosCamionesModal.estado) query.set("estado", filtrosCamionesModal.estado);
 
+            query.set("excluirAsignados", "true");
+            const viajeForm = document.getElementById("viajeForm");
+            const viajeId = viajeForm?.dataset.viajeId;
+            if (viajeId) {
+                query.set("viajeIdActual", viajeId);
+            }
+
             const res = await fetch(`/api/camiones?${query.toString()}`);
             if (!res.ok) throw new Error("No se pudieron cargar camiones");
             const pageData = await res.json();
@@ -1781,6 +1801,13 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             if (filtrosChoferesModal.q) query.set("q", filtrosChoferesModal.q);
             if (filtrosChoferesModal.estado) query.set("estado", filtrosChoferesModal.estado);
+
+            query.set("excluirAsignados", "true");
+            const viajeForm = document.getElementById("viajeForm");
+            const viajeId = viajeForm?.dataset.viajeId;
+            if (viajeId) {
+                query.set("viajeIdActual", viajeId);
+            }
 
             const res = await fetch(`/api/usuarios?${query.toString()}`);
             if (!res.ok) throw new Error("No se pudieron cargar choferes");
@@ -2202,7 +2229,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const estadoIda = document.getElementById("idaEstado")?.value || null;
         const estadoVuelta = document.getElementById("vueltaEstado")?.value || null;
         const pagado = document.getElementById("pagadoGeneral")?.checked ?? false;
-        const iva = document.getElementById("ivaGeneral")?.checked ?? false;
+        const iva = document.getElementById("ivaActivoResumen")?.checked ?? false;
 
 
         const getId = (hiddenId, inputId) => {

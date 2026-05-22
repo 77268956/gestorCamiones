@@ -43,10 +43,12 @@ public class UsuarioController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String q,
-            @RequestParam(required = false) EstadoEmpleado estado
+            @RequestParam(required = false) EstadoEmpleado estado,
+            @RequestParam(defaultValue = "false") boolean excluirAsignados,
+            @RequestParam(required = false) Long viajeIdActual
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        return usuarioService.listarUsuarios(pageable, q, estado);
+        return usuarioService.listarUsuarios(pageable, q, estado, excluirAsignados, viajeIdActual);
     }
 
     @GetMapping("/estados")

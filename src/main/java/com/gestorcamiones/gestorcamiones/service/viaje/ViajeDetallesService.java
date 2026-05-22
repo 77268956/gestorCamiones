@@ -200,6 +200,7 @@ public class ViajeDetallesService implements IViajeDetalleService {
                 gasto = existentes.get(gastoDTO.getId());
             } else {
                 gasto = mapper.toEntity(gastoDTO);
+                gasto.setIdGastoViaje(null);
                 gasto.setViajeDetalle(detalle);
                 gasto.setUsuarioAdmin(usuarioAdmin);
                 detalle.getGastos().add(gasto);

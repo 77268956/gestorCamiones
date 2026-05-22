@@ -49,9 +49,9 @@ public class UsuarioService implements IUsuarioService {
     }
 
     @Override
-    public Page<UsuarioPerfilDTO> listarUsuarios(Pageable pageable, String texto, EstadoEmpleado estado) {
+    public Page<UsuarioPerfilDTO> listarUsuarios(Pageable pageable, String texto, EstadoEmpleado estado, boolean excluirAsignados, Long viajeIdActual) {
         String textoNormalizado = (texto == null || texto.isBlank()) ? "" : texto.trim();
-        Page<Usuario> page = usuarioRepository.buscarFiltrados(textoNormalizado, estado, pageable);
+        Page<Usuario> page = usuarioRepository.buscarFiltrados(textoNormalizado, estado, excluirAsignados, viajeIdActual, pageable);
         return page.map(usuarioMapper::mapToPerfilDTO);
     }
 
