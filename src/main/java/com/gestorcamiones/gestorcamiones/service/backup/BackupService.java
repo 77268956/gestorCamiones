@@ -61,16 +61,17 @@ public class BackupService {
         BackupRegistro backup = repository.findById(backupId).orElseThrow(() -> new IllegalArgumentException("Backup no encontrado"));
         Path archivo = Paths.get(backup.getRutaInterna());
         try {
+            registrarAuditoria(backup, AccionAuditoria.UPDATE, null, "Inicio de restauracion de backup");
             Path temporal = Files.createTempFile("restore-", ".backup");
             encryptionService.decryptFile(archivo, temporal, properties.getEncryptionKey());
             ejecutarPgRestore(temporal);
-            backup.setEstado("RESTAURADO");
-            backup.setRestauradoEn(LocalDateTime.now());
-            BackupRegistro guardado = repository.save(backup);
-            registrarAuditoria(guardado, AccionAuditoria.UPDATE, null, "Backup restaurado correctamente");
             Files.deleteIfExists(temporal);
         } catch (Exception e) {
-            throw new IllegalStateException("No se pudo restaurar el backup", e);
+            String detalle = e.getMessage();
+            if (e.getCause() != null && e.getCause().getMessage() != null && !e.getCause().getMessage().isBlank()) {
+                detalle = e.getCause().getMessage();
+            }
+            throw new IllegalStateException("No se pudo restaurar el backup: " + detalle, e);
         }
     }
 
@@ -220,7 +221,9 @@ public class BackupService {
                 properties.getPgRestorePath(),
                 "-U", properties.getDatabaseUser(),
                 "-d", properties.getDatabaseName(),
-                "-c",
+                "--clean",
+                "--if-exists",
+                "--no-owner",
                 archivo.toString()
         );
         if (!properties.getDatabasePassword().isBlank()) {

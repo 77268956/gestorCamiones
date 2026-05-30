@@ -6,6 +6,7 @@ import com.gestorcamiones.gestorcamiones.service.backup.BackupService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,20 +36,23 @@ public class BackupViewController {
     }
 
     @PostMapping("/manual")
-    public String generarManual(@AuthenticationPrincipal CustomUserDetails admin) {
+    public String generarManual(@AuthenticationPrincipal CustomUserDetails admin, RedirectAttributes redirectAttributes) {
         backupService.crearBackupManual(admin);
+        redirectAttributes.addFlashAttribute("message", "Backup generado correctamente");
         return "redirect:/backups";
     }
 
     @PostMapping("/{id}/restaurar")
-    public String restaurar(@PathVariable Long id) {
+    public String restaurar(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         backupService.restaurarBackup(id);
+        redirectAttributes.addFlashAttribute("message", "Restauracion ejecutada correctamente");
         return "redirect:/backups";
     }
 
     @PostMapping("/subir")
-    public String subirBackup(MultipartFile archivo, @AuthenticationPrincipal CustomUserDetails admin) throws Exception {
+    public String subirBackup(MultipartFile archivo, @AuthenticationPrincipal CustomUserDetails admin, RedirectAttributes redirectAttributes) throws Exception {
         if (archivo.isEmpty() || archivo.getOriginalFilename() == null || archivo.getOriginalFilename().isBlank()) {
+            redirectAttributes.addFlashAttribute("error", "Debes seleccionar un archivo de backup valido");
             return "redirect:/backups";
         }
         Path dir = Paths.get("backups", "ingresados");
@@ -57,6 +61,7 @@ public class BackupViewController {
         Path destino = dir.resolve(nombreSeguro);
         archivo.transferTo(destino);
         backupService.registrarBackupExistente(destino, admin);
+        redirectAttributes.addFlashAttribute("message", "Backup ingresado correctamente");
         return "redirect:/backups";
     }
 }

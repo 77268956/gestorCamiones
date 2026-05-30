@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
     let tiposGastoCache = [];
+    const notify = (type, message, title) => window.mpAlert?.[type]?.(message, title) || window.alert(message);
 
     const tipoGastoMap = {
         combustible: 1,
@@ -201,7 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("loteEditFormContainer").style.display = "block";
         } catch(error) {
             console.error(error);
-            alert("Error al cargar la información del lote para editar.");
+            notify("error", "Error al cargar la información del lote para editar.", "Viajes");
         }
     };
 
@@ -254,7 +255,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } catch(error) {
             console.error(error);
-            alert("Ocurrió un error al guardar el lote.");
+            notify("error", "Ocurrió un error al guardar el lote.", "Viajes");
         } finally {
             btn.disabled = false;
             btn.textContent = "Guardar Lote";
@@ -2386,6 +2387,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 estadoGuardado.textContent = msg;
                 estadoGuardado.className = "estado-guardado error";
             }
+            notify("error", msg, "Viajes");
         } finally {
             if (btnGuardarViaje) btnGuardarViaje.disabled = false;
         }

@@ -104,17 +104,6 @@ public class ViewController {
         return "/view/usuarios";
     }
 
-    @GetMapping("/practica")
-    public String practica(Authentication authentication, Model model) {
-        String nombreUsuario = authentication.getName();
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof CustomUserDetails customUserDetails) {
-            nombreUsuario = customUserDetails.getUsername();
-        }
-        model.addAttribute("nombreUsuario", nombreUsuario);
-        return "/view/practica";
-    }
-
     @GetMapping("/camiones")
     public String camiones() {
         return "/view/view_camiones";
