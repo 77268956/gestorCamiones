@@ -19,11 +19,9 @@ public class UsuarioPerfilDTO {
     private String usuario;
     private String telefono;
     private String dui;
+    private String correo;
     private String rol;
     private Long rolId;
     private EstadoEmpleado estado;
     private String fotoUrl;
-    private Long camionId;
-    private String camionPlaca;
-    private String camionModelo;
 }

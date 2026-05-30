@@ -55,10 +55,7 @@ public class CustomAuthenticationFailureHandler
         } else if (exception instanceof UsernameNotFoundException) {
             motivo = "USER_NOT_FOUND";
         } else {
-            if (login != null) {
-                login.incrementarIntentos();
-                loginRepository.save(login);
-            }
+            // V2: intentos/bloqueo se eliminaron; solo se registra en auditoria.
         }
 
         // Guardar auditoría

@@ -238,6 +238,18 @@
                 </thead>
                 <tbody id="idaGastosBody"></tbody>
             </table>
+            
+            <!-- Pagination Controls -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    <span id="totalGastosText" class="text-muted">Mostrando 0 gastos</span>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-secondary" id="btnPrevPage">Anterior</button>
+                    <span id="pageInfo" class="mx-2">Página 1 de 1</span>
+                    <button class="btn btn-sm btn-outline-secondary" id="btnNextPage">Siguiente</button>
+                </div>
+            </div>
         </div>
 
         <!-- SIDEBAR -->
@@ -307,8 +319,52 @@
     </div>
 </div>
 
+<!-- Modal: Agregar/Editar Gasto -->
+<div class="modal fade" id="gastoModal" tabindex="-1" aria-labelledby="gastoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content mp-modal-content">
+            <div class="modal-header mp-modal-header">
+                <h5 class="modal-title" id="gastoModalLabel">Nuevo gasto</h5>
+                <button type="button" class="btn-close mp-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="gastoAlert" class="alert alert-danger d-none" role="alert"></div>
+                <form id="gastoForm">
+                    <input type="hidden" id="gastoId">
+                    <div class="mb-3">
+                        <label for="gastoTipo" class="form-label">Tipo de gasto *</label>
+                        <select id="gastoTipo" class="form-select" required>
+                            <option value="">Seleccione un tipo</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="gastoMonto" class="form-label">Monto ($) *</label>
+                        <input type="number" id="gastoMonto" class="form-control" step="0.01" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="gastoFecha" class="form-label">Fecha de gasto</label>
+                        <input type="date" id="gastoFecha" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="gastoDescripcion" class="form-label">Descripción</label>
+                        <textarea id="gastoDescripcion" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="gastoEvidencia" class="form-label">Evidencia (Foto/Recibo)</label>
+                        <input type="file" id="gastoEvidencia" class="form-control" accept="image/*,.pdf">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnGuardarGasto" class="btn btn-primary">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <th:block th:replace="fragments/assets :: globalScripts"></th:block>
 <script src="/js/tipoGasto.js"></script>
-
+<script src="/js/gastosGenerales.js"></script>
 </body>
 </html>

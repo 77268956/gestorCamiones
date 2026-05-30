@@ -22,6 +22,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Servicio para crear/actualizar tramos de viaje.
+ * Actualizado para V2: sin precioViaje, con campos de ubicacion.
+ */
 @Service
 public class ViajeDetallesService implements IViajeDetalleService {
 
@@ -98,6 +102,14 @@ public class ViajeDetallesService implements IViajeDetalleService {
     private void aplicarTramo(ViajeDetalle detalle, TramoDTO dto, Long idDetalleExistente) {
         if (dto == null) return;
 
+        // Validar que las fechas sean coherentes
+        if (dto.getFechaSalida() != null && dto.getFechaEntrada() != null) {
+            if (!dto.getFechaSalida().isBefore(dto.getFechaEntrada())) {
+                throw new IllegalArgumentException(
+                    "La fecha de salida debe ser anterior a la fecha de llegada (" + dto.getTipoTramo() + ")");
+            }
+        }
+
         validarDisponibilidad(dto.getIdCamion(), dto.getIdConductor(), dto.getFechaSalida(), dto.getFechaEntrada(), idDetalleExistente);
 
         detalle.setTipoTramo(dto.getTipoTramo());
@@ -106,7 +118,13 @@ public class ViajeDetallesService implements IViajeDetalleService {
         detalle.setIva(dto.isIva());
         detalle.setFechaSalida(dto.getFechaSalida());
         detalle.setFechaLlegada(dto.getFechaEntrada());
-        detalle.setPrecioViaje(dto.getPrecioViaje());
+
+        // Ubicación (V2)
+        detalle.setPaisSalida(dto.getPaisSalida());
+        detalle.setPaisDestino(dto.getPaisDestino());
+        detalle.setDireccionSalida(dto.getDireccionSalida());
+        detalle.setDireccionDestino(dto.getDireccionDestino());
+        detalle.setObservaciones(dto.getObservaciones());
 
         if (dto.getIdCamion() > 0) {
             detalle.setCamion(camionRepository.findById(dto.getIdCamion())
@@ -119,7 +137,8 @@ public class ViajeDetallesService implements IViajeDetalleService {
             detalle.setChofer(usuarioRepository.findById(dto.getIdConductor())
                     .orElseThrow(() -> new IllegalArgumentException("Conductor no encontrado")));
         } else {
-            detalle.setChofer(null);
+            // En V2 id_chofer es NOT NULL, el conductor es obligatorio
+            throw new IllegalArgumentException("El conductor es obligatorio");
         }
     }
 
@@ -181,6 +200,7 @@ public class ViajeDetallesService implements IViajeDetalleService {
                 gasto = existentes.get(gastoDTO.getId());
             } else {
                 gasto = mapper.toEntity(gastoDTO);
+                gasto.setIdGastoViaje(null);
                 gasto.setViajeDetalle(detalle);
                 gasto.setUsuarioAdmin(usuarioAdmin);
                 detalle.getGastos().add(gasto);

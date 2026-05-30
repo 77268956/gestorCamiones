@@ -2,6 +2,8 @@ package com.gestorcamiones.gestorcamiones.controller;
 
 import com.gestorcamiones.gestorcamiones.dto.usuario.CrearUsuarioDTO;
 import com.gestorcamiones.gestorcamiones.dto.usuario.EditarUsuarioDTO;
+import com.gestorcamiones.gestorcamiones.dto.usuario.ResetPasswordResponseDTO;
+import com.gestorcamiones.gestorcamiones.dto.usuario.UsuarioCreadoResponseDTO;
 import com.gestorcamiones.gestorcamiones.dto.usuario.UsuarioPerfilDTO;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoEmpleado;
 import com.gestorcamiones.gestorcamiones.service.usuario.IUsuarioService;
@@ -31,7 +33,7 @@ public class UsuarioController {
 
     @PostMapping
     @Operation(summary = "Crear usuario", description = "Crea un usuario y su acceso de login asociado.")
-    public ResponseEntity<UsuarioPerfilDTO> crear(@Valid @RequestBody CrearUsuarioDTO dto) {
+    public ResponseEntity<UsuarioCreadoResponseDTO> crear(@Valid @RequestBody CrearUsuarioDTO dto) {
         return ResponseEntity.ok(usuarioService.crearUsuario(dto));
     }
 
@@ -41,10 +43,12 @@ public class UsuarioController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String q,
-            @RequestParam(required = false) EstadoEmpleado estado
+            @RequestParam(required = false) EstadoEmpleado estado,
+            @RequestParam(defaultValue = "false") boolean excluirAsignados,
+            @RequestParam(required = false) Long viajeIdActual
     ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "idUsuarios"));
-        return usuarioService.listarUsuarios(pageable, q, estado);
+        Pageable pageable = PageRequest.of(page, size);
+        return usuarioService.listarUsuarios(pageable, q, estado, excluirAsignados, viajeIdActual);
     }
 
     @GetMapping("/estados")
@@ -67,5 +71,12 @@ public class UsuarioController {
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         usuarioService.eliminarUsuario(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/reset-password")
+    @Operation(summary = "Resetear contraseña", description = "Genera y asigna una nueva contraseña temporal al usuario.")
+    public ResponseEntity<ResetPasswordResponseDTO> resetPassword(@PathVariable Long id) {
+        String passwordTemporal = usuarioService.resetPassword(id);
+        return ResponseEntity.ok(new ResetPasswordResponseDTO(passwordTemporal));
     }
 }

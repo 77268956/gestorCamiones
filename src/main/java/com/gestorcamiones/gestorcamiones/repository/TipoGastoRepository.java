@@ -16,8 +16,8 @@ public interface TipoGastoRepository extends JpaRepository<TipoGasto, Long> {
             value = """
                     select tg.*
                     from tipo_gasto tg
-                    where (:texto IS NULL
-                        OR CAST(tg.tipo_gasto AS TEXT) ILIKE concat('%', :texto, '%'))
+                    where (CAST(:texto AS TEXT) IS NULL
+                        OR CAST(tg.tipo_gasto AS TEXT) ILIKE concat('%', CAST(:texto AS TEXT), '%'))
                     ORDER BY tg.id_tipo_gasto DESC;
                     
                     """,

@@ -30,8 +30,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         Login login = loginRepository.findByEmail(email).orElse(null);
 
         if (login != null) {
-            login.resetIntentos();
-            loginRepository.save(login);
+            // V2: intentos/bloqueo se eliminaron; no hay nada que resetear.
         }
 
        response.sendRedirect("/dashboard");

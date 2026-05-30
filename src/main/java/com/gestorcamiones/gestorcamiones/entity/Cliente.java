@@ -36,6 +36,9 @@ public class Cliente {
     @Column(name = "dui_nit", unique = true)
     private String duiNit;
 
+    @Column(unique = true)
+    private String correo;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 

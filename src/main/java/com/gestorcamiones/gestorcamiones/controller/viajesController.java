@@ -5,13 +5,17 @@ import com.gestorcamiones.gestorcamiones.dto.viaje.CrearViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ListaViajesDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ViajeUpsertDTO;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
+import com.gestorcamiones.gestorcamiones.entity.Enum.Pais;
+import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
 import com.gestorcamiones.gestorcamiones.security.CustomUserDetails;
 import com.gestorcamiones.gestorcamiones.service.viaje.ViajeService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,9 +27,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 
+/**
+ * Controlador REST para el módulo de viajes (V2).
+ * Endpoints: listar, obtener, crear, actualizar, eliminar viajes.
+ * También expone catálogos de enums (estados, países, tipos de tramo).
+ */
 @RestController
 @RequestMapping("/api/viajes")
-
 public class viajesController {
     private ViajeService viajeService;
 
@@ -36,6 +44,16 @@ public class viajesController {
     @GetMapping("/estados")
     public EstadoViaje[] listarEstados() {
         return EstadoViaje.values();
+    }
+
+    @GetMapping("/paises")
+    public Pais[] listarPaises() {
+        return Pais.values();
+    }
+
+    @GetMapping("/tipos-tramo")
+    public TipoTramo[] listarTiposTramo() {
+        return TipoTramo.values();
     }
 
     @GetMapping
@@ -72,5 +90,14 @@ public class viajesController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         return viajeService.actualizarViaje(idViaje, dto, userDetails.getUsuario());
+    }
+
+    @DeleteMapping("/{idViaje}")
+    public ResponseEntity<Void> eliminarViaje(
+            @PathVariable Long idViaje,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        viajeService.eliminarViaje(idViaje, userDetails.getUsuario());
+        return ResponseEntity.noContent().build();
     }
 }

@@ -89,6 +89,7 @@ public class ClientesService implements IClientesService {
         cliente.setTelefono(dto.getTelefono());
         cliente.setDireccion(dto.getDireccion());
         cliente.setDuiNit(dto.getDuiNit());
+        cliente.setCorreo(dto.getCorreo());
 
         Cliente guardado = clienteRepository.save(cliente);
 

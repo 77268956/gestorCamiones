@@ -23,21 +23,54 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     boolean existsByNombre(String nombre);
 
-    @EntityGraph(attributePaths = {"rol", "login", "camion"})
-    @Query("""
-            select u
-            from Usuario u
-            left join u.login l
-            where (:texto is null
-                   or lower(u.nombre) like lower(concat('%', :texto, '%'))
-                   or lower(u.apellido) like lower(concat('%', :texto, '%'))
-                   or lower(u.telefono) like lower(concat('%', :texto, '%'))
-                   or lower(u.dui) like lower(concat('%', :texto, '%'))
-                   or lower(l.email) like lower(concat('%', :texto, '%')))
-              and (:estado is null or u.estadoEmpleado = :estado)
-            """)
+    // V2: el usuario ya no tiene relacion con camion. Solo cargamos rol y login.
+    // @EntityGraph(attributePaths = {"rol", "login"})
+    @Query(value = """
+            SELECT DISTINCT u.*
+            FROM usuarios u
+            LEFT JOIN login l ON l.id_usuario = u.id_usuarios
+            WHERE u.deleted_at IS NULL
+              AND (CAST(:texto AS TEXT) IS NULL
+                   OR LOWER(u.nombre) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(u.apellido) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(u.telefono) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(u.dui) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(l.email) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%')))
+              AND (CAST(:estado AS TEXT) IS NULL OR CAST(u.estado_empleado AS TEXT) = CAST(:estado AS TEXT))
+              AND (:excluirAsignados = false OR NOT EXISTS (
+                  SELECT 1 FROM viaje_detalle vd
+                  WHERE vd.id_chofer = u.id_usuarios
+                    AND vd.deleted_at IS NULL
+                    AND vd.estado NOT IN ('cancelado', 'completado')
+                    AND (CAST(:viajeIdActual AS BIGINT) IS NULL OR vd.id_viaje <> CAST(:viajeIdActual AS BIGINT))
+              ))
+            ORDER BY u.id_usuarios DESC
+            """,
+            countQuery = """
+            SELECT COUNT(DISTINCT u.id_usuarios)
+            FROM usuarios u
+            LEFT JOIN login l ON l.id_usuario = u.id_usuarios
+            WHERE u.deleted_at IS NULL
+              AND (CAST(:texto AS TEXT) IS NULL
+                   OR LOWER(u.nombre) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(u.apellido) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(u.telefono) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(u.dui) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%'))
+                   OR LOWER(l.email) LIKE LOWER(CONCAT('%', CAST(:texto AS TEXT), '%')))
+              AND (CAST(:estado AS TEXT) IS NULL OR CAST(u.estado_empleado AS TEXT) = CAST(:estado AS TEXT))
+              AND (:excluirAsignados = false OR NOT EXISTS (
+                  SELECT 1 FROM viaje_detalle vd
+                  WHERE vd.id_chofer = u.id_usuarios
+                    AND vd.deleted_at IS NULL
+                    AND vd.estado NOT IN ('cancelado', 'completado')
+                    AND (CAST(:viajeIdActual AS BIGINT) IS NULL OR vd.id_viaje <> CAST(:viajeIdActual AS BIGINT))
+              ))
+            """,
+            nativeQuery = true)
     Page<Usuario> buscarFiltrados(@Param("texto") String texto,
-                                  @Param("estado") EstadoEmpleado estado,
+                                  @Param("estado") Object estado,
+                                  @Param("excluirAsignados") boolean excluirAsignados,
+                                  @Param("viajeIdActual") Long viajeIdActual,
                                   Pageable pageable);
 
 

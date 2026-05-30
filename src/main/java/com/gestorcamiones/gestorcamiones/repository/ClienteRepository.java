@@ -16,20 +16,20 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
                 SELECT c.*
                 FROM clientes c
                 WHERE c.deleted_at IS NULL
-                  AND (:texto IS NULL
-                       OR CAST(c.nombre AS TEXT) ILIKE CONCAT('%', :texto, '%')
-                       OR CAST(c.telefono AS TEXT) ILIKE CONCAT('%', :texto, '%')
-                       OR CAST(c.dui_nit AS TEXT) ILIKE CONCAT('%', :texto, '%'))
+                  AND (CAST(:texto AS TEXT) IS NULL
+                       OR CAST(c.nombre AS TEXT) ILIKE CONCAT('%', CAST(:texto AS TEXT), '%')
+                       OR CAST(c.telefono AS TEXT) ILIKE CONCAT('%', CAST(:texto AS TEXT), '%')
+                       OR CAST(c.dui_nit AS TEXT) ILIKE CONCAT('%', CAST(:texto AS TEXT), '%'))
                 ORDER BY c.id_cliente DESC
                 """,
             countQuery = """
                 SELECT COUNT(*)
                 FROM clientes c
                 WHERE c.deleted_at IS NULL
-                  AND (:texto IS NULL
-                       OR CAST(c.nombre AS TEXT) ILIKE CONCAT('%', :texto, '%')
-                       OR CAST(c.telefono AS TEXT) ILIKE CONCAT('%', :texto, '%')
-                       OR CAST(c.dui_nit AS TEXT) ILIKE CONCAT('%', :texto, '%'))
+                  AND (CAST(:texto AS TEXT) IS NULL
+                       OR CAST(c.nombre AS TEXT) ILIKE CONCAT('%', CAST(:texto AS TEXT), '%')
+                       OR CAST(c.telefono AS TEXT) ILIKE CONCAT('%', CAST(:texto AS TEXT), '%')
+                       OR CAST(c.dui_nit AS TEXT) ILIKE CONCAT('%', CAST(:texto AS TEXT), '%'))
                 """,
             nativeQuery = true
     )

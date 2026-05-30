@@ -1,14 +1,20 @@
 package com.gestorcamiones.gestorcamiones.dto.viaje;
 
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
+import com.gestorcamiones.gestorcamiones.entity.Enum.Pais;
 import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * DTO con información de un tramo (viaje_detalle) para la lista de viajes.
+ * V2: sin precioViaje ni gananciaTotal.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,9 +32,14 @@ public class DetalleViajeDTO {
 
     private Boolean pagado;
     private Boolean iva;
-    private java.math.BigDecimal precioViaje;
-    private java.math.BigDecimal gastoTotal;
-    private java.math.BigDecimal gananciaTotal;
+    private BigDecimal gastoTotal;
+
+    // Ubicación (V2)
+    private Pais paisSalida;
+    private Pais paisDestino;
+    private String direccionSalida;
+    private String direccionDestino;
+    private String observaciones;
 
     private LocalDateTime fechaSalida;
     private LocalDateTime fechaEntrada;

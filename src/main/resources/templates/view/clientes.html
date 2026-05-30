@@ -23,7 +23,7 @@
                 <div class="col-12 col-md-6 mp-search">
                     <div class="input-group">
                         <span class="input-group-text">Buscar</span>
-                        <input id="filtroBusquedaClientes" type="text" class="form-control" placeholder="Buscar nombre, telefono o DUI/NIT...">
+                        <input id="filtroBusquedaClientes" type="text" class="form-control" placeholder="Buscar nombre, telefono, correo o DUI/NIT...">
                     </div>
                 </div>
 
@@ -40,6 +40,7 @@
                     <th>#</th>
                     <th>Nombre</th>
                     <th>Telefono</th>
+                    <th>Correo</th>
                     <th>DUI/NIT</th>
                     <th>Direccion</th>
                     <th class="text-center">Acciones</th>
@@ -47,7 +48,7 @@
                 </thead>
                 <tbody id="tablaClientes">
                 <tr>
-                    <td colspan="6" class="text-center">Cargando clientes...</td>
+                    <td colspan="7" class="text-center">Cargando clientes...</td>
                 </tr>
                 </tbody>
             </table>
@@ -101,10 +102,14 @@
                         <input type="text" class="form-control mp-modal-input" id="clienteTelefono">
                     </div>
                     <div class="col-md-6">
+                        <label for="clienteCorreo" class="form-label">Correo</label>
+                        <input type="email" class="form-control mp-modal-input" id="clienteCorreo" autocomplete="email">
+                    </div>
+                    <div class="col-md-6">
                         <label for="clienteDuiNit" class="form-label">DUI/NIT</label>
                         <input type="text" class="form-control mp-modal-input" id="clienteDuiNit">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-12">
                         <label for="clienteDireccion" class="form-label">Direccion</label>
                         <input type="text" class="form-control mp-modal-input" id="clienteDireccion">
                     </div>

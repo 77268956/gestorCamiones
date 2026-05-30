@@ -41,11 +41,11 @@ public class CamionServicio implements ICamionService {
 
 
     @Override
-    public Page<CamionDTO> listarCamiones(Pageable pageable, String texto, EstadoCamion estado) {
+    public Page<CamionDTO> listarCamiones(Pageable pageable, String texto, EstadoCamion estado, boolean excluirAsignados, Long viajeIdActual) {
         String textoNormalizado = (texto == null || texto.isBlank()) ? null : texto.trim();
         String estadoNormalizado = (estado == null) ? null : estado.name();
 
-        List<CamionDTO> filtrados = camionRepository.buscarFiltrados(textoNormalizado, estadoNormalizado)
+        List<CamionDTO> filtrados = camionRepository.buscarFiltrados(textoNormalizado, estadoNormalizado, excluirAsignados, viajeIdActual)
                 .stream()
                 .map(camionMapper::toDTO)
                 .toList();
@@ -112,6 +112,7 @@ public class CamionServicio implements ICamionService {
         camion.setEstadoCamion(dto.getEstadoCamion());
         camion.setModelo(dto.getModelo());
         camion.setComentario(dto.getComentario());
+        camion.setPrecioCompra(dto.getPrecioCompra());
         Camion camionGuardado = camionRepository.save(camion);
 
         JsonNode despuesJson = objectMapper.valueToTree(camionGuardado);

@@ -6,9 +6,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 @Entity
@@ -30,11 +31,15 @@ public class Usuario {
     private String apellido;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_empleado", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "estado_empleado", nullable = false, columnDefinition = "estado_empleado_enum")
     private EstadoEmpleado estadoEmpleado;
 
     private String telefono;
     private String dui;
+
+    @Column(unique = true)
+    private String correo;
 
     @Column(name = "foto_url")
     private String fotoUrl;
@@ -44,10 +49,6 @@ public class Usuario {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_rol", nullable = false)
     private Rol rol;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_camion")
-    private Camion camion;
 
     @OneToOne(mappedBy = "usuarioEntidad", fetch = FetchType.LAZY)
     private Login login;

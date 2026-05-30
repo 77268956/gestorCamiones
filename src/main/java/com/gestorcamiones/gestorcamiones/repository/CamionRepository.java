@@ -22,17 +22,26 @@ public interface CamionRepository  extends JpaRepository<Camion, Long> {
                 SELECT c.*
                 FROM camion c
                 WHERE c.deleted_at IS NULL
-                  AND (:texto IS NULL
-                       OR CAST(c.nombre AS TEXT) ILIKE CONCAT('%', :texto, '%')
-                       OR CAST(c.modelo AS TEXT) ILIKE CONCAT('%', :texto, '%')
-                       OR CAST(c.placa AS TEXT) ILIKE CONCAT('%', :texto, '%'))
-                  AND (:estado IS NULL OR c.estado = :estado)
+                  AND (CAST(:texto AS TEXT) IS NULL
+                       OR CAST(c.nombre AS TEXT) ILIKE CONCAT('%', CAST(:texto AS TEXT), '%')
+                       OR CAST(c.modelo AS TEXT) ILIKE CONCAT('%', CAST(:texto AS TEXT), '%')
+                       OR CAST(c.placa AS TEXT) ILIKE CONCAT('%', CAST(:texto AS TEXT), '%'))
+                  AND (CAST(:estado AS TEXT) IS NULL OR CAST(c.estado AS TEXT) = CAST(:estado AS TEXT))
+                  AND (:excluirAsignados = false OR NOT EXISTS (
+                      SELECT 1 FROM viaje_detalle vd
+                      WHERE vd.id_camion = c.id_camion
+                        AND vd.deleted_at IS NULL
+                        AND vd.estado NOT IN ('cancelado', 'completado')
+                        AND (CAST(:viajeIdActual AS BIGINT) IS NULL OR vd.id_viaje <> CAST(:viajeIdActual AS BIGINT))
+                  ))
                 ORDER BY c.id_camion DESC
                 """,
             nativeQuery = true
     )
     List<Camion> buscarFiltrados(@Param("texto") String texto,
-                                     @Param("estado") String estado);
+                                 @Param("estado") String estado,
+                                 @Param("excluirAsignados") boolean excluirAsignados,
+                                 @Param("viajeIdActual") Long viajeIdActual);
 
     @Query(
             value = """

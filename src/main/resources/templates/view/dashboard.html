@@ -1,43 +1,552 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>Dashboard - Gestor de Camiones</title>
-    <th:block th:replace="fragments/assets :: globalStyles"></th:block>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Dashboard — Gestor de Camiones</title>
+        <meta name="description" content="Panel principal con KPIs, gráficas de viajes, ingresos y gastos mensuales.">
+        <th:block th:replace="fragments/assets :: globalStyles"></th:block>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+
+        /* ── Encabezado ─────────────────────────────────────────────────────── */
+        .dash-header {
+            background: linear-gradient(135deg, var(--mp-blue-dark) 0%, #1a3a8f 60%, #1e4fc2 100%);
+            border-radius: 16px;
+            padding: 1.8rem 2rem;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        .dash-header::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 220px; height: 220px;
+            background: rgba(240,122,24,.18);
+            border-radius: 50%;
+        }
+        .dash-header::after {
+            content: '';
+            position: absolute;
+            bottom: -60px; left: 40%;
+            width: 160px; height: 160px;
+            background: rgba(255,255,255,.06);
+            border-radius: 50%;
+        }
+
+        /* ── KPI Cards ──────────────────────────────────────────────────────── */
+        .kpi-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 1.4rem 1.5rem;
+            box-shadow: 0 4px 20px rgba(15,36,96,.09);
+            border: 1px solid #e8edf8;
+            transition: transform .2s, box-shadow .2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 28px rgba(15,36,96,.14);
+        }
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+        }
+        .kpi-card.kpi-blue::before   { background: linear-gradient(90deg,#1a3a8f,#2a52c9); }
+        .kpi-card.kpi-green::before  { background: linear-gradient(90deg,#059669,#10b981); }
+        .kpi-card.kpi-orange::before { background: linear-gradient(90deg,#f07a18,#d4640a); }
+        .kpi-card.kpi-red::before    { background: linear-gradient(90deg,#dc2626,#ef4444); }
+        .kpi-card.kpi-purple::before { background: linear-gradient(90deg,#7c3aed,#8b5cf6); }
+        .kpi-card.kpi-teal::before   { background: linear-gradient(90deg,#0891b2,#06b6d4); }
+
+        .kpi-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: .8rem;
+        }
+        .kpi-blue   .kpi-icon { background: rgba(26,58,143,.12);  color: #1a3a8f; }
+        .kpi-green  .kpi-icon { background: rgba(5,150,105,.12);   color: #059669; }
+        .kpi-orange .kpi-icon { background: rgba(240,122,24,.12);  color: #f07a18; }
+        .kpi-red    .kpi-icon { background: rgba(220,38,38,.12);   color: #dc2626; }
+        .kpi-purple .kpi-icon { background: rgba(124,58,237,.12);  color: #7c3aed; }
+        .kpi-teal   .kpi-icon { background: rgba(8,145,178,.12);   color: #0891b2; }
+
+        .kpi-label  { font-size: .78rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; }
+        .kpi-value  { font-size: 1.65rem; font-weight: 800; color: var(--mp-blue-dark); line-height: 1.1; margin: .2rem 0 0; }
+        .kpi-sub    { font-size: .78rem; color: #9ca3af; margin-top: .25rem; }
+
+        /* ── Chart containers ───────────────────────────────────────────────── */
+        .chart-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 1.4rem 1.5rem;
+            box-shadow: 0 4px 20px rgba(15,36,96,.08);
+            border: 1px solid #e8edf8;
+        }
+        .chart-title {
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--mp-blue-dark);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .chart-title .dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .chart-container { position: relative; height: 260px; }
+        .chart-container-sm { position: relative; height: 220px; }
+
+        /* ── Selector año ───────────────────────────────────────────────────── */
+        .year-selector {
+            background: rgba(255,255,255,.15);
+            border: 1.5px solid rgba(255,255,255,.35);
+            color: #fff;
+            border-radius: 8px;
+            padding: .35rem .8rem;
+            font-size: .88rem;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+        }
+        .year-selector option { color: #1a3a8f; background: #fff; }
+
+        /* ── Balance ────────────────────────────────────────────────────────── */
+        .balance-positive { color: #059669; }
+        .balance-negative { color: #dc2626; }
+
+        /* ── Loading overlay ────────────────────────────────────────────────── */
+        .chart-loading {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,.8);
+            border-radius: 10px;
+            z-index: 5;
+            display: none;
+        }
+    </style>
 </head>
 <body>
 <div th:replace="fragments/navbar :: navbar"></div>
 
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="alert alert-success" role="alert">
-                <h4 class="alert-heading">Inicio de sesion exitoso</h4>
-                <p>Has accedido correctamente al dashboard.</p>
+<div class="container-fluid px-3 px-md-4 mt-4">
+
+    <!-- ═══════════ ENCABEZADO ═══════════ -->
+    <div class="dash-header mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <p class="mb-1 opacity-75" style="font-size:.85rem;">Bienvenido de vuelta,</p>
+                <h1 class="mb-0 fw-bold" style="font-size:1.6rem;" th:text="${nombreUsuario}">Usuario</h1>
+                <p class="mb-0 mt-1 opacity-75" style="font-size:.83rem;">
+                    <i class="bi bi-calendar3 me-1"></i>
+                    Panel de control — mostrando datos del año
+                    <strong id="lblAnoActivo" th:text="${anoActual}">2026</strong>
+                </p>
             </div>
+            <div class="d-flex align-items-center gap-2">
+                <label class="text-white opacity-75" style="font-size:.82rem;">Año:</label>
+                <select id="selectorAno" class="year-selector" th:attr="data-ano-actual=${anoActual}">
+                    <option th:each="a : ${#numbers.sequence(anoActual - 3, anoActual)}"
+                            th:value="${a}" th:text="${a}"
+                            th:selected="${a == anoActual}"></option>
+                </select>
+                <a href="/reportes" class="btn btn-sm btn-warning fw-semibold ms-2">
+                    <i class="bi bi-file-earmark-bar-graph me-1"></i>Reportes
+                </a>
+            </div>
+        </div>
+    </div>
 
-            <div class="card">
-                <div class="card-body">
-                    <h2>Dashboard</h2>
-                    <p>Bienvenido al sistema de gestion de camiones.</p>
+    <!-- ═══════════ KPI CARDS ═══════════ -->
+    <div class="row g-3 mb-4">
+        <!-- Viajes del mes -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="kpi-card kpi-blue h-100">
+                <div class="kpi-icon"><i class="bi bi-truck"></i></div>
+                <div class="kpi-label">Viajes del mes</div>
+                <div class="kpi-value" id="kpiViajes" th:text="${resumen.viajesMes}">0</div>
+                <div class="kpi-sub">viajes realizados</div>
+            </div>
+        </div>
+        <!-- Ingresos del mes -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="kpi-card kpi-green h-100">
+                <div class="kpi-icon"><i class="bi bi-cash-coin"></i></div>
+                <div class="kpi-label">Ingresos mes</div>
+                <div class="kpi-value" id="kpiIngresos"
+                     th:text="${'$' + #numbers.formatDecimal(resumen.ingresosMes, 1, 2)}">$0.00</div>
+                <div class="kpi-sub">lotes pagados</div>
+            </div>
+        </div>
+        <!-- Gasto viajes -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="kpi-card kpi-orange h-100">
+                <div class="kpi-icon"><i class="bi bi-fuel-pump"></i></div>
+                <div class="kpi-label">Gasto viajes</div>
+                <div class="kpi-value" id="kpiGastoViajes"
+                     th:text="${'$' + #numbers.formatDecimal(resumen.gastoViajesMes, 1, 2)}">$0.00</div>
+                <div class="kpi-sub">combustible, peajes…</div>
+            </div>
+        </div>
+        <!-- Gasto generales -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="kpi-card kpi-purple h-100">
+                <div class="kpi-icon"><i class="bi bi-receipt"></i></div>
+                <div class="kpi-label">Gasto general</div>
+                <div class="kpi-value" id="kpiGastoGeneral"
+                     th:text="${'$' + #numbers.formatDecimal(resumen.gastoGeneralesMes, 1, 2)}">$0.00</div>
+                <div class="kpi-sub">gastos de oficina…</div>
+            </div>
+        </div>
+        <!-- Gasto camiones -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="kpi-card kpi-teal h-100">
+                <div class="kpi-icon"><i class="bi bi-wrench-adjustable"></i></div>
+                <div class="kpi-label">Gasto camiones</div>
+                <div class="kpi-value" id="kpiGastoCamion"
+                     th:text="${'$' + #numbers.formatDecimal(resumen.gastoCamionesMes, 1, 2)}">$0.00</div>
+                <div class="kpi-sub">mantenimiento, taller…</div>
+            </div>
+        </div>
+        <!-- Balance -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="kpi-card kpi-red h-100">
+                <div class="kpi-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                <div class="kpi-label">Balance mes</div>
+                <div class="kpi-value"
+                     id="kpiBalance"
+                     th:classappend="${resumen.balanceMes >= 0} ? ' balance-positive' : ' balance-negative'"
+                     th:text="${'$' + #numbers.formatDecimal(resumen.balanceMes, 1, 2)}">$0.00</div>
+                <div class="kpi-sub">ingresos − gastos</div>
+            </div>
+        </div>
+    </div>
 
-                    <hr>
-
-                    <h5>Enlaces:</h5>
-                    <ul>
-                        <li><a th:href="@{/usuarios}">Ver usuarios</a></li>
-                    </ul>
-
-                    <p class="mb-0 mt-3">
-                        Usuario autenticado:
-                        <strong th:text="${nombreUsuario}">usuario</strong>
-                    </p>
+    <!-- ═══════════ GRÁFICAS PRINCIPALES ═══════════ -->
+    <div class="row g-3 mb-4">
+        <!-- Viajes por mes (barras) -->
+        <div class="col-12 col-lg-6">
+            <div class="chart-card h-100">
+                <div class="chart-title">
+                    <span class="dot" style="background:#1a3a8f;"></span>
+                    Viajes por mes
+                </div>
+                <div class="chart-container" style="position:relative;">
+                    <div class="chart-loading" id="loadingViajes">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                    <canvas id="chartViajes"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Ingresos vs Gastos por mes (líneas) -->
+        <div class="col-12 col-lg-6">
+            <div class="chart-card h-100">
+                <div class="chart-title">
+                    <span class="dot" style="background:#059669;"></span>
+                    Ingresos vs Gastos por mes
+                </div>
+                <div class="chart-container" style="position:relative;">
+                    <div class="chart-loading" id="loadingFinanciero">
+                        <div class="spinner-border text-success" role="status"></div>
+                    </div>
+                    <canvas id="chartFinanciero"></canvas>
                 </div>
             </div>
         </div>
     </div>
-</div>
+
+    <!-- ═══════════ FILA INFERIOR: DONA + TOTALES ═══════════ -->
+    <div class="row g-3 mb-4">
+        <!-- Dona: viajes por estado -->
+        <div class="col-12 col-md-5 col-xl-4">
+            <div class="chart-card h-100">
+                <div class="chart-title">
+                    <span class="dot" style="background:#f07a18;"></span>
+                    Viajes por estado
+                </div>
+                <div class="chart-container-sm" style="position:relative;">
+                    <canvas id="chartEstados"></canvas>
+                </div>
+                <!-- Leyenda personalizada -->
+                <div id="leyendaEstados" class="mt-3 d-flex flex-wrap gap-2"></div>
+            </div>
+        </div>
+        <!-- Resumen financiero del mes -->
+        <div class="col-12 col-md-7 col-xl-8">
+            <div class="chart-card h-100">
+                <div class="chart-title">
+                    <span class="dot" style="background:#7c3aed;"></span>
+                    Resumen financiero del mes actual
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0" style="font-size:.9rem;">
+                        <tbody>
+                        <tr>
+                            <td><i class="bi bi-circle-fill me-2" style="color:#059669;font-size:.6rem;"></i>Ingresos (lotes pagados)</td>
+                            <td class="text-end fw-bold" id="tabIngresos"
+                                th:text="${'$' + #numbers.formatDecimal(resumen.ingresosMes, 1, 2)}">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><hr class="my-1"></td>
+                        </tr>
+                        <tr>
+                            <td><i class="bi bi-circle-fill me-2" style="color:#f07a18;font-size:.6rem;"></i>Gastos de viaje</td>
+                            <td class="text-end text-danger" id="tabGastoViaje"
+                                th:text="${'−$' + #numbers.formatDecimal(resumen.gastoViajesMes, 1, 2)}">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td><i class="bi bi-circle-fill me-2" style="color:#7c3aed;font-size:.6rem;"></i>Gastos generales</td>
+                            <td class="text-end text-danger" id="tabGastoGeneral"
+                                th:text="${'−$' + #numbers.formatDecimal(resumen.gastoGeneralesMes, 1, 2)}">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td><i class="bi bi-circle-fill me-2" style="color:#0891b2;font-size:.6rem;"></i>Gastos de camiones</td>
+                            <td class="text-end text-danger" id="tabGastoCamion"
+                                th:text="${'−$' + #numbers.formatDecimal(resumen.gastoCamionesMes, 1, 2)}">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><hr class="my-1"></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Total gastos</td>
+                            <td class="text-end fw-bold text-danger" id="tabTotalGastos"
+                                th:text="${'−$' + #numbers.formatDecimal(resumen.totalGastosMes, 1, 2)}">$0.00</td>
+                        </tr>
+                        <tr style="background:rgba(15,36,96,.04);">
+                            <td class="fw-bold" style="color:var(--mp-blue-dark);">Balance neto</td>
+                            <td class="text-end fw-bold fs-5"
+                                id="tabBalance"
+                                th:classappend="${resumen.balanceMes >= 0} ? ' text-success' : ' text-danger'"
+                                th:text="${'$' + #numbers.formatDecimal(resumen.balanceMes, 1, 2)}">$0.00</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Barra de progreso ingresos vs gastos -->
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#6b7280;">
+                        <span>Ingresos</span><span>Gastos</span>
+                    </div>
+                    <div class="progress" style="height:10px;border-radius:8px;">
+                        <div class="progress-bar bg-success" id="barraIngresos"
+                             th:style="${'width:' + (resumen.totalGastosMes?.compareTo(resumen.ingresosMes) >= 0 ? 50 : (resumen.ingresosMes.doubleValue() / (resumen.ingresosMes.doubleValue() + resumen.totalGastosMes.doubleValue()) * 100)) + '%'}">
+                        </div>
+                        <div class="progress-bar bg-danger" id="barraGastos"
+                             th:style="${'width:' + (resumen.ingresosMes?.compareTo(resumen.totalGastosMes) >= 0 ? 50 : (resumen.totalGastosMes.doubleValue() / (resumen.ingresosMes.doubleValue() + resumen.totalGastosMes.doubleValue()) * 100)) + '%'}">
+                        </div>
+                    </div>
+                </div>
+                <div class="text-end mt-3">
+                    <a href="/reportes" class="btn btn-add btn-sm">
+                        <i class="bi bi-file-earmark-bar-graph me-1"></i>Ver reportes completos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /container -->
 
 <th:block th:replace="fragments/assets :: globalScripts"></th:block>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+// Datos iniciales inyectados por Thymeleaf
+const INIT_VIAJES_POR_MES   = /*[[${resumen.viajesPorMes}]]*/ [];
+const INIT_INGRESOS_POR_MES = /*[[${resumen.ingresosPorMes}]]*/ [];
+const INIT_GASTOS_POR_MES   = /*[[${resumen.gastosPorMes}]]*/ [];
+const INIT_ESTADOS          = /*[[${resumen.viajesPorEstado}]]*/ {};
+const AÑO_ACTUAL            = /*[[${anoActual}]]*/ 2026;
+
+const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+const COLOR_ESTADOS = {
+    'cargando':     '#f59e0b',
+    'en camino':    '#3b82f6',
+    'descargando':  '#06b6d4',
+    'con fallas':   '#f97316',
+    'cancelado':    '#ef4444',
+    'completado':   '#22c55e',
+};
+
+// ── Gráfica de barras: Viajes por mes ──────────────────────────────────────
+const ctxViajes = document.getElementById('chartViajes').getContext('2d');
+const chartViajes = new Chart(ctxViajes, {
+    type: 'bar',
+    data: {
+        labels: MESES,
+        datasets: [{
+            label: 'Viajes',
+            data: INIT_VIAJES_POR_MES,
+            backgroundColor: MESES.map((_, i) =>
+                i === (new Date().getMonth()) ? 'rgba(26,58,143,0.9)' : 'rgba(26,58,143,0.4)'),
+            borderColor: 'rgba(26,58,143,1)',
+            borderWidth: 2,
+            borderRadius: 6,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#f0f0f0' } },
+            x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        }
+    }
+});
+
+// ── Gráfica de líneas: Ingresos vs Gastos ─────────────────────────────────
+const ctxFin = document.getElementById('chartFinanciero').getContext('2d');
+const chartFinanciero = new Chart(ctxFin, {
+    type: 'line',
+    data: {
+        labels: MESES,
+        datasets: [
+            {
+                label: 'Ingresos',
+                data: INIT_INGRESOS_POR_MES,
+                borderColor: '#059669',
+                backgroundColor: 'rgba(5,150,105,0.08)',
+                borderWidth: 2.5,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#059669',
+                pointRadius: 4,
+            },
+            {
+                label: 'Gastos',
+                data: INIT_GASTOS_POR_MES,
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239,68,68,0.08)',
+                borderWidth: 2.5,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#ef4444',
+                pointRadius: 4,
+            }
+        ]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: { font: { size: 11 }, boxWidth: 12 }
+            },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ` $${ctx.parsed.y.toFixed(2)}`
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { font: { size: 11 }, callback: v => '$' + v.toLocaleString() },
+                grid: { color: '#f0f0f0' }
+            },
+            x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        }
+    }
+});
+
+// ── Gráfica de dona: Estados ───────────────────────────────────────────────
+function buildDonaEstados(estados) {
+    const labels = Object.keys(estados);
+    const data   = Object.values(estados);
+    const colors = labels.map(l => COLOR_ESTADOS[l] || '#94a3b8');
+
+    const ctxEstado = document.getElementById('chartEstados').getContext('2d');
+    if (window._chartEstados) window._chartEstados.destroy();
+    window._chartEstados = new Chart(ctxEstado, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // Leyenda personalizada
+    const ley = document.getElementById('leyendaEstados');
+    ley.innerHTML = '';
+    labels.forEach((l, i) => {
+        ley.insertAdjacentHTML('beforeend', `
+            <span class="d-flex align-items-center gap-1" style="font-size:.75rem;">
+                <span style="width:10px;height:10px;border-radius:50%;background:${colors[i]};display:inline-block;"></span>
+                ${l} <strong>(${data[i]})</strong>
+            </span>`);
+    });
+}
+buildDonaEstados(INIT_ESTADOS);
+
+// ── Selector de año → actualiza todo vía API ──────────────────────────────
+document.getElementById('selectorAno').addEventListener('change', async function() {
+    const ano = this.value;
+    document.getElementById('lblAnoActivo').textContent = ano;
+
+    // Mostrar loading
+    document.getElementById('loadingViajes').style.display    = 'flex';
+    document.getElementById('loadingFinanciero').style.display = 'flex';
+
+    try {
+        const res  = await fetch(`/api/dashboard/resumen?ano=${ano}&mes=${new Date().getMonth() + 1}`);
+        const data = await res.json();
+
+        // Actualizar gráficas
+        chartViajes.data.datasets[0].data = data.viajesPorMes;
+        chartViajes.update();
+
+        chartFinanciero.data.datasets[0].data = data.ingresosPorMes;
+        chartFinanciero.data.datasets[1].data = data.gastosPorMes;
+        chartFinanciero.update();
+
+        buildDonaEstados(data.viajesPorEstado);
+
+        // Actualizar KPIs
+        const fmt = v => '$' + parseFloat(v).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        document.getElementById('kpiViajes').textContent      = data.viajesMes;
+        document.getElementById('kpiIngresos').textContent    = fmt(data.ingresosMes);
+        document.getElementById('kpiGastoViajes').textContent = fmt(data.gastoViajesMes);
+        document.getElementById('kpiGastoGeneral').textContent= fmt(data.gastoGeneralesMes);
+        document.getElementById('kpiGastoCamion').textContent = fmt(data.gastoCamionesMes);
+        const bal = parseFloat(data.balanceMes);
+        const kpiB = document.getElementById('kpiBalance');
+        kpiB.textContent = fmt(bal);
+        kpiB.className = 'kpi-value ' + (bal >= 0 ? 'balance-positive' : 'balance-negative');
+
+        // Actualizar tabla
+        document.getElementById('tabIngresos').textContent   = fmt(data.ingresosMes);
+        document.getElementById('tabGastoViaje').textContent = '−' + fmt(data.gastoViajesMes);
+        document.getElementById('tabGastoGeneral').textContent='−' + fmt(data.gastoGeneralesMes);
+        document.getElementById('tabGastoCamion').textContent= '−' + fmt(data.gastoCamionesMes);
+        document.getElementById('tabTotalGastos').textContent= '−' + fmt(data.totalGastosMes);
+        const tabB = document.getElementById('tabBalance');
+        tabB.textContent  = fmt(bal);
+        tabB.className = 'text-end fw-bold fs-5 ' + (bal >= 0 ? 'text-success' : 'text-danger');
+
+    } catch(e) { console.error('Error actualizando dashboard', e); }
+
+    document.getElementById('loadingViajes').style.display    = 'none';
+    document.getElementById('loadingFinanciero').style.display = 'none';
+});
+/*]]>*/
+</script>
 </body>
 </html>

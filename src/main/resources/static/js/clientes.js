@@ -77,7 +77,7 @@ async function cargarClientes(page = paginacionClientes.page) {
     const tbody = document.getElementById("tablaClientes");
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Cargando clientes...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Cargando clientes...</td></tr>';
 
     const pageSeguro = Math.max(0, Number(page) || 0);
     const sizeSeguro = Math.max(1, Number(paginacionClientes.size) || 10);
@@ -119,7 +119,7 @@ async function cargarClientes(page = paginacionClientes.page) {
         clientesCache = [];
         paginacionClientes.totalElements = 0;
         paginacionClientes.totalPages = 1;
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al cargar clientes</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error al cargar clientes</td></tr>';
         actualizarControlesPaginacion();
     }
 }
@@ -130,7 +130,7 @@ function renderClientes(clientes) {
     if (!tbody) return;
 
     if (!Array.isArray(clientes) || clientes.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay clientes registrados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay clientes registrados</td></tr>';
         if (total) total.textContent = "Mostrando 0 clientes";
         return;
     }
@@ -143,6 +143,7 @@ function renderClientes(clientes) {
                 <td class="row-num">${String(inicio + index + 1).padStart(2, "0")}</td>
                 <td><strong>${escapeHtml(cliente.nombre || "-")}</strong></td>
                 <td>${escapeHtml(cliente.telefono || "-")}</td>
+                <td>${escapeHtml(cliente.correo || "-")}</td>
                 <td>${escapeHtml(cliente.duiNit || "-")}</td>
                 <td>${escapeHtml(cliente.direccion || "-")}</td>
                 <td class="text-center">
@@ -236,6 +237,7 @@ async function guardarCliente(event) {
     const telefono = obtenerValor("clienteTelefono");
     const direccion = obtenerValor("clienteDireccion");
     const duiNit = obtenerValor("clienteDuiNit");
+    const correo = obtenerValor("clienteCorreo");
 
     if (!nombre) {
         alert("El nombre es obligatorio");
@@ -245,6 +247,7 @@ async function guardarCliente(event) {
     const payload = {
         nombre,
         telefono: telefono || null,
+        correo: correo || null,
         direccion: direccion || null,
         duiNit: duiNit || null
     };
@@ -336,6 +339,7 @@ function prepararModalEdicion(cliente) {
 
     setValor("clienteNombre", cliente.nombre);
     setValor("clienteTelefono", cliente.telefono);
+    setValor("clienteCorreo", cliente.correo);
     setValor("clienteDireccion", cliente.direccion);
     setValor("clienteDuiNit", cliente.duiNit);
 }

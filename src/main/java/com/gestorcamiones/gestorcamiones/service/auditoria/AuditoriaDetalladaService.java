@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -59,6 +61,7 @@ public class AuditoriaDetalladaService implements IAuditoriaDetalladaService {
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void registrar(
             String tabla,
             Long usuarioId,
@@ -95,6 +98,30 @@ public class AuditoriaDetalladaService implements IAuditoriaDetalladaService {
         auditoria.setIp(ip);
         auditoria.setUserAgent(userAgent);
 
+        repository.save(auditoria);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void registrarSistema(
+            String tabla,
+            AccionAuditoria accion,
+            String nombre,
+            JsonNode datosAntes,
+            JsonNode datosDespues,
+            Long idRegistro,
+            String detalle
+    ) {
+        AuditoriaDetallada auditoria = new AuditoriaDetallada();
+        auditoria.setTabla(tabla);
+        auditoria.setUsuarioId(null);
+        auditoria.setAccion(accion);
+        auditoria.setIdRegistro(idRegistro);
+        auditoria.setUsuarioNombre(nombre);
+        auditoria.setDatosAntes(datosAntes);
+        auditoria.setDatosDespues(datosDespues);
+        auditoria.setIp("SISTEMA");
+        auditoria.setUserAgent(detalle == null ? "SISTEMA" : detalle);
         repository.save(auditoria);
     }
 

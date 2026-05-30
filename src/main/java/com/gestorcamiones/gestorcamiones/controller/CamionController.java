@@ -41,10 +41,12 @@ public class CamionController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "idCamion,desc") String sort,
             @RequestParam(required = false) String q,
-            @RequestParam(required = false) EstadoCamion estado
+            @RequestParam(required = false) EstadoCamion estado,
+            @RequestParam(defaultValue = "false") boolean excluirAsignados,
+            @RequestParam(required = false) Long viajeIdActual
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        return camionService.listarCamiones(pageable, q, estado);
+        return camionService.listarCamiones(pageable, q, estado, excluirAsignados, viajeIdActual);
     }
 
     @PostMapping

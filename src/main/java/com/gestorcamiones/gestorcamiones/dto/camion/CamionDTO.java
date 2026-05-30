@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,6 +32,8 @@ public class CamionDTO {
     private String fotoUrl;
 
     private String comentario;
+
+    private BigDecimal precioCompra;
 
     @NotNull(message = "El estado es obligatorio")
     private EstadoCamion estadoCamion;

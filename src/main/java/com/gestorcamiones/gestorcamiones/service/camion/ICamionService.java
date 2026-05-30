@@ -9,7 +9,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface ICamionService {
 
-    Page<CamionDTO> listarCamiones(Pageable pageable, String texto, EstadoCamion estado);
+    Page<CamionDTO> listarCamiones(Pageable pageable, String texto, EstadoCamion estado, boolean excluirAsignados, Long viajeIdActual);
 
     UsuarioPerfilDTO obtenerPerfilCamion(Long id);
 

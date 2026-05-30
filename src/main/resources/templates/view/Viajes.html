@@ -152,12 +152,57 @@
         }
 
         .trip-leg-block {
-            border: 1px solid rgba(26, 58, 143, 0.15);
             border-radius: 16px;
             padding: 12px 14px;
-            background: rgba(26, 58, 143, 0.04);
             display: flex;
             gap: 14px;
+        }
+
+        .trip-leg-block.leg-ida {
+            border: 2px solid rgba(37, 99, 235, 0.35);
+            background: rgba(37, 99, 235, 0.06);
+        }
+
+        .trip-leg-block.leg-vuelta {
+            border: 2px solid rgba(124, 58, 237, 0.35);
+            background: rgba(124, 58, 237, 0.06);
+        }
+
+        .leg-ida .trip-leg-title {
+            color: #1e40af;
+        }
+
+        .leg-vuelta .trip-leg-title {
+            color: #6d28d9;
+        }
+
+        .leg-ida .trip-leg-stats {
+            border-color: rgba(37, 99, 235, 0.3);
+        }
+
+        .leg-vuelta .trip-leg-stats {
+            border-color: rgba(124, 58, 237, 0.3);
+        }
+
+        .trip-leg-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 2px 10px;
+            border-radius: 999px;
+            color: white;
+        }
+
+        .trip-leg-indicator.indicator-ida {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        }
+
+        .trip-leg-indicator.indicator-vuelta {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
         }
 
         .trip-leg-main {
@@ -602,6 +647,92 @@
             color: #b91c1c;
         }
     </style>
+    <style>
+        /* ── Resumen financiero ── */
+        .resumen-financiero {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+        }
+
+        .resumen-card.card-ingreso {
+            border-color: #16a34a;
+            background: rgba(22, 163, 74, 0.06);
+        }
+
+        .resumen-card.card-ingreso strong {
+            color: #15803d;
+        }
+
+        .resumen-card.card-gasto {
+            border-color: #dc2626;
+            background: rgba(220, 38, 38, 0.06);
+        }
+
+        .resumen-card.card-gasto strong {
+            color: #b91c1c;
+        }
+
+        .resumen-card.card-iva {
+            border-color: #d97706;
+            background: rgba(217, 119, 6, 0.06);
+        }
+
+        .resumen-card.card-iva strong {
+            color: #b45309;
+        }
+
+        .resumen-card.card-ganancia {
+            border-color: var(--mp-blue);
+            background: rgba(26, 58, 143, 0.06);
+        }
+
+        .resumen-card.card-ganancia strong {
+            color: var(--mp-blue-dark);
+            font-size: 1.1rem;
+        }
+
+        .iva-config {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            padding: 8px 12px;
+            border: 1px dashed var(--mp-border);
+            border-radius: 10px;
+            background: var(--mp-gray-bg);
+        }
+
+        .iva-config label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .iva-config input[type=number] {
+            width: 80px;
+        }
+
+        /* Trip card totals with colors */
+        .trip-total-financiero {
+            display: grid;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .trip-total-financiero .metric-ingreso {
+            color: #15803d;
+        }
+
+        .trip-total-financiero .metric-gasto {
+            color: #b91c1c;
+        }
+
+        .trip-total-financiero .metric-ganancia {
+            color: var(--mp-blue-dark);
+            font-weight: 700;
+        }
+    </style>
 </head>
 <body>
 <div th:replace="fragments/navbar :: navbar"></div>
@@ -614,20 +745,16 @@
 
     <div class="metrics">
         <div class="metric">
-            <div id="metricIngresos">$0.00</div>
-            <small>Ingresos</small>
-        </div>
-        <div class="metric">
             <div id="metricGastos">$0.00</div>
-            <small>Gastos</small>
-        </div>
-        <div class="metric">
-            <div id="metricGanancia">$0.00</div>
-            <small>Ganancia</small>
+            <small>Gastos totales</small>
         </div>
         <div class="metric">
             <div id="metricActivos">0</div>
-            <small>Activos</small>
+            <small>Tramos activos</small>
+        </div>
+        <div class="metric">
+            <div id="metricLotes">0</div>
+            <small>Lotes en transito</small>
         </div>
     </div>
 
@@ -658,8 +785,22 @@
         </div>
     </div>
 
-    <div id="listaViajes" class="trip-list">
-        <div class="card-clean text-center">Cargando viajes...</div>
+    <div class="table-responsive bg-white rounded shadow-sm border border-light">
+        <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+            <thead class="table-light">
+                <tr>
+                    <th class="py-3 px-3">Viaje</th>
+                    <th class="py-3 px-3">Salida - Llegada</th>
+                    <th class="py-3 px-3">Ruta</th>
+                    <th class="py-3 px-3 text-center">Lotes</th>
+                    <th class="py-3 px-3 text-end">Financiero</th>
+                    <th class="py-3 px-3 text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="listaViajes">
+                <tr><td colspan="6" class="text-center py-4 text-muted">Cargando viajes...</td></tr>
+            </tbody>
+        </table>
     </div>
 
     <div class="mp-table-footer d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
@@ -706,29 +847,58 @@
                                 <div class="invalid-feedback">Este campo es requerido.</div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Cliente</label>
-                                <div class="input-group">
-                                    <input id="clienteInput" list="clientesList" type="text" class="form-control" required readonly>
-                                    <input id="clienteId" type="hidden">
-                                    <button id="btnBuscarCliente" class="btn btn-outline-secondary" type="button">
-                                        Buscar
+                                <label class="form-label">Lotes asociados</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <button id="btnAbrirModalBusquedaLotes" class="btn btn-outline-primary btn-sm" type="button">
+                                        <i class="fas fa-search me-1"></i> Buscar y Asignar Lote
                                     </button>
                                 </div>
-                                <datalist id="clientesList">
-                                    <option value="AgroLogistica" data-id="1"></option>
-                                    <option value="Grupo Alimentos" data-id="2"></option>
-                                    <option value="Textiles Mayas" data-id="3"></option>
-                                </datalist>
-                                <div class="invalid-feedback">Selecciona un cliente.</div>
+                                <div id="lotesAsociados" class="mt-2 d-flex flex-wrap gap-2"></div>
+
+                                <!-- Formulario de edicion de lote (Oculto por defecto) -->
+                                <div id="loteEditFormContainer" class="card mt-3" style="display: none;">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+                                        <h6 class="mb-0 text-secondary">Editar Información del Lote</h6>
+                                        <button type="button" class="btn-close" id="btnCerrarLoteEdit" aria-label="Cerrar"></button>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <div class="row g-2">
+                                            <input type="hidden" id="editLoteId">
+                                            <div class="col-md-6">
+                                                <label class="form-label mb-1">Numero Lote</label>
+                                                <input type="text" class="form-control form-control-sm" id="editLoteNumero" readonly>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label mb-1">Estado</label>
+                                                <select class="form-select form-select-sm" id="editLoteEstado"></select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label mb-1">Peso</label>
+                                                <input type="number" step="0.01" class="form-control form-control-sm" id="editLotePeso">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label mb-1">Valor Declarado</label>
+                                                <input type="number" step="0.01" class="form-control form-control-sm" id="editLoteValor">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label mb-1">Encargado</label>
+                                                <input type="text" class="form-control form-control-sm" id="editLoteEncargado">
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label mb-1">Descripcion</label>
+                                                <textarea class="form-control form-control-sm" id="editLoteDescripcion" rows="2"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3 text-end">
+                                            <button type="button" id="btnGuardarLoteEdit" class="btn btn-primary btn-sm">Guardar Lote</button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="d-flex gap-3 align-items-center mb-3">
                                 <div class="form-check">
                                     <input id="pagadoGeneral" class="form-check-input" type="checkbox">
                                     <label class="form-check-label" for="pagadoGeneral">Pagado</label>
-                                </div>
-                                <div class="form-check">
-                                    <input id="ivaGeneral" class="form-check-input" type="checkbox">
-                                    <label class="form-check-label" for="ivaGeneral">IVA</label>
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -772,7 +942,7 @@
                                         <label class="form-label">Chofer</label>
                                         <div class="input-group">
                                             <input id="idaChoferInput" list="choferesList" type="text" class="form-control" required readonly>
-                                            <input id="idaChoferId" type="hidden">bo
+                                            <input id="idaChoferId" type="hidden">
                                             <button id="btnBuscarChoferIda" class="btn btn-outline-secondary" type="button">
                                                 Buscar
                                             </button>
@@ -799,14 +969,30 @@
                                         <div id="idaDuracion" class="form-control form-control-sm trip-readonly">-</div>
                                     </div>
                                     <div>
-                                        <label class="form-label">Ingreso del tramo</label>
-                                        <input id="idaIngreso" type="number" min="0" step="0.01" class="form-control">
-                                    </div>
-                                    <div>
                                         <label class="form-label">Estado del tramo</label>
                                         <select id="idaEstado" class="form-select">
                                             <option value="" selected>Seleccione un estado</option>
                                         </select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Pais salida</label>
+                                        <select id="idaPaisSalida" class="form-select"><option value="">Seleccione</option></select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Pais destino</label>
+                                        <select id="idaPaisDestino" class="form-select"><option value="">Seleccione</option></select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Direccion salida</label>
+                                        <input id="idaDireccionSalida" type="text" class="form-control">
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Direccion destino</label>
+                                        <input id="idaDireccionDestino" type="text" class="form-control">
+                                    </div>
+                                    <div style="grid-column: 1 / -1;">
+                                        <label class="form-label">Observaciones</label>
+                                        <textarea id="idaObservaciones" class="form-control" rows="2"></textarea>
                                     </div>
                                 </div>
 
@@ -908,14 +1094,30 @@
                                         <div id="vueltaDuracion" class="form-control form-control-sm trip-readonly">-</div>
                                     </div>
                                     <div>
-                                        <label class="form-label">Ingreso del tramo</label>
-                                        <input id="vueltaIngreso" type="number" min="0" step="0.01" class="form-control">
-                                    </div>
-                                    <div>
                                         <label class="form-label">Estado del tramo</label>
                                         <select id="vueltaEstado" class="form-select">
                                             <option value="" selected>Seleccione un estado</option>
                                         </select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Pais salida</label>
+                                        <select id="vueltaPaisSalida" class="form-select"><option value="">Seleccione</option></select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Pais destino</label>
+                                        <select id="vueltaPaisDestino" class="form-select"><option value="">Seleccione</option></select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Direccion salida</label>
+                                        <input id="vueltaDireccionSalida" type="text" class="form-control">
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Direccion destino</label>
+                                        <input id="vueltaDireccionDestino" type="text" class="form-control">
+                                    </div>
+                                    <div style="grid-column: 1 / -1;">
+                                        <label class="form-label">Observaciones</label>
+                                        <textarea id="vueltaObservaciones" class="form-control" rows="2"></textarea>
                                     </div>
                                 </div>
 
@@ -981,25 +1183,53 @@
                     </div>
 
                     <section class="form-section resumen-section">
-                        <h6 class="section-title">Resumen general</h6>
-                        <div class="resumen-grid">
-                            <div class="resumen-card">
-                                <div>Total generado</div>
-                                <strong id="totalGenerado">$0.00</strong>
+                        <h6 class="section-title">Resumen financiero</h6>
+                        <div class="iva-config">
+                            <div class="form-check form-switch">
+                                <input id="ivaActivoResumen" class="form-check-input" type="checkbox">
+                                <label class="form-check-label" for="ivaActivoResumen">Aplicar IVA</label>
                             </div>
-                            <div class="resumen-card">
-                                <div>Total gastado</div>
+                            <div>
+                                <label for="ivaPorcentaje">%&nbsp;IVA</label>
+                                <input id="ivaPorcentaje" type="number" min="0" max="100" step="0.5" value="13" class="form-control form-control-sm" style="width:80px;display:inline-block" disabled>
+                            </div>
+                        </div>
+
+                        <div class="resumen-grid resumen-financiero mt-3">
+                            <div class="resumen-card card-ingreso">
+                                <div>Valor de lotes</div>
+                                <strong id="resumenValorLotes">$0.00</strong>
+                            </div>
+                            <div class="resumen-card card-gasto">
+                                <div>Gastos ida</div>
+                                <strong id="resumenGastosIda">$0.00</strong>
+                            </div>
+                            <div class="resumen-card card-gasto">
+                                <div>Gastos vuelta</div>
+                                <strong id="resumenGastosVuelta">$0.00</strong>
+                            </div>
+                            <div class="resumen-card card-gasto">
+                                <div>Total gastos</div>
                                 <strong id="totalGastado">$0.00</strong>
                             </div>
+                            <div class="resumen-card card-iva">
+                                <div>IVA</div>
+                                <strong id="resumenIVA">$0.00</strong>
+                            </div>
+                            <div class="resumen-card card-ganancia">
+                                <div>Ganancia neta</div>
+                                <strong id="resumenGanancia">$0.00</strong>
+                            </div>
                             <div class="resumen-card">
-                                <div>Ganancia</div>
-                                <strong id="totalGanancia">$0.00</strong>
+                                <div>Lotes asociados</div>
+                                <strong id="resumenLotes">0</strong>
                             </div>
                         </div>
                     </section>
 
                     <div class="form-actions">
                         <button type="submit" id="btnGuardarViaje" class="btn btn-primary">Guardar viaje</button>
+                        <button type="button" id="btnEliminarViaje" class="btn btn-danger" style="display:none;">Eliminar viaje</button>
                         <span id="estadoGuardado" class="estado-guardado"></span>
                     </div>
                 </form>
@@ -1082,61 +1312,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalBuscarClienteViaje" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content mp-modal-content">
-                <div class="modal-header mp-modal-header">
-                    <h5 class="modal-title">Seleccionar Cliente</h5>
-                    <button type="button" class="btn-close mp-modal-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-2 mb-3">
-                        <div class="col-12 col-md-9">
-                            <div class="input-group">
-                                <span class="input-group-text">Buscar</span>
-                                <input id="filtroBusquedaClientesViajeModal" type="text" class="form-control" placeholder="Buscar nombre o documento...">
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-3 d-grid">
-                            <button id="btnLimpiarFiltrosClientesViajeModal" type="button" class="btn btn-outline-secondary">Limpiar</button>
-                        </div>
-                    </div>
-                    <table class="table mp-table">
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Nombre</th>
-                            <th>Telefono</th>
-                            <th>Dui/Nit</th>
-                            <th>Accion</th>
-                        </tr>
-                        </thead>
-                        <tbody id="tablaClientesViaje">
-                        <tr>
-                            <td colspan="5" class="text-center">Cargando clientes...</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <span id="totalClientesViajeModal">Mostrando 0 clientes</span>
-                        <nav aria-label="Paginacion de clientes">
-                            <ul class="pagination pagination-sm mb-0">
-                                <li class="page-item disabled">
-                                    <button id="btnPrevClientesViajeModal" class="page-link" type="button">Anterior</button>
-                                </li>
-                                <li class="page-item disabled">
-                                    <span id="paginaActualClientesViajeModal" class="page-link">1 / 1</span>
-                                </li>
-                                <li class="page-item disabled">
-                                    <button id="btnNextClientesViajeModal" class="page-link" type="button">Siguiente</button>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Modal de cliente removido en V2: los clientes se manejan a través de lotes -->
 
     <div class="modal fade" id="modalBuscarChoferViaje" tabindex="-1">
         <div class="modal-dialog modal-xl">
@@ -1194,6 +1370,133 @@
                             </ul>
                         </nav>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalBuscarLoteViaje" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content mp-modal-content">
+                <div class="modal-header mp-modal-header">
+                    <h5 class="modal-title">Seleccionar Lote</h5>
+                    <button type="button" class="btn-close mp-modal-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-12 col-md-7">
+                            <div class="input-group">
+                                <span class="input-group-text">Buscar</span>
+                                <input id="filtroBusquedaLotesViajeModal" type="text" class="form-control" placeholder="Numero, encargado o descripcion...">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <select id="filtroEstadoLotesViajeModal" class="form-select mp-select">
+                                <option value="" selected>Todos los estados</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2 d-grid">
+                            <button id="btnNuevoLoteDesdeViaje" type="button" class="btn btn-primary">Nuevo lote</button>
+                        </div>
+                    </div>
+
+                    <table class="table mp-table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Numero</th>
+                            <th>Estado</th>
+                            <th>Categoria</th>
+                            <th>Remitente</th>
+                            <th>Destinatario</th>
+                            <th>Accion</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaLotesViaje">
+                        <tr>
+                            <td colspan="7" class="text-center">Cargando lotes...</td>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Formulario inline para crear lote sin salir del viaje -->
+                    <div id="nuevoLoteInlineForm" style="display:none; margin-top: 16px; border: 2px dashed var(--mp-blue); border-radius: 12px; padding: 16px; background: rgba(26,58,143,0.03);">
+                        <h6 style="font-weight: 700; color: var(--mp-blue-dark); margin-bottom: 12px;">Crear nuevo lote</h6>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label">Numero de lote *</label>
+                                <input type="text" class="form-control" data-lote-numero placeholder="Ej: LOTE-001">
+                                <div class="invalid-feedback">Numero de lote obligatorio</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Estado *</label>
+                                <select class="form-select" data-lote-estado>
+                                    <option value="">Seleccione estado</option>
+                                </select>
+                                <div class="invalid-feedback">Selecciona un estado</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Categoria *</label>
+                                <select class="form-select" data-lote-categoria>
+                                    <option value="">Seleccione categoria</option>
+                                </select>
+                                <div class="invalid-feedback">Selecciona una categoria</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">ID Cliente Remitente *</label>
+                                <input type="number" class="form-control" data-lote-remitente placeholder="ID del cliente">
+                                <div class="invalid-feedback">Remitente obligatorio</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Peso (kg)</label>
+                                <input type="number" step="0.01" min="0" class="form-control" data-lote-peso placeholder="0.00">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Valor declarado</label>
+                                <input type="number" step="0.01" min="0" class="form-control" data-lote-valor placeholder="0.00">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Descripcion</label>
+                                <input type="text" class="form-control" data-lote-descripcion placeholder="Descripcion del lote">
+                            </div>
+                            <div class="col-12 d-flex gap-2 mt-2">
+                                <button id="btnGuardarLoteInline" type="button" class="btn btn-primary btn-sm">Crear y asociar lote</button>
+                                <button id="btnCancelarLoteInline" type="button" class="btn btn-outline-secondary btn-sm">Cancelar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Buscar y Seleccionar Lotes -->
+<div id="modalBusquedaLotes" class="modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Seleccionar Lote Disponible</h5>
+                <button type="button" class="btn-close" id="btnCerrarModalBusquedaLotes" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" id="filtroModalLotes" class="form-control" placeholder="Buscar por número o encargado...">
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Estado</th>
+                                <th>Encargado</th>
+                                <th>Valor</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaModalBusquedaLotes">
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
