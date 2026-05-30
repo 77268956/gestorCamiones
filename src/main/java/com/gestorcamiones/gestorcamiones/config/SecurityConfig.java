@@ -50,6 +50,7 @@ public class SecurityConfig {
                         .requestMatchers("/viajes", "/viajes/**", "/api/viajes/**").hasRole("ADMIN")
                         .requestMatchers("/gastos", "/gastos/**", "/api/tipogasto/**", "/api/gastos-generales/**").hasRole("ADMIN")
                         .requestMatchers("/dashboard", "/practica").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/backup/", "/backup/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

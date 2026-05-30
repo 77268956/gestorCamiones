@@ -20,6 +20,16 @@ public interface IAuditoriaDetalladaService {
             Long idRegistro
     );
 
+    void registrarSistema(
+            String tabla,
+            AccionAuditoria accion,
+            String nombre,
+            JsonNode datosAntes,
+            JsonNode datosDespues,
+            Long idRegistro,
+            String detalle
+    );
+
     Page<AuditoriaDetallada> obtenerAuditoriaDetallada(
             LocalDateTime desde,
             LocalDateTime hasta,

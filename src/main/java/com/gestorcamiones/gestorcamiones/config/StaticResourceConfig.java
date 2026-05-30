@@ -24,6 +24,10 @@ public class StaticResourceConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(location)
                 .setCachePeriod(3600);
+
+        Path backupDir = Paths.get("backups").toAbsolutePath().normalize();
+        registry.addResourceHandler("/backups-files/**")
+                .addResourceLocations(backupDir.toUri().toString())
+                .setCachePeriod(3600);
     }
 }
-
