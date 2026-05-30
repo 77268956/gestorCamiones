@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gestorcamiones.gestorcamiones.entity.BackupRegistro;
 import com.gestorcamiones.gestorcamiones.repository.BackupRegistroRepository;
 import com.gestorcamiones.gestorcamiones.entity.Enum.AccionAuditoria;
+import com.gestorcamiones.gestorcamiones.security.CustomUserDetails;
 import com.gestorcamiones.gestorcamiones.service.auditoria.IAuditoriaDetalladaService;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -49,6 +49,14 @@ public class BackupService {
         return crearBackup("AUTOMATICO");
     }
 
+    public BackupRegistro crearBackupManual(CustomUserDetails admin) {
+        return crearBackup("MANUAL", admin);
+    }
+
+    public BackupRegistro crearBackupAutomaticoSistema() {
+        return crearBackup("AUTOMATICO", null);
+    }
+
     public void restaurarBackup(Long backupId) {
         BackupRegistro backup = repository.findById(backupId).orElseThrow(() -> new IllegalArgumentException("Backup no encontrado"));
         Path archivo = Paths.get(backup.getRutaInterna());
@@ -59,7 +67,7 @@ public class BackupService {
             backup.setEstado("RESTAURADO");
             backup.setRestauradoEn(LocalDateTime.now());
             BackupRegistro guardado = repository.save(backup);
-            registrarAuditoria(guardado, AccionAuditoria.UPDATE, "Backup restaurado correctamente");
+            registrarAuditoria(guardado, AccionAuditoria.UPDATE, null, "Backup restaurado correctamente");
             Files.deleteIfExists(temporal);
         } catch (Exception e) {
             throw new IllegalStateException("No se pudo restaurar el backup", e);
@@ -73,6 +81,10 @@ public class BackupService {
     }
 
     public BackupRegistro registrarBackupExistente(Path archivoSubido) {
+        return registrarBackupExistente(archivoSubido, null);
+    }
+
+    public BackupRegistro registrarBackupExistente(Path archivoSubido, CustomUserDetails admin) {
         try {
             Path base = Paths.get(properties.getBaseDir()).toAbsolutePath();
             Path external = Paths.get(properties.getExternalDir()).toAbsolutePath();
@@ -102,7 +114,7 @@ public class BackupService {
             registro.setCreadoEn(LocalDateTime.now());
             registro.setDetalle("Backup existente registrado en el sistema");
             BackupRegistro guardado = repository.save(registro);
-            registrarAuditoria(guardado, AccionAuditoria.CREATE, "Backup importado manualmente");
+            registrarAuditoria(guardado, AccionAuditoria.CREATE, admin, "Backup importado manualmente");
             return guardado;
         } catch (Exception e) {
             throw new IllegalStateException("No se pudo registrar el backup existente", e);
@@ -110,6 +122,10 @@ public class BackupService {
     }
 
     private BackupRegistro crearBackup(String origen) {
+        return crearBackup(origen, null);
+    }
+
+    private BackupRegistro crearBackup(String origen, CustomUserDetails admin) {
         try {
             Path base = Paths.get(properties.getBaseDir()).toAbsolutePath();
             Path external = Paths.get(properties.getExternalDir()).toAbsolutePath();
@@ -146,7 +162,7 @@ public class BackupService {
             registro.setCreadoEn(LocalDateTime.now());
             registro.setDetalle("Backup generado correctamente");
             BackupRegistro guardado = repository.save(registro);
-            registrarAuditoria(guardado, AccionAuditoria.CREATE, "Backup generado correctamente");
+            registrarAuditoria(guardado, AccionAuditoria.CREATE, admin, "Backup generado correctamente");
             return guardado;
         } catch (Exception e) {
             BackupRegistro error = new BackupRegistro();
@@ -172,7 +188,7 @@ public class BackupService {
 
         int eliminados = 0;
         for (BackupRegistro backup : antiguos) {
-            registrarAuditoria(backup, AccionAuditoria.DELETE, "Backup eliminado por antiguedad");
+            registrarAuditoria(backup, AccionAuditoria.DELETE, null, "Backup eliminado por antiguedad");
             eliminarArchivosBackup(backup);
             repository.delete(backup);
             eliminados++;
@@ -247,17 +263,29 @@ public class BackupService {
         }
     }
 
-    private void registrarAuditoria(BackupRegistro backup, AccionAuditoria accion, String detalle) {
+    private void registrarAuditoria(BackupRegistro backup, AccionAuditoria accion, CustomUserDetails admin, String detalle) {
         try {
-            auditoriaDetalladaService.registrarSistema(
-                    "backup",
-                    accion,
-                    "SISTEMA",
-                    objectMapper.valueToTree(backup),
-                    objectMapper.valueToTree(backup),
-                    backup.getId(),
-                    detalle
-            );
+            if (admin != null) {
+                auditoriaDetalladaService.registrar(
+                        "backup",
+                        admin.getIdUsuario(),
+                        accion,
+                        admin.getUsername(),
+                        objectMapper.valueToTree(backup),
+                        objectMapper.valueToTree(backup),
+                        backup.getId()
+                );
+            } else {
+                auditoriaDetalladaService.registrarSistema(
+                        "backup",
+                        accion,
+                        "SISTEMA",
+                        objectMapper.valueToTree(backup),
+                        objectMapper.valueToTree(backup),
+                        backup.getId(),
+                        detalle
+                );
+            }
         } catch (Exception ignored) {
         }
     }

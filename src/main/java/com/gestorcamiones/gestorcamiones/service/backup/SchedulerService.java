@@ -14,7 +14,7 @@ public class SchedulerService {
 
     @Scheduled(cron = "0 0 3 * * MON")
     public void ejecutarBackupSemanal() {
-        backupService.crearBackupAutomatico();
+        backupService.crearBackupAutomaticoSistema();
     }
 
     @Scheduled(cron = "0 30 3 * * MON")

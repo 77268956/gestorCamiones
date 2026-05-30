@@ -1,9 +1,11 @@
 package com.gestorcamiones.gestorcamiones.controller;
 
 import com.gestorcamiones.gestorcamiones.repository.BackupRegistroRepository;
+import com.gestorcamiones.gestorcamiones.security.CustomUserDetails;
 import com.gestorcamiones.gestorcamiones.service.backup.BackupService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,8 +35,8 @@ public class BackupViewController {
     }
 
     @PostMapping("/manual")
-    public String generarManual() {
-        backupService.crearBackupManual();
+    public String generarManual(@AuthenticationPrincipal CustomUserDetails admin) {
+        backupService.crearBackupManual(admin);
         return "redirect:/backups";
     }
 
@@ -45,7 +47,7 @@ public class BackupViewController {
     }
 
     @PostMapping("/subir")
-    public String subirBackup(MultipartFile archivo) throws Exception {
+    public String subirBackup(MultipartFile archivo, @AuthenticationPrincipal CustomUserDetails admin) throws Exception {
         if (archivo.isEmpty() || archivo.getOriginalFilename() == null || archivo.getOriginalFilename().isBlank()) {
             return "redirect:/backups";
         }
@@ -54,7 +56,7 @@ public class BackupViewController {
         String nombreSeguro = Paths.get(archivo.getOriginalFilename()).getFileName().toString();
         Path destino = dir.resolve(nombreSeguro);
         archivo.transferTo(destino);
-        backupService.registrarBackupExistente(destino);
+        backupService.registrarBackupExistente(destino, admin);
         return "redirect:/backups";
     }
 }
