@@ -41,21 +41,21 @@ public class DashboardService {
      * Devuelve el resumen completo del dashboard para el año y mes actuales.
      *
      * @param mes mes (1-12)
-     * @param ano año (ej. 2026)
+     * @param anio año (ej. 2026)
      */
-    public DashboardResumenDTO getDashboardResumen(int mes, int ano) {
+    public DashboardResumenDTO getDashboardResumen(int mes, int anio) {
         DashboardResumenDTO dto = new DashboardResumenDTO();
         dto.setMes(mes);
-        dto.setAno(ano);
+        dto.setAnio(anio);
 
         // ── KPIs del mes ──────────────────────────────────────────────────────
-        long viajes = viajeRepo.countViajesByMesYAno(mes, ano);
+        long viajes = viajeRepo.countViajesByMesYAno(mes, anio);
         dto.setViajesMes(viajes);
 
-        BigDecimal ingresos      = safe(viajeRepo.sumIngresosByMes(mes, ano));
-        BigDecimal gastoViajes   = safe(gastoViajeRepo.sumMontoByMes(mes, ano));
-        BigDecimal gastoGeneral  = safe(gastoGeneralRepo.sumMontoByMes(mes, ano));
-        BigDecimal gastoCamiones = safe(gastoCamionRepo.sumMontoByMes(mes, ano));
+        BigDecimal ingresos      = safe(viajeRepo.sumIngresosByMes(mes, anio));
+        BigDecimal gastoViajes   = safe(gastoViajeRepo.sumMontoByMes(mes, anio));
+        BigDecimal gastoGeneral  = safe(gastoGeneralRepo.sumMontoByMes(mes, anio));
+        BigDecimal gastoCamiones = safe(gastoCamionRepo.sumMontoByMes(mes, anio));
 
         BigDecimal totalGastos = gastoViajes.add(gastoGeneral).add(gastoCamiones);
         BigDecimal balance     = ingresos.subtract(totalGastos);
@@ -68,13 +68,13 @@ public class DashboardService {
         dto.setBalanceMes(balance);
 
         // ── Gráficas anuales ──────────────────────────────────────────────────
-        dto.setViajesPorMes(buildLongArray(viajeRepo.countViajesByMesAgrupado(ano)));
-        dto.setIngresosPorMes(buildDecimalArray(viajeRepo.sumIngresosByMesAgrupado(ano)));
+        dto.setViajesPorMes(buildLongArray(viajeRepo.countViajesByMesAgrupado(anio)));
+        dto.setIngresosPorMes(buildDecimalArray(viajeRepo.sumIngresosByMesAgrupado(anio)));
 
         // gastos totales por mes = viajes + generales + camiones
-        List<BigDecimal> gv  = buildDecimalArray(gastoViajeRepo.sumMontoByMesAgrupado(ano));
-        List<BigDecimal> gg  = buildDecimalArray(gastoGeneralRepo.sumMontoByMesAgrupado(ano));
-        List<BigDecimal> gc  = buildDecimalArray(gastoCamionRepo.sumMontoByMesAgrupado(ano));
+        List<BigDecimal> gv  = buildDecimalArray(gastoViajeRepo.sumMontoByMesAgrupado(anio));
+        List<BigDecimal> gg  = buildDecimalArray(gastoGeneralRepo.sumMontoByMesAgrupado(anio));
+        List<BigDecimal> gc  = buildDecimalArray(gastoCamionRepo.sumMontoByMesAgrupado(anio));
         List<BigDecimal> gt  = new ArrayList<>();
         for (int i = 0; i < 12; i++) {
             gt.add(gv.get(i).add(gg.get(i)).add(gc.get(i)));

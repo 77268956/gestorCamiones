@@ -77,6 +77,8 @@ public interface ViajeRepository extends JpaRepository<Viaje, Long> {
             Pageable pageable
     );
 
+    boolean existsByNombreViajeIgnoreCaseAndIdViajeNot(String nombreViaje, Long idViaje);
+
     // ── Dashboard queries ────────────────────────────────────────────────────
 
     /** Cuenta viajes creados en un mes y año concreto (por created_at del viaje). */

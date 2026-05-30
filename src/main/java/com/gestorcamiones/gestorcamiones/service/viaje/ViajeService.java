@@ -153,7 +153,7 @@ public class ViajeService implements IViajeService {
             throw new IllegalArgumentException("Usuario no autenticado correctamente");
         }
 
-        validarNombreViaje(dto.getNombreViaje());
+        validarNombreViaje(dto.getNombreViaje(), dto.getIdViaje());
         validarTramosNoDuplicados(dto.getTramos());
 
         Viaje viaje = guardarViaje(dto, usuario);
@@ -198,13 +198,15 @@ public class ViajeService implements IViajeService {
         Viaje viaje = viajeRepository.findById(idViaje)
                 .orElseThrow(() -> new RuntimeException("Viaje no encontrado"));
 
+        validarNombreViaje(dto.getNombreViaje(), viaje.getIdViaje());
+        validarTramosNoDuplicados(dto.getTramos());
+
+
         JsonNode antesJson = objectMapper.valueToTree(toAuditoriaDTO(viaje));
 
         viaje.setNombreViaje(dto.getNombreViaje());
         viaje.setAdmin(usuario);
 
-        validarNombreViaje(dto.getNombreViaje());
-        validarTramosNoDuplicados(dto.getTramos());
 
         if (dto.getTramos() != null) {
             viajeDetallesService.actualizarTramos(dto.getTramos(), viaje, usuario);
@@ -335,7 +337,12 @@ public class ViajeService implements IViajeService {
     /**
      * Valida que el nombre del viaje no esté vacío y tenga longitud mínima.
      */
-    private void validarNombreViaje(String nombre) {
+    private void validarNombreViaje(String nombre, long id) {
+
+        if (viajeRepository.existsByNombreViajeIgnoreCaseAndIdViajeNot(nombre, id)) {
+            throw new IllegalArgumentException("El nombre del viaje ya esta registrado");
+        }
+
         if (nombre == null || nombre.trim().isEmpty()) {
             throw new IllegalArgumentException("El nombre del viaje es obligatorio");
         }
