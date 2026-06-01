@@ -16,6 +16,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
 
 /**
  * Controlador REST para alta y consulta de usuarios.
@@ -78,5 +81,15 @@ public class UsuarioController {
     public ResponseEntity<ResetPasswordResponseDTO> resetPassword(@PathVariable Long id) {
         String passwordTemporal = usuarioService.resetPassword(id);
         return ResponseEntity.ok(new ResetPasswordResponseDTO(passwordTemporal));
+    }
+
+    @PostMapping(value = "/{id}/foto", consumes = "multipart/form-data")
+    @Operation(summary = "Subir foto de usuario", description = "Sube y asocia una foto al perfil del usuario.")
+    public ResponseEntity<Map<String, String>> subirFoto(
+            @PathVariable Long id,
+            @RequestParam("foto") MultipartFile foto
+    ) {
+        String url = usuarioService.subirFoto(id, foto);
+        return ResponseEntity.ok(Map.of("fotoUrl", url));
     }
 }

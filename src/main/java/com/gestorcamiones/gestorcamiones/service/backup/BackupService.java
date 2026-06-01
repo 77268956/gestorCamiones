@@ -110,6 +110,7 @@ public class BackupService {
             registro.setRutaInterna(internalCopy.toString());
             registro.setRutaExterna(externalCopy.toString());
             registro.setRutaNube(driveCopy.toString());
+            registro.setDriveEstado("LOCAL");
             registro.setOrigen("IMPORTADO");
             registro.setEstado("OK");
             registro.setCreadoEn(LocalDateTime.now());
@@ -149,7 +150,16 @@ public class BackupService {
             Path driveCopy = drive.resolve(baseName + "_drive.enc");
             Files.copy(encryptedFile, internalCopy, StandardCopyOption.REPLACE_EXISTING);
             Files.copy(encryptedFile, externalCopy, StandardCopyOption.REPLACE_EXISTING);
-            driveService.subirSimulado(encryptedFile, driveCopy);
+            String detalleDrive = null;
+            DriveService.DriveUploadResult driveUpload = null;
+            try {
+                driveUpload = driveService.subirSimulado(encryptedFile, driveCopy);
+            } catch (Exception driveError) {
+                detalleDrive = driveError.getMessage();
+                if (detalleDrive == null || detalleDrive.isBlank()) {
+                    detalleDrive = driveError.getClass().getSimpleName();
+                }
+            }
             Files.deleteIfExists(dumpFile);
 
             BackupRegistro registro = new BackupRegistro();
@@ -161,7 +171,16 @@ public class BackupService {
             registro.setOrigen(origen);
             registro.setEstado("OK");
             registro.setCreadoEn(LocalDateTime.now());
-            registro.setDetalle("Backup generado correctamente");
+            registro.setDetalle(detalleDrive == null
+                    ? "Backup generado correctamente" + (driveUpload != null && driveUpload.webViewLink() != null ? ". Drive: " + driveUpload.webViewLink() : "")
+                    : "Backup generado correctamente. Drive no disponible: " + detalleDrive);
+            if (driveUpload != null && driveUpload.fileId() != null && !driveUpload.fileId().isBlank()) {
+                registro.setDriveFileId(driveUpload.fileId());
+                registro.setDriveWebViewLink(driveUpload.webViewLink());
+                registro.setDriveEstado("DRIVE");
+            } else {
+                registro.setDriveEstado("LOCAL");
+            }
             BackupRegistro guardado = repository.save(registro);
             registrarAuditoria(guardado, AccionAuditoria.CREATE, admin, "Backup generado correctamente");
             return guardado;
@@ -172,12 +191,13 @@ public class BackupService {
             error.setRutaInterna("");
             error.setRutaExterna("");
             error.setRutaNube("");
+            error.setDriveEstado("ERROR");
             error.setOrigen(origen);
             error.setEstado("ERROR");
             error.setCreadoEn(LocalDateTime.now());
-            error.setDetalle(e.getMessage());
+            error.setDetalle(extraerDetalleError(e));
             repository.save(error);
-            throw new IllegalStateException("No se pudo crear el backup", e);
+            throw new IllegalStateException("No se pudo crear el backup: " + extraerDetalleError(e), e);
         }
     }
 
@@ -291,5 +311,18 @@ public class BackupService {
             }
         } catch (Exception ignored) {
         }
+    }
+
+    private String extraerDetalleError(Exception e) {
+        String detalle = e.getMessage();
+        Throwable current = e.getCause();
+        while ((detalle == null || detalle.isBlank()) && current != null) {
+            if (current.getMessage() != null && !current.getMessage().isBlank()) {
+                detalle = current.getMessage();
+                break;
+            }
+            current = current.getCause();
+        }
+        return (detalle == null || detalle.isBlank()) ? e.getClass().getSimpleName() : detalle;
     }
 }

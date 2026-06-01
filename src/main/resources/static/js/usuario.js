@@ -1,4 +1,4 @@
-﻿let usuariosCache = [];
+let usuariosCache = [];
 let usuarioEditandoId = null;
 
 const paginacionUsuarios = {
@@ -27,6 +27,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const selectEstado = document.getElementById("filtroEstadoUsuarios");
     const btnAgregar = document.querySelector('[data-bs-target="#modalAgregarUsuario"]');
     const btnResetPassword = document.getElementById("btnResetPassword");
+
+    // ── Previsualización de foto de usuario ─────────────────────────────────
+    const fileInput = document.getElementById("fileInput");
+    const usuarioImagen = document.getElementById("usuarioImagen");
+
+    if (fileInput && usuarioImagen) {
+        fileInput.addEventListener("change", () => {
+            const file = fileInput.files?.[0];
+            if (file) {
+                const objectUrl = URL.createObjectURL(file);
+                usuarioImagen.src = objectUrl;
+                usuarioImagen.style.display = "block";
+            }
+        });
+    }
 
     if (tamanoPagina) {
         const size = Number(tamanoPagina.value);
@@ -155,7 +170,7 @@ async function cargarUsuarios(page = paginacionUsuarios.page) {
     const tbody = document.getElementById("tablaUsuarios");
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="8" class="text-center">Cargando usuarios...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center">Cargando usuarios...</td></tr>';
 
     const pageSeguro = Math.max(0, Number(page) || 0);
     const sizeSeguro = Math.max(1, Number(paginacionUsuarios.size) || 10);
@@ -201,7 +216,7 @@ async function cargarUsuarios(page = paginacionUsuarios.page) {
         usuariosCache = [];
         paginacionUsuarios.totalElements = 0;
         paginacionUsuarios.totalPages = 1;
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error al cargar usuarios</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error al cargar usuarios</td></tr>';
         actualizarControlesPaginacion();
     }
 }
@@ -212,7 +227,7 @@ function renderUsuarios(usuarios) {
     if (!tbody) return;
 
     if (!Array.isArray(usuarios) || usuarios.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No hay usuarios registrados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center">No hay usuarios registrados</td></tr>';
         if (total) total.textContent = "Mostrando 0 usuarios";
         return;
     }
@@ -220,9 +235,14 @@ function renderUsuarios(usuarios) {
     const inicio = paginacionUsuarios.page * paginacionUsuarios.size;
 
     const html = usuarios
-        .map((usuario, index) => `
+        .map((usuario, index) => {
+            const fotoHtml = usuario.fotoUrl
+                ? `<img src="${escapeHtml(usuario.fotoUrl)}" alt="Foto" style="height:36px;width:36px;object-fit:cover;border-radius:50%;border:2px solid rgba(0,0,0,.1);">`
+                : `<span style="display:inline-flex;align-items:center;justify-content:center;height:36px;width:36px;border-radius:50%;background:#e2e8f0;font-size:14px;color:#64748b;">👤</span>`;
+            return `
             <tr>
                 <td class="row-num">${String(inicio + index + 1).padStart(2, "0")}</td>
+                <td>${fotoHtml}</td>
                 <td><strong>${escapeHtml(usuario.nombre || "-")} ${escapeHtml(usuario.apellido || "")}</strong></td>
                 <td>${escapeHtml(usuario.email || "-")}</td>
                 <td>${escapeHtml(usuario.telefono || "-")}</td>
@@ -240,7 +260,8 @@ function renderUsuarios(usuarios) {
                     </div>
                 </td>
             </tr>
-        `)
+        `;
+        })
         .join("");
 
     tbody.innerHTML = html;
@@ -385,9 +406,35 @@ async function guardarUsuario(event) {
         }
 
         let passwordTemporal = null;
+        let savedId = usuarioEditandoId;
+
         if (!enEdicion) {
             const data = await res.json().catch(() => null);
             passwordTemporal = data?.passwordTemporal || null;
+            savedId = data?.usuario?.id || null;
+        }
+
+        // ── Subir foto si se seleccionó una ──────────────────────────────────
+        const fileInput = document.getElementById("fileInput");
+        const fotoFile = fileInput?.files?.[0];
+        const idParaFoto = enEdicion ? usuarioEditandoId : savedId;
+
+        if (fotoFile && Number.isInteger(idParaFoto)) {
+            const formFoto = new FormData();
+            formFoto.append("foto", fotoFile);
+
+            const fotoHeaders = {};
+            if (csrfHeader && csrfToken) fotoHeaders[csrfHeader] = csrfToken;
+
+            const fotoRes = await fetch(`/api/usuarios/${idParaFoto}/foto`, {
+                method: "POST",
+                headers: fotoHeaders,
+                body: formFoto
+            });
+
+            if (!fotoRes.ok) {
+                console.warn("No se pudo subir la foto del usuario");
+            }
         }
 
         limpiarFormularioUsuario();
@@ -514,6 +561,13 @@ function prepararModalEdicion(usuario) {
     setValor("estadoEmpleado", usuario.estado);
     setValor("rol", usuario.rolId || "");
     setValor("usuarioLogin", usuario.usuario || "");
+
+    // Mostrar la foto existente si la hay
+    const usuarioImagen = document.getElementById("usuarioImagen");
+    const PLACEHOLDER = "https://via.placeholder.com/400x200?text=Sin+Imagen";
+    if (usuarioImagen) {
+        usuarioImagen.src = usuario.fotoUrl || PLACEHOLDER;
+    }
 }
 
 function actualizarTextosModal(titulo, textoBoton) {
@@ -527,6 +581,12 @@ function limpiarFormularioUsuario() {
     const form = document.getElementById("formAgregarUsuario");
     form?.reset();
     setValor("usuarioLogin", "");
+
+    // Resetear imagen a placeholder
+    const usuarioImagen = document.getElementById("usuarioImagen");
+    if (usuarioImagen) {
+        usuarioImagen.src = "https://via.placeholder.com/400x200?text=Sin+Imagen";
+    }
 }
 
 function setValor(id, valor) {
