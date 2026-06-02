@@ -13,11 +13,13 @@ import com.gestorcamiones.gestorcamiones.mapper.UsuarioMapper;
 import com.gestorcamiones.gestorcamiones.repository.LoginRepository;
 import com.gestorcamiones.gestorcamiones.repository.RolRepository;
 import com.gestorcamiones.gestorcamiones.repository.UsuarioRepository;
+import com.gestorcamiones.gestorcamiones.service.storage.UploadStorageService;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Locale;
 
@@ -33,19 +35,22 @@ public class UsuarioService implements IUsuarioService {
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
     private final UsuarioMapper usuarioMapper;
+    private final UploadStorageService uploadStorageService;
 
     public UsuarioService(
             UsuarioRepository usuarioRepository,
             LoginRepository loginRepository,
             RolRepository rolRepository,
             PasswordEncoder passwordEncoder,
-            UsuarioMapper usuarioMapper
+            UsuarioMapper usuarioMapper,
+            UploadStorageService uploadStorageService
     ) {
         this.usuarioRepository = usuarioRepository;
         this.loginRepository = loginRepository;
         this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
         this.usuarioMapper = usuarioMapper;
+        this.uploadStorageService = uploadStorageService;
     }
 
     @Override
@@ -205,6 +210,22 @@ public class UsuarioService implements IUsuarioService {
         login.setPassword(passwordEncoder.encode(passwordTemporal));
         loginRepository.save(login);
         return passwordTemporal;
+    }
+
+    @Override
+    @Transactional
+    public String subirFoto(Long id, MultipartFile foto) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado: " + id));
+
+        if (foto == null || foto.isEmpty()) {
+            throw new IllegalArgumentException("El archivo de foto esta vacio");
+        }
+
+        String url = uploadStorageService.store("usuarios", "usuario_" + id, foto);
+        usuario.setFotoUrl(url);
+        usuarioRepository.save(usuario);
+        return url;
     }
 
     private String generarUsuarioLogin(String emailNormalizado) {

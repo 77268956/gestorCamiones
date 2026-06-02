@@ -13,6 +13,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
 
 /**
  * Expone los endpoints REST para consulta y creacion de camiones.
@@ -75,4 +78,14 @@ public class CamionController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping(value = "/{id}/foto", consumes = "multipart/form-data")
+    @Operation(summary = "Subir foto de camion", description = "Sube y asocia una foto al perfil del camion.")
+    public ResponseEntity<Map<String, String>> subirFoto(
+            @PathVariable Long id,
+            @RequestParam("foto") MultipartFile foto,
+            @AuthenticationPrincipal CustomUserDetails admin
+    ) {
+        String url = camionService.subirFoto(id, foto, admin);
+        return ResponseEntity.ok(Map.of("fotoUrl", url));
+    }
 }

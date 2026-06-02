@@ -45,6 +45,7 @@
                     <th>ID</th>
                     <th>Origen</th>
                     <th>Estado</th>
+                    <th>Drive</th>
                     <th>Creado</th>
                     <th>Ruta interna</th>
                     <th>Acciones</th>
@@ -55,7 +56,19 @@
                     <td th:text="${backup.id}"></td>
                     <td th:text="${backup.origen}"></td>
                     <td th:text="${backup.estado}"></td>
+                    <td>
+                        <span class="badge bg-success" th:if="${backup.driveEstado == 'DRIVE'}">SUBIDO</span>
+                        <span class="badge bg-secondary" th:if="${backup.driveEstado == 'LOCAL'}">LOCAL</span>
+                        <span class="badge bg-danger" th:if="${backup.driveEstado == 'ERROR'}">ERROR</span>
+                        <span class="badge bg-light text-dark" th:if="${backup.driveEstado == null}">SIN INFO</span>
+                    </td>
                     <td th:text="${backup.creadoEn}"></td>
+                    <td>
+                        <a th:if="${backup.driveWebViewLink != null and !#strings.isEmpty(backup.driveWebViewLink)}"
+                           th:href="${backup.driveWebViewLink}" target="_blank" rel="noopener">Abrir Drive</a>
+                        <span th:unless="${backup.driveWebViewLink != null and !#strings.isEmpty(backup.driveWebViewLink)}"
+                              th:text="${backup.rutaNube}"></span>
+                    </td>
                     <td th:text="${backup.rutaInterna}"></td>
                     <td>
                         <form th:action="@{'/backups/' + ${backup.id} + '/restaurar'}" method="post">

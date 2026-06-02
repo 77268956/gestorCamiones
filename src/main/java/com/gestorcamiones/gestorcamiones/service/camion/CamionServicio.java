@@ -11,11 +11,13 @@ import com.gestorcamiones.gestorcamiones.mapper.CamionMapper;
 import com.gestorcamiones.gestorcamiones.repository.CamionRepository;
 import com.gestorcamiones.gestorcamiones.security.CustomUserDetails;
 import com.gestorcamiones.gestorcamiones.service.auditoria.AuditoriaDetalladaService;
+import com.gestorcamiones.gestorcamiones.service.storage.UploadStorageService;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -29,16 +31,17 @@ public class CamionServicio implements ICamionService {
     private final CamionMapper camionMapper;
     private final AuditoriaDetalladaService auditori;
     private final ObjectMapper objectMapper;
+    private final UploadStorageService uploadStorageService;
 
-
-
-    public CamionServicio(CamionRepository camionRepository, CamionMapper camionMapper, AuditoriaDetalladaService auditori, ObjectMapper objectMapper) {
+    public CamionServicio(CamionRepository camionRepository, CamionMapper camionMapper,
+                          AuditoriaDetalladaService auditori, ObjectMapper objectMapper,
+                          UploadStorageService uploadStorageService) {
         this.camionRepository = camionRepository;
         this.camionMapper = camionMapper;
         this.auditori = auditori;
         this.objectMapper = objectMapper;
+        this.uploadStorageService = uploadStorageService;
     }
-
 
     @Override
     public Page<CamionDTO> listarCamiones(Pageable pageable, String texto, EstadoCamion estado, boolean excluirAsignados, Long viajeIdActual) {
@@ -87,7 +90,6 @@ public class CamionServicio implements ICamionService {
                 despuesJson,
                 camion.getIdCamion()
         );
-
 
         return camionMapper.toDTO(camionGuardado);
     }
@@ -150,5 +152,21 @@ public class CamionServicio implements ICamionService {
     @Override
     public EstadoCamion[] estadosCamion() {
         return EstadoCamion.values();
+    }
+
+    @Override
+    @Transactional
+    public String subirFoto(Long id, MultipartFile foto, CustomUserDetails admin) {
+        Camion camion = camionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Camion no encontrado con ID: " + id));
+
+        if (foto == null || foto.isEmpty()) {
+            throw new IllegalArgumentException("El archivo de foto esta vacio");
+        }
+
+        String url = uploadStorageService.store("camiones", "camion_" + id, foto);
+        camion.setFotoUrl(url);
+        camionRepository.save(camion);
+        return url;
     }
 }

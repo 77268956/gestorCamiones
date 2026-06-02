@@ -44,6 +44,25 @@
     const btnGuardarGasto = byId("btnGuardarGasto");
     const alertEl = byId("gastoAlert");
 
+    // Previsualizacion de evidencia
+    const evidenciaPreview = document.createElement("img");
+    evidenciaPreview.id = "evidenciaPreviewImg";
+    evidenciaPreview.alt = "Vista previa";
+    evidenciaPreview.style.cssText = "display:none;max-height:120px;max-width:100%;border-radius:8px;margin-top:8px;border:1px solid rgba(0,0,0,.1);object-fit:contain;";
+    if (inputEvidencia) {
+        inputEvidencia.insertAdjacentElement("afterend", evidenciaPreview);
+        inputEvidencia.addEventListener("change", () => {
+            const file = inputEvidencia.files?.[0];
+            if (file && file.type.startsWith("image/")) {
+                evidenciaPreview.src = URL.createObjectURL(file);
+                evidenciaPreview.style.display = "block";
+            } else {
+                evidenciaPreview.src = "";
+                evidenciaPreview.style.display = "none";
+            }
+        });
+    }
+
     if (!tbodyGastos) return;
 
     let gastoModal = null;
@@ -129,8 +148,10 @@
             const cat = g.nombreTipoGasto || "Sin categoría";
             porCategoria[cat] = (porCategoria[cat] || 0) + monto;
 
-            const fotoHtml = g.evidenciaUrl 
-                ? `<a href="${g.evidenciaUrl}" target="_blank" class="btn btn-sm btn-outline-info" title="Ver foto">📸</a>`
+            const fotoHtml = g.evidenciaUrl
+                ? (g.evidenciaUrl.match(/\.(png|jpe?g|gif|webp|bmp)$/i)
+                    ? `<a href="${g.evidenciaUrl}" target="_blank" rel="noopener"><img src="${g.evidenciaUrl}" alt="Evidencia" style="height:36px;width:52px;object-fit:cover;border-radius:6px;border:1px solid rgba(0,0,0,.1)"></a>`
+                    : `<a href="${g.evidenciaUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-info" title="Ver archivo">📎 Ver</a>`)
                 : `<span class="text-muted">-</span>`;
 
             return `
@@ -261,6 +282,9 @@
             inputFecha.value = new Date().toISOString().split('T')[0];
             inputDescripcion.value = "";
             inputEvidencia.value = "";
+            // Limpiar preview
+            evidenciaPreview.src = "";
+            evidenciaPreview.style.display = "none";
             byId("gastoModalLabel").textContent = "Nuevo gasto";
             gastoModal.show();
         });
@@ -286,6 +310,14 @@
             inputFecha.value = gasto.fechaGasto || "";
             inputDescripcion.value = gasto.descripcion || "";
             inputEvidencia.value = "";
+            // Mostrar preview de evidencia existente si es imagen
+            if (gasto.evidenciaUrl && gasto.evidenciaUrl.match(/\.(png|jpe?g|gif|webp|bmp)$/i)) {
+                evidenciaPreview.src = gasto.evidenciaUrl;
+                evidenciaPreview.style.display = "block";
+            } else {
+                evidenciaPreview.src = "";
+                evidenciaPreview.style.display = "none";
+            }
             byId("gastoModalLabel").textContent = "Editar gasto";
             gastoModal.show();
         }

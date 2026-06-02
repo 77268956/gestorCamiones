@@ -7,6 +7,7 @@ import com.gestorcamiones.gestorcamiones.dto.usuario.UsuarioPerfilDTO;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoEmpleado;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface IUsuarioService {
 
@@ -27,4 +28,10 @@ public interface IUsuarioService {
     String resetPassword(Long idUsuario);
 
     EstadoEmpleado[] estados();
+
+    /**
+     * Sube una foto de perfil para el usuario indicado y actualiza su fotoUrl en BD.
+     * Devuelve la URL publica del archivo guardado.
+     */
+    String subirFoto(Long id, MultipartFile foto);
 }

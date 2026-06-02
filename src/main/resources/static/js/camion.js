@@ -1,4 +1,4 @@
-﻿let camionesCache = [];
+let camionesCache = [];
 let camionEditandoId = null;
 let camionGastosId = null;
 let tiposGastoCache = [];
@@ -46,6 +46,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (btnAgregar) {
         btnAgregar.addEventListener("click", prepararModalAgregar);
+    }
+
+    // ── Vista previa de la foto del camión ─────────────────────────────────────────
+    const fileInputCamion = document.getElementById("fileInputCamion");
+    const camionImagen = document.getElementById("camionImagen");
+    if (fileInputCamion && camionImagen) {
+        fileInputCamion.addEventListener("change", () => {
+            const file = fileInputCamion.files?.[0];
+            if (file) {
+                camionImagen.src = URL.createObjectURL(file);
+            }
+        });
     }
 
     if (tabla) {
@@ -205,9 +217,14 @@ function renderCamiones(camiones) {
     const formatter = new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD" });
 
     const html = camiones
-        .map((camion, index) => `
+        .map((camion, index) => {
+            const fotoHtml = camion.fotoUrl
+                ? `<img src="${escapeHtml(camion.fotoUrl)}" alt="Foto" style="height:36px;width:52px;object-fit:cover;border-radius:6px;border:1px solid rgba(0,0,0,.1);">`
+                : `<span style="display:inline-flex;align-items:center;justify-content:center;height:36px;width:52px;border-radius:6px;background:#e2e8f0;font-size:18px;">🚛</span>`;
+            return `
             <tr>
                 <td class="row-num">${String(inicio + index + 1).padStart(2, "0")}</td>
+                <td>${fotoHtml}</td>
                 <td><span class="plate">${escapeHtml(camion.placa || "-")}</span></td>
                 <td><strong>${escapeHtml(camion.modelo || "-")}</strong></td>
                 <td>${escapeHtml(camion.nombre || "-")}</td>
@@ -221,7 +238,8 @@ function renderCamiones(camiones) {
                     </div>
                 </td>
             </tr>
-        `)
+        `;
+        })
         .join("");
 
     tbody.innerHTML = html;
@@ -358,6 +376,31 @@ async function guardarCamion(event) {
             throw new Error(error || "No se pudo guardar el camion");
         }
 
+        const savedData = await res.json().catch(() => null);
+        const savedId = enEdicion ? camionEditandoId : (savedData?.id || null);
+
+        // ── Subir foto si se seleccionó una ────────────────────────────────────
+        const fileInputCamion = document.getElementById("fileInputCamion");
+        const fotoFile = fileInputCamion?.files?.[0];
+
+        if (fotoFile && Number.isInteger(savedId)) {
+            const formFoto = new FormData();
+            formFoto.append("foto", fotoFile);
+
+            const fotoHeaders = {};
+            if (csrfHeader && csrfToken) fotoHeaders[csrfHeader] = csrfToken;
+
+            const fotoRes = await fetch(`/api/camiones/${savedId}/foto`, {
+                method: "POST",
+                headers: fotoHeaders,
+                body: formFoto
+            });
+
+            if (!fotoRes.ok) {
+                console.warn("No se pudo subir la foto del camion");
+            }
+        }
+
         limpiarFormularioCamion();
         prepararModalAgregar();
 
@@ -427,6 +470,13 @@ function prepararModalEdicion(camion) {
     setValor("camionComentario", camion.comentario || "");
     setValor("camionPrecioCompra", camion.precioCompra ?? "");
     setValor("camionEstado", camion.estadoCamion || "");
+
+    // Mostrar la foto existente si la hay
+    const camionImagen = document.getElementById("camionImagen");
+    const PLACEHOLDER = "https://via.placeholder.com/400x200?text=Sin+Imagen";
+    if (camionImagen) {
+        camionImagen.src = camion.fotoUrl || PLACEHOLDER;
+    }
 }
 
 function actualizarTextosModal(titulo, textoBoton) {
@@ -440,6 +490,12 @@ function limpiarFormularioCamion() {
     const form = document.getElementById("formAgregarCamion");
     form?.reset();
     setValor("camionId", "");
+
+    // Resetear imagen a placeholder
+    const camionImagen = document.getElementById("camionImagen");
+    if (camionImagen) {
+        camionImagen.src = "https://via.placeholder.com/400x200?text=Sin+Imagen";
+    }
 }
 
 function setValor(id, valor) {
