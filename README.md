@@ -22,11 +22,16 @@ Aplicacion web para la gestion operativa de camiones, usuarios, viajes, lotes, g
 
 Variables de entorno soportadas:
 
-- `DB_URL`: `jdbc:postgresql://localhost:5432/gestor_camionesMP`
-- `DB_USERNAME`: `postgres`
-- `DB_PASSWORD`: `********`
+- `DB_URL`: por defecto `jdbc:postgresql://localhost:5432/gestor_camionesMP`
+- `DB_USERNAME`: por defecto `postgres`
+- `DB_PASSWORD`: obligatorio en local si tu PostgreSQL no usa la clave vacia
+- `APP_PROFILE`: `pruebas` o `produccion`
 
 La configuracion base se encuentra en `src/main/resources/application.properties`.
+Los perfiles especificos estan en `src/main/resources/application-pruebas.properties` y `src/main/resources/application-produccion.properties`.
+
+Por defecto la aplicacion inicia con `pruebas`. Para levantar produccion, cambia `APP_PROFILE=produccion`.
+Si tu PostgreSQL local no usa la clave por defecto, define `DB_PASSWORD` antes de arrancar.
 
 ## Ejecucion local
 
@@ -43,6 +48,13 @@ La aplicacion queda disponible en:
 - App: `http://localhost:8080`
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+
+Para forzar produccion en local:
+
+```powershell
+$env:APP_PROFILE="produccion"
+.\mvnw.cmd spring-boot:run
+```
 
 ## Credenciales iniciales
 
