@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title>Mi Perfil - Gestor de Camiones</title>
+    <th:block th:replace="fragments/assets :: globalStyles"></th:block>
+    <style>
+        /* ── Hero Banner de Perfil ── */
+        .perfil-hero {
+            background: linear-gradient(135deg, var(--mp-blue-dark) 0%, var(--mp-blue) 60%, var(--mp-blue-light) 100%);
+            border-bottom: 4px solid var(--mp-orange);
+            padding: 2.5rem 2rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .perfil-hero::before {
+            content: '';
+            position: absolute;
+            top: -60px; right: -60px;
+            width: 200px; height: 200px;
+            background: rgba(240, 122, 24, 0.12);
+            border-radius: 50%;
+        }
+        .perfil-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -40px; left: -40px;
+            width: 140px; height: 140px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+        /* ── Avatar ── */
+        .perfil-avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--mp-orange), var(--mp-orange-dk));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+            border: 4px solid rgba(255,255,255,0.25);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            text-transform: uppercase;
+        }
+        .perfil-hero-info h3 {
+            color: white;
+            font-weight: 700;
+            font-size: 1.4rem;
+            margin: 0 0 0.3rem 0;
+        }
+        .perfil-hero-info p {
+            color: rgba(255,255,255,0.75);
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        .perfil-rol-badge {
+            display: inline-block;
+            background: rgba(240, 122, 24, 0.9);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.2rem 0.75rem;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        /* ── Sección de datos ── */
+        .perfil-body {
+            padding: 2rem;
+        }
+
+        .perfil-section-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--mp-blue-dark);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--mp-orange);
+            display: inline-block;
+        }
+
+        /* ── Data rows ── */
+        .perfil-data-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.85rem 1rem;
+            border-radius: 10px;
+            background: var(--mp-gray-bg);
+            border: 1px solid var(--mp-border);
+            margin-bottom: 0.75rem;
+            transition: box-shadow 0.15s;
+        }
+        .perfil-data-row:hover {
+            box-shadow: 0 2px 10px rgba(26, 58, 143, 0.08);
+        }
+        .perfil-data-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--mp-blue-dark), var(--mp-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .perfil-data-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--mp-gray-text);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .perfil-data-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--mp-blue-dark);
+        }
+
+        /* ── Password form ── */
+        .perfil-password-card {
+            background: var(--mp-white);
+            border-radius: 12px;
+            border: 1px solid var(--mp-border);
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(15, 36, 96, 0.07);
+        }
+        .perfil-password-header {
+            background: linear-gradient(90deg, var(--mp-blue-dark), var(--mp-blue));
+            color: white;
+            padding: 1rem 1.5rem;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            border-bottom: 3px solid var(--mp-orange);
+        }
+        .perfil-password-body {
+            padding: 1.5rem;
+        }
+
+        /* Strength bar */
+        .strength-bar-container {
+            height: 5px;
+            border-radius: 5px;
+            background: var(--mp-border);
+            overflow: hidden;
+            margin-top: 0.5rem;
+            transition: all 0.3s;
+        }
+        .strength-bar {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.4s ease, background-color 0.3s;
+            width: 0%;
+        }
+        .strength-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.3rem;
+            min-height: 1.1rem;
+        }
+
+        /* Eye toggle button */
+        .password-toggle {
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: var(--mp-gray-text);
+            padding: 0 0.75rem;
+            font-size: 1rem;
+            transition: color 0.15s;
+        }
+        .password-toggle:hover { color: var(--mp-blue); }
+
+        /* Success animation */
+        @keyframes successPulse {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.04); }
+            100% { transform: scale(1); }
+        }
+        .success-animate { animation: successPulse 0.4s ease; }
+
+        /* Responsive */
+        @media (max-width: 767px) {
+            .perfil-hero {
+                padding: 1.5rem 1rem 1.5rem;
+            }
+            .perfil-avatar {
+                width: 68px;
+                height: 68px;
+                font-size: 1.6rem;
+            }
+            .perfil-hero-info h3 {
+                font-size: 1.1rem;
+            }
+            .perfil-body {
+                padding: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div th:replace="fragments/navbar :: navbar"></div>
+
+<div class="container py-4">
+    <div class="row g-4 justify-content-center">
+
+        <!-- ═══ COLUMNA IZQUIERDA: Info del usuario ═══ -->
+        <div class="col-12 col-lg-5">
+            <div class="page-surface h-100">
+                <div class="mp-stripe"></div>
+
+                <!-- Hero banner con avatar -->
+                <div class="perfil-hero">
+                    <div class="d-flex align-items-center gap-3 position-relative" style="z-index:1">
+                        <div class="perfil-avatar" id="avatarLetras">
+                            <span th:if="${perfil != null}"
+                                  th:text="${#strings.substring(perfil.nombre,0,1) + #strings.substring(perfil.apellido,0,1)}">MP</span>
+                            <span th:if="${perfil == null}">MP</span>
+                        </div>
+                        <div class="perfil-hero-info">
+                            <h3 th:text="${perfil != null ? perfil.nombre + ' ' + perfil.apellido : nombreUsuario}">Nombre Usuario</h3>
+                            <p th:text="${perfil != null ? perfil.email : nombreUsuario}">correo@ejemplo.com</p>
+                            <span class="perfil-rol-badge" th:text="${perfil != null ? perfil.rol : 'Usuario'}">ROL</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos del perfil -->
+                <div class="perfil-body">
+                    <div class="perfil-section-title">Información de la Cuenta</div>
+
+                    <div class="perfil-data-row">
+                        <div class="perfil-data-icon">👤</div>
+                        <div>
+                            <div class="perfil-data-label">Nombre Completo</div>
+                            <div class="perfil-data-value"
+                                 th:text="${perfil != null ? perfil.nombre + ' ' + perfil.apellido : '-'}">-</div>
+                        </div>
+                    </div>
+
+                    <div class="perfil-data-row">
+                        <div class="perfil-data-icon">✉️</div>
+                        <div>
+                            <div class="perfil-data-label">Correo / Usuario</div>
+                            <div class="perfil-data-value"
+                                 th:text="${perfil != null ? perfil.email : nombreUsuario}">-</div>
+                        </div>
+                    </div>
+
+                    <div class="perfil-data-row">
+                        <div class="perfil-data-icon">🛡️</div>
+                        <div>
+                            <div class="perfil-data-label">Rol del Sistema</div>
+                            <div class="perfil-data-value"
+                                 th:text="${perfil != null ? perfil.rol : '-'}">-</div>
+                        </div>
+                    </div>
+
+                    <div th:if="${perfil != null and perfil.telefono != null}" class="perfil-data-row">
+                        <div class="perfil-data-icon">📞</div>
+                        <div>
+                            <div class="perfil-data-label">Teléfono</div>
+                            <div class="perfil-data-value" th:text="${perfil.telefono}">-</div>
+                        </div>
+                    </div>
+
+                    <div th:if="${perfil != null and perfil.estado != null}" class="perfil-data-row">
+                        <div class="perfil-data-icon">📋</div>
+                        <div>
+                            <div class="perfil-data-label">Estado</div>
+                            <div class="perfil-data-value" th:text="${perfil.estado}">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ COLUMNA DERECHA: Cambiar contraseña ═══ -->
+        <div class="col-12 col-lg-7">
+            <div class="perfil-password-card">
+                <div class="perfil-password-header">
+                    🔐 Cambiar Contraseña
+                </div>
+                <div class="perfil-password-body">
+                    <p class="text-muted mb-4" style="font-size: 0.88rem;">
+                        Elige una contraseña segura de al menos 6 caracteres. Combina letras mayúsculas, minúsculas, números y símbolos.
+                    </p>
+
+                    <!-- Alerta resultado -->
+                    <div id="mensajeAlerta" class="alert d-none mb-3" role="alert"></div>
+
+                    <form id="formCambiarPassword" autocomplete="off" novalidate>
+                        <!-- Nueva contraseña -->
+                        <div class="mb-3">
+                            <label for="nuevaPassword" class="form-label fw-semibold" style="font-size:.88rem; color: var(--mp-blue-dark);">
+                                Nueva Contraseña <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="password"
+                                       class="form-control mp-modal-input"
+                                       id="nuevaPassword"
+                                       placeholder="Escribe tu nueva contraseña"
+                                       required
+                                       minlength="6"
+                                       autocomplete="new-password">
+                                <button class="btn btn-outline-secondary password-toggle" type="button"
+                                        onclick="togglePassword('nuevaPassword', this)"
+                                        title="Mostrar/Ocultar">
+                                    👁
+                                </button>
+                            </div>
+                            <!-- Barra de seguridad -->
+                            <div class="strength-bar-container mt-2">
+                                <div class="strength-bar" id="strengthBar"></div>
+                            </div>
+                            <div class="strength-label" id="strengthLabel"></div>
+                        </div>
+
+                        <!-- Confirmar contraseña -->
+                        <div class="mb-4">
+                            <label for="confirmarPassword" class="form-label fw-semibold" style="font-size:.88rem; color: var(--mp-blue-dark);">
+                                Confirmar Nueva Contraseña <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="password"
+                                       class="form-control mp-modal-input"
+                                       id="confirmarPassword"
+                                       placeholder="Repite la contraseña"
+                                       required
+                                       minlength="6"
+                                       autocomplete="new-password">
+                                <button class="btn btn-outline-secondary password-toggle" type="button"
+                                        onclick="togglePassword('confirmarPassword', this)"
+                                        title="Mostrar/Ocultar">
+                                    👁
+                                </button>
+                            </div>
+                            <div id="matchIndicator" class="strength-label"></div>
+                        </div>
+
+                        <!-- Botón -->
+                        <div class="d-grid">
+                            <button type="submit" id="btnActualizar" class="btn btn-add btn-lg">
+                                <span id="btnTexto">🔒 Actualizar Contraseña</span>
+                                <span id="btnSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Reglas de contraseña -->
+                    <div class="mt-4 p-3 rounded" style="background: rgba(26,58,143,0.04); border: 1px solid var(--mp-border);">
+                        <p class="mb-2 fw-semibold" style="font-size:.8rem; color: var(--mp-blue-dark);">📌 Requisitos de seguridad:</p>
+                        <ul class="mb-0" style="font-size:.8rem; color: var(--mp-gray-text); padding-left:1.2rem;">
+                            <li id="req-len" class="req-item">Mínimo 6 caracteres</li>
+                            <li id="req-upper" class="req-item">Al menos una letra mayúscula</li>
+                            <li id="req-num" class="req-item">Al menos un número</li>
+                            <li id="req-sym" class="req-item">Al menos un símbolo (!@#$%...)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<th:block th:replace="fragments/assets :: globalScripts"></th:block>
+<script>
+/* ═══ Helpers ═══ */
+function togglePassword(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    btn.textContent = isPassword ? '🙈' : '👁';
+}
+
+/* ═══ Password strength ═══ */
+function evaluateStrength(password) {
+    let score = 0;
+    if (password.length >= 6)  score++;
+    if (password.length >= 10) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    return score;
+}
+
+function updateRequirement(id, met) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.color = met ? '#16a34a' : '';
+    el.style.fontWeight = met ? '700' : '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const passwordInput    = document.getElementById('nuevaPassword');
+    const confirmInput     = document.getElementById('confirmarPassword');
+    const bar              = document.getElementById('strengthBar');
+    const label            = document.getElementById('strengthLabel');
+    const matchIndicator   = document.getElementById('matchIndicator');
+    const form             = document.getElementById('formCambiarPassword');
+    const alerta           = document.getElementById('mensajeAlerta');
+    const btnActualizar    = document.getElementById('btnActualizar');
+    const btnTexto         = document.getElementById('btnTexto');
+    const btnSpinner       = document.getElementById('btnSpinner');
+
+    /* ── Realtime strength ── */
+    passwordInput.addEventListener('input', () => {
+        const val = passwordInput.value;
+        const score = evaluateStrength(val);
+        const pct = Math.min(score * 20, 100);
+
+        const colors = ['#dc2626','#f59e0b','#f59e0b','#3b82f6','#16a34a','#16a34a'];
+        const labels = ['', 'Muy débil', 'Débil', 'Regular', 'Buena', 'Muy segura'];
+
+        bar.style.width  = pct + '%';
+        bar.style.backgroundColor = colors[score] ?? '#dc2626';
+        label.textContent = val.length > 0 ? (labels[score] ?? '') : '';
+        label.style.color = colors[score] ?? '';
+
+        updateRequirement('req-len',   val.length >= 6);
+        updateRequirement('req-upper', /[A-Z]/.test(val));
+        updateRequirement('req-num',   /[0-9]/.test(val));
+        updateRequirement('req-sym',   /[^A-Za-z0-9]/.test(val));
+
+        checkMatch();
+    });
+
+    /* ── Confirm match ── */
+    confirmInput.addEventListener('input', checkMatch);
+
+    function checkMatch() {
+        const a = passwordInput.value;
+        const b = confirmInput.value;
+        if (!b) { matchIndicator.textContent = ''; return; }
+        if (a === b) {
+            matchIndicator.textContent = '✅ Las contraseñas coinciden';
+            matchIndicator.style.color = '#16a34a';
+        } else {
+            matchIndicator.textContent = '❌ Las contraseñas no coinciden';
+            matchIndicator.style.color = '#dc2626';
+        }
+    }
+
+    /* ── Submit ── */
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        ocultarAlerta();
+
+        const password = passwordInput.value.trim();
+        const confirm  = confirmInput.value.trim();
+
+        if (!password || password.length < 6) {
+            mostrarAlerta('La contraseña debe tener al menos 6 caracteres.', 'danger');
+            return;
+        }
+        if (password !== confirm) {
+            mostrarAlerta('Las contraseñas no coinciden.', 'danger');
+            return;
+        }
+
+        // Loading state
+        btnActualizar.disabled = true;
+        btnTexto.textContent = 'Actualizando...';
+        btnSpinner.classList.remove('d-none');
+
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+        const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
+        const headers    = { 'Content-Type': 'application/json' };
+        if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+
+        try {
+            const res  = await fetch('/api/perfil/cambiar-password', {
+                method: 'POST', headers,
+                body: JSON.stringify({ password })
+            });
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.error ?? 'Error al actualizar la contraseña');
+
+            form.reset();
+            bar.style.width = '0%';
+            bar.style.backgroundColor = '';
+            label.textContent = '';
+            matchIndicator.textContent = '';
+            ['req-len','req-upper','req-num','req-sym'].forEach(id => updateRequirement(id, false));
+
+            mostrarAlerta('✅ ¡Contraseña actualizada con éxito!', 'success');
+
+            /* Animación de éxito */
+            const card = document.querySelector('.perfil-password-card');
+            card.classList.add('success-animate');
+            setTimeout(() => card.classList.remove('success-animate'), 500);
+
+        } catch (err) {
+            mostrarAlerta('❌ ' + err.message, 'danger');
+        } finally {
+            btnActualizar.disabled = false;
+            btnTexto.textContent   = '🔒 Actualizar Contraseña';
+            btnSpinner.classList.add('d-none');
+        }
+    });
+
+    /* ── Alerta helpers ── */
+    function mostrarAlerta(msg, tipo) {
+        alerta.className = `alert alert-${tipo} mb-3`;
+        alerta.textContent = msg;
+        alerta.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    function ocultarAlerta() {
+        alerta.className = 'alert d-none mb-3';
+        alerta.textContent = '';
+    }
+});
+</script>
+</body>
+</html>

@@ -127,4 +127,21 @@ public class ViewController {
 
     @GetMapping("/gastos")
     public String total_gastos() { return "view/total_gastos"; }
+
+    @GetMapping("/perfil")
+    public String perfil(Authentication authentication, Model model) {
+        String nombreUsuario = authentication.getName();
+        Object principal = authentication.getPrincipal();
+        Long idUsuario = null;
+        if (principal instanceof CustomUserDetails customUserDetails) {
+            nombreUsuario = customUserDetails.getUsername();
+            idUsuario = customUserDetails.getIdUsuario();
+        }
+        model.addAttribute("nombreUsuario", nombreUsuario);
+
+        if (idUsuario != null) {
+            model.addAttribute("perfil", usuarioService.obtenerPerfil(idUsuario));
+        }
+        return "view/perfil";
+    }
 }

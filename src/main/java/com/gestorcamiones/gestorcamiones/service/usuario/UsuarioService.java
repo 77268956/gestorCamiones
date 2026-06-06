@@ -228,6 +228,15 @@ public class UsuarioService implements IUsuarioService {
         return url;
     }
 
+    @Override
+    @Transactional
+    public void cambiarPassword(Long idUsuario, String nuevaPassword) {
+        Login login = loginRepository.findByUsuarioEntidad_IdUsuarios(idUsuario)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró el login para el usuario con id " + idUsuario));
+        login.setPassword(passwordEncoder.encode(nuevaPassword));
+        loginRepository.save(login);
+    }
+
     private String generarUsuarioLogin(String emailNormalizado) {
         String base = (emailNormalizado == null) ? "" : emailNormalizado;
         int at = base.indexOf('@');
