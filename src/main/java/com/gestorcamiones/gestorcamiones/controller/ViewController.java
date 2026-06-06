@@ -101,30 +101,30 @@ public class ViewController {
             nombreUsuario = customUserDetails.getUsername();
         }
         model.addAttribute("nombreUsuario", nombreUsuario);
-        return "/view/usuarios";
+        return "view/usuarios";
     }
 
     @GetMapping("/camiones")
     public String camiones() {
-        return "/view/view_camiones";
+        return "view/view_camiones";
     }
 
     @GetMapping("/clientes")
     public String clientes() {
-        return "/view/clientes";
+        return "view/clientes";
     }
 
     @GetMapping("/auditoria")
     public String auditoria() {
-        return "/view/auditoria";
+        return "view/auditoria";
     }
 
     @GetMapping("/viajes")
-    public String viajes() { return "/view/Viajes"; }
+    public String viajes() { return "view/Viajes"; }
 
     @GetMapping("/lotes")
-    public String lotes() { return "/view/lotes"; }
+    public String lotes() { return "view/lotes"; }
 
     @GetMapping("/gastos")
-    public String total_gastos() { return "/view/total_gastos"; }
+    public String total_gastos() { return "view/total_gastos"; }
 }
