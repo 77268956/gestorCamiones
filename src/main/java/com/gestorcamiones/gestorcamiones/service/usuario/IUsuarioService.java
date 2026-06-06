@@ -34,4 +34,9 @@ public interface IUsuarioService {
      * Devuelve la URL publica del archivo guardado.
      */
     String subirFoto(Long id, MultipartFile foto);
+
+    /**
+     * Permite al usuario cambiar su propia contraseña.
+     */
+    void cambiarPassword(Long idUsuario, String nuevaPassword);
 }

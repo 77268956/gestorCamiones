@@ -101,30 +101,47 @@ public class ViewController {
             nombreUsuario = customUserDetails.getUsername();
         }
         model.addAttribute("nombreUsuario", nombreUsuario);
-        return "/view/usuarios";
+        return "view/usuarios";
     }
 
     @GetMapping("/camiones")
     public String camiones() {
-        return "/view/view_camiones";
+        return "view/view_camiones";
     }
 
     @GetMapping("/clientes")
     public String clientes() {
-        return "/view/clientes";
+        return "view/clientes";
     }
 
     @GetMapping("/auditoria")
     public String auditoria() {
-        return "/view/auditoria";
+        return "view/auditoria";
     }
 
     @GetMapping("/viajes")
-    public String viajes() { return "/view/Viajes"; }
+    public String viajes() { return "view/Viajes"; }
 
     @GetMapping("/lotes")
-    public String lotes() { return "/view/lotes"; }
+    public String lotes() { return "view/lotes"; }
 
     @GetMapping("/gastos")
-    public String total_gastos() { return "/view/total_gastos"; }
+    public String total_gastos() { return "view/total_gastos"; }
+
+    @GetMapping("/perfil")
+    public String perfil(Authentication authentication, Model model) {
+        String nombreUsuario = authentication.getName();
+        Object principal = authentication.getPrincipal();
+        Long idUsuario = null;
+        if (principal instanceof CustomUserDetails customUserDetails) {
+            nombreUsuario = customUserDetails.getUsername();
+            idUsuario = customUserDetails.getIdUsuario();
+        }
+        model.addAttribute("nombreUsuario", nombreUsuario);
+
+        if (idUsuario != null) {
+            model.addAttribute("perfil", usuarioService.obtenerPerfil(idUsuario));
+        }
+        return "view/perfil";
+    }
 }
