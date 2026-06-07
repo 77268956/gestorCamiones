@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function cargarViajes(page = paginacionViajes.page) {
         if (!listaViajes) return;
-        listaViajes.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Cargando viajes...</td></tr>';
+        listaViajes.innerHTML = '<div class="text-center py-4 text-muted">Cargando viajes...</div>';
         const pageSeguro = Math.max(0, Number(page) || 0);
         const sizeSeguro = Math.max(1, Number(paginacionViajes.size) || 10);
         try {
@@ -122,109 +122,190 @@ document.addEventListener("DOMContentLoaded", () => {
             renderViajes();
         } catch (error) {
             console.error(error);
-            listaViajes.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger">Error al cargar viajes</td></tr>';
+            listaViajes.innerHTML = '<div class="text-center py-4 text-danger">Error al cargar viajes</div>';
         }
+    }
+
+    function buildTramoCard(tramo, tipoKey, idViaje) {
+        if (!tramo) {
+            const label = tipoKey === 'ida' ? 'Ida' : 'Vuelta';
+            return `<div class="tleg-empty">
+                <span class="tleg-empty-icon">${tipoKey === 'ida' ? '🚛' : '↩'}</span>
+                <span>Sin tramo de ${escapeHtml(label)}</span>
+            </div>`;
+        }
+
+        const estadoKey = String(tramo.estadoViaje || tramo.estado || '').toLowerCase().replaceAll(' ', '_');
+        const estadoLabel = String(tramo.estadoViaje || tramo.estado || '-').replaceAll('_', ' ');
+        const tramoId = tramo.id ?? '';
+
+        const paisSal = escapeHtml(String(tramo.paisSalida || '-').replaceAll('_', ' '));
+        const paisDest = escapeHtml(String(tramo.paisDestino || '-').replaceAll('_', ' '));
+        const fechaSal = escapeHtml(formatDateTimeHuman(tramo.fechaSalida));
+        const fechaLle = escapeHtml(formatDateTimeHuman(tramo.fechaEntrada));
+        const camion = escapeHtml(tramo.camionNombre ? `${tramo.camionNombre}${tramo.camionPlaca ? ' · ' + tramo.camionPlaca : ''}` : '-');
+        const chofer = escapeHtml(tramo.conductorNombre || '-');
+
+        const isPagado = Boolean(tramo.pagado);
+        const isIva = Boolean(tramo.iva);
+        const gastoTramo = parseNumber(tramo.gastoTotal);
+        const ingresoTramo = parseNumber(tramo.precioTramo ?? tramo.precio ?? 0);
+        const gananciaTramo = ingresoTramo - gastoTramo;
+
+        const isIdaClass = tipoKey === 'ida' ? 'tleg-ida' : 'tleg-vuelta';
+        const indicatorClass = tipoKey === 'ida' ? 'tleg-ind-ida' : 'tleg-ind-vuelta';
+        const emoji = tipoKey === 'ida' ? '🚛' : '↩';
+        const tipoLabel = tipoKey === 'ida' ? 'Ida' : 'Vuelta';
+
+        return `
+        <div class="tleg-card ${isIdaClass}" data-tramo-id="${escapeHtml(String(tramoId))}" data-tramo-tipo="${tipoKey}" data-viaje-id-edit="${escapeHtml(String(idViaje))}">
+            <div class="tleg-header">
+                <span class="tleg-indicator ${indicatorClass}">${emoji} ${tipoLabel}</span>
+                <span class="status-badge status-${escapeHtml(estadoKey)}">${escapeHtml(estadoLabel)}</span>
+            </div>
+            <div class="tleg-body">
+                <div class="tleg-route">
+                    <span class="tleg-route-from">${paisSal}</span>
+                    <span class="tleg-route-arrow">→</span>
+                    <span class="tleg-route-to">${paisDest}</span>
+                </div>
+                <div class="tleg-info-row">
+                    <span class="tleg-info-icon">🚌</span>
+                    <span class="tleg-info-val">${camion}</span>
+                </div>
+                <div class="tleg-info-row">
+                    <span class="tleg-info-icon">👤</span>
+                    <span class="tleg-info-val">${chofer}</span>
+                </div>
+                <div class="tleg-info-row tleg-dates">
+                    <span class="tleg-info-icon">📅</span>
+                    <span class="tleg-info-val">${fechaSal} → ${fechaLle}</span>
+                </div>
+                <div class="tleg-financials">
+                    <div class="tleg-fin-item">
+                        <span class="tleg-fin-label">Gastos</span>
+                        <span class="tleg-fin-val text-danger">${formatMoney(gastoTramo)}</span>
+                    </div>
+                    <div class="tleg-fin-item">
+                        <span class="tleg-fin-label">Ganancia</span>
+                        <span class="tleg-fin-val ${gananciaTramo >= 0 ? 'text-success' : 'text-danger'}">${formatMoney(gananciaTramo)}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="tleg-toggles" onclick="event.stopPropagation();">
+                <button type="button"
+                    class="tleg-toggle-btn ${isPagado ? 'tleg-toggle-on' : 'tleg-toggle-off'}"
+                    data-toggle-field="pagado"
+                    data-tramo-id="${escapeHtml(String(tramoId))}"
+                    data-viaje-id="${escapeHtml(String(idViaje))}"
+                    title="${isPagado ? 'Marcar como pendiente' : 'Marcar como pagado'}">
+                    <span class="tleg-toggle-dot"></span>
+                    <span class="tleg-toggle-label">Pagado</span>
+                </button>
+                <button type="button"
+                    class="tleg-toggle-btn ${isIva ? 'tleg-toggle-iva-on' : 'tleg-toggle-off'}"
+                    data-toggle-field="iva"
+                    data-tramo-id="${escapeHtml(String(tramoId))}"
+                    data-viaje-id="${escapeHtml(String(idViaje))}"
+                    title="${isIva ? 'Quitar IVA' : 'Aplicar IVA 13%'}">
+                    <span class="tleg-toggle-dot"></span>
+                    <span class="tleg-toggle-label">IVA</span>
+                </button>
+            </div>
+            <div class="tleg-edit-hint">Toca para editar →</div>
+        </div>`;
     }
 
     function renderViajes() {
         if (!listaViajes) return;
         if (!viajesCache.length) {
-            listaViajes.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No se encontraron viajes.</td></tr>';
+            listaViajes.innerHTML = '<div class="text-center py-4 text-muted">No se encontraron viajes.</div>';
             const total = document.getElementById("totalViajes");
             if (total) total.textContent = "Mostrando 0 viajes";
             actualizarPaginacionViajes();
             return;
         }
 
-        const isActivo = detalle => {
-            if (!detalle?.estadoViaje) return false;
-            const estado = String(detalle.estadoViaje).toLowerCase();
-            return estado !== "completado" && estado !== "cancelado";
-        };
-
         listaViajes.innerHTML = viajesCache.map(viaje => {
             const ida = Array.isArray(viaje.listaIDa) ? viaje.listaIDa[0] : null;
             const vuelta = Array.isArray(viaje.listaVuelta) ? viaje.listaVuelta[0] : null;
-            const gastoNumero = parseNumber(viaje.gastoTotal);
-            const gastoTotal = formatMoney(gastoNumero);
-            const idViaje = viaje.id_viaje ?? viaje.idViaje ?? "";
-
-            const estadoIdaKey = String(ida?.estadoViaje || "").toLowerCase().replaceAll(" ", "_");
-            const estadoVueltaKey = String(vuelta?.estadoViaje || "").toLowerCase().replaceAll(" ", "_");
-            const estadoIdaLabel = String(ida?.estadoViaje || "-").replaceAll("_", " ");
-            const estadoVueltaLabel = String(vuelta?.estadoViaje || "-").replaceAll("_", " ");
-            const idaFechaSalida = formatDateTimeHuman(ida?.fechaSalida);
-            const vueltaFechaSalida = formatDateTimeHuman(vuelta?.fechaSalida);
+            const idViaje = viaje.id_viaje ?? viaje.idViaje ?? '';
 
             const lotes = Array.isArray(viaje.lotes) ? viaje.lotes : [];
             const totalLotes = Number(viaje.totalLotes ?? lotes.length) || lotes.length;
-            const lotesTransito = lotes.filter(l => String(l?.estado || "").toLowerCase() === "en_transito").length;
-
             let valorTotalLotes = 0;
-            lotes.forEach(l => {
-                valorTotalLotes += parseFloat(l.valorDeclarado || l.valor_declarado) || 0;
-            });
-            const ivaCalculado = valorTotalLotes * 0.13;
-            const gananciaCalculada = valorTotalLotes - gastoNumero - ivaCalculado;
+            lotes.forEach(l => { valorTotalLotes += parseFloat(l.valorDeclarado || l.valor_declarado) || 0; });
 
-            const hasIda = !!ida;
-            const hasVuelta = !!vuelta;
-            const ruta = [ida?.paisSalida, ida?.paisDestino, vuelta?.paisDestino].filter(Boolean).join(" → ") || "-";
+            const gastoIda = parseNumber(ida?.gastoTotal);
+            const gastoVuelta = parseNumber(vuelta?.gastoTotal);
+            const gastoTotal = gastoIda + gastoVuelta;
 
-            let mainStatusLabel = estadoIdaLabel;
-            let mainStatusClass = estadoIdaKey ? `status-${escapeHtml(estadoIdaKey)}` : "";
-            if (estadoIdaKey === "completado" && hasVuelta) {
-                mainStatusLabel = estadoVueltaLabel;
-                mainStatusClass = estadoVueltaKey ? `status-${escapeHtml(estadoVueltaKey)}` : "";
-            }
+            const hasIvaIda = Boolean(ida?.iva);
+            const hasIvaVuelta = Boolean(vuelta?.iva);
+            const ivaIda = hasIvaIda ? valorTotalLotes * 0.13 : 0;
+            const ivaVuelta = hasIvaVuelta ? valorTotalLotes * 0.13 : 0;
+            const totalIva = ivaIda + ivaVuelta;
+            const gananciaTotal = valorTotalLotes - gastoTotal - totalIva;
+
+            const tramoIdaHtml = buildTramoCard(ida, 'ida', idViaje);
+            const tramoVueltaHtml = vuelta ? buildTramoCard(vuelta, 'vuelta', idViaje) : '';
 
             return `
-                <tr class="align-middle border-bottom" data-viaje-id="${escapeHtml(idViaje)}" style="cursor:pointer;">
-                    <td class="px-3 py-3">
-                        <div class="fw-bold text-primary mb-1">${escapeHtml(viaje.nombreVieje || "Sin nombre")}</div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-badge ${mainStatusClass}" style="font-size: 0.7rem; padding: 2px 6px;">
-                                ${escapeHtml(mainStatusLabel)}
-                            </span>
+            <div class="vcard" data-viaje-id="${escapeHtml(String(idViaje))}">
+                <div class="vcard-header">
+                    <div class="vcard-title-group">
+                        <span class="vcard-id">Viaje #${escapeHtml(String(idViaje))}</span>
+                        <h3 class="vcard-name">${escapeHtml(viaje.nombreVieje || 'Sin nombre')}</h3>
+                    </div>
+                    <div class="vcard-header-actions" onclick="event.stopPropagation();">
+                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3"
+                            data-viaje-action="edit" data-viaje-id="${escapeHtml(String(idViaje))}">
+                            <i class="fas fa-edit me-1"></i>Editar
+                        </button>
+                    </div>
+                </div>
+                <div class="vcard-body">
+                    <div class="vcard-legs">
+                        ${tramoIdaHtml}
+                        ${tramoVueltaHtml}
+                    </div>
+                    <div class="vcard-stats" data-viaje-action="view" data-viaje-id="${escapeHtml(String(idViaje))}" title="Ver detalle completo">
+                        <div class="vcard-stats-header">📊 Estadísticas</div>
+                        <div class="vcard-stat-row">
+                            <span class="vcard-stat-label">Lotes</span>
+                            <span class="vcard-stat-val">${totalLotes}</span>
                         </div>
-                    </td>
-                    <td class="px-3">
-                        <div class="text-secondary small mb-1"><i class="fas fa-truck text-muted me-1"></i> Ida: ${escapeHtml(idaFechaSalida)}</div>
-                        ${hasVuelta ? `<div class="text-secondary small"><i class="fas fa-undo text-muted me-1"></i> Vta: ${escapeHtml(vueltaFechaSalida)}</div>` : ''}
-                    </td>
-                    <td class="px-3">
-                        <div class="small fw-medium text-dark">${escapeHtml(ruta)}</div>
-                        <div class="small text-muted mt-1">
-                            ${hasIda ? `<span title="Chofer Ida">${escapeHtml(ida?.conductorNombre || "-")}</span>` : ''}
+                        <div class="vcard-stat-row">
+                            <span class="vcard-stat-label">Valor lotes</span>
+                            <span class="vcard-stat-val">${formatMoney(valorTotalLotes)}</span>
                         </div>
-                    </td>
-                    <td class="px-3 text-center">
-                        <div class="fw-bold fs-6">${escapeHtml(String(totalLotes))}</div>
-                        <div class="small text-muted">${escapeHtml(String(lotesTransito))} en tránsito</div>
-                    </td>
-                    <td class="px-3 text-end">
-                        <div class="fw-bold text-success" title="Ganancia Neta">${formatMoney(gananciaCalculada)}</div>
-                        <div class="small text-muted mt-1" title="Gastos">-${gastoTotal}</div>
-                    </td>
-                    <td class="px-3 text-center" onclick="event.stopPropagation();">
-                        <div class="btn-group btn-group-sm">
-                            <button type="button" class="btn btn-light border" title="Editar Viaje"
-                                data-viaje-action="edit" data-viaje-id="${escapeHtml(idViaje)}">
-                                <i class="fas fa-edit text-primary"></i>
-                            </button>
-                            <button type="button" class="btn btn-light border" title="Ver Detalles"
-                                data-viaje-action="view" data-viaje-id="${escapeHtml(idViaje)}">
-                                <i class="fas fa-eye text-secondary"></i>
-                            </button>
+                        <div class="vcard-stat-divider"></div>
+                        <div class="vcard-stat-row">
+                            <span class="vcard-stat-label">Gasto Ida</span>
+                            <span class="vcard-stat-val text-danger">${formatMoney(gastoIda)}</span>
                         </div>
-                    </td>
-                </tr>
-            `;
-        }).join("");
+                        <div class="vcard-stat-row">
+                            <span class="vcard-stat-label">Gasto Vuelta</span>
+                            <span class="vcard-stat-val text-danger">${formatMoney(gastoVuelta)}</span>
+                        </div>
+                        <div class="vcard-stat-row">
+                            <span class="vcard-stat-label">Total Gastado</span>
+                            <span class="vcard-stat-val text-danger fw-bold">${formatMoney(gastoTotal)}</span>
+                        </div>
+                        <div class="vcard-stat-divider"></div>
+                        <div class="vcard-stat-row vcard-stat-ganancia">
+                            <span class="vcard-stat-label">Ganancia Total</span>
+                            <span class="vcard-stat-val fw-bold ${gananciaTotal >= 0 ? 'text-success' : 'text-danger'}">${formatMoney(gananciaTotal)}</span>
+                        </div>
+                        <div class="vcard-stats-hint">Toca para ver todo →</div>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
 
         const inicio = paginacionViajes.page * paginacionViajes.size;
         const fin = inicio + viajesCache.length;
-        const total = document.getElementById("totalViajes");
+        const total = document.getElementById('totalViajes');
         if (total) total.textContent = `Mostrando ${inicio + 1}-${fin} de ${paginacionViajes.totalElements} viajes`;
         actualizarPaginacionViajes();
     }
@@ -254,8 +335,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const abrirModalVerViaje = async viajeId => {
         if (!viajeId) return;
         if (!viewModal) return;
-        const inst = bootstrap.Modal.getOrCreateInstance(viewModal);
-        inst.show();
+        viewModal.classList.add("is-open");
         if (viajeViewBody) viajeViewBody.innerHTML = "Cargando...";
         if (viewModalTitle) viewModalTitle.textContent = "Detalle del viaje";
         try {
@@ -271,10 +351,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const cerrarModalVerViaje = () => {
         if (!viewModal) return;
-        bootstrap.Modal.getInstance(viewModal)?.hide();
+        viewModal.classList.remove("is-open");
     };
 
     btnCerrarViajeView?.addEventListener("click", cerrarModalVerViaje);
+    viewModal?.querySelector(".mp-modal-backdrop")?.addEventListener("click", cerrarModalVerViaje);
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && viewModal?.classList.contains("is-open")) cerrarModalVerViaje(); });
 
     async function cargarLotesDisponibles() {
         if (lotesCargados) return;
@@ -347,6 +429,17 @@ document.addEventListener("DOMContentLoaded", () => {
             .sort((a, b) => b.getTime() - a.getTime())[0] || null;
         const duracionTotal = salidaTotal && llegadaTotal ? formatDurationHuman(salidaTotal, llegadaTotal) : "-";
 
+        let valorTotalLotes = 0;
+        const lotesAsignados = Array.isArray(data.lotesAsignados) ? data.lotesAsignados : [];
+        lotesAsignados.forEach(l => {
+            valorTotalLotes += parseFloat(l.valorDeclarado) || 0;
+        });
+
+        const hasIva = tramos.some(t => Boolean(t.iva));
+        const ivaCalculado = valorTotalLotes * 0.13;
+        const totalIva = hasIva ? ivaCalculado : 0;
+        const gananciaCalculada = valorTotalLotes - totalGastos - totalIva;
+
         const renderGastosTable = gastos => {
             const list = Array.isArray(gastos) ? gastos : [];
             if (!list.length) return '<div class="text-muted small">Sin gastos registrados.</div>';
@@ -406,11 +499,18 @@ document.addEventListener("DOMContentLoaded", () => {
             const duracion = formatDurationHuman(tramo.fechaSalida, tramo.fechaEntrada);
             const badgeClass = String(tramo.estadoViaje || "").toLowerCase() === "completado" ? "bg-success" : "bg-warning text-dark";
 
+            const tramoPagado = Boolean(tramo.pagado);
+            const pagadoBadgeClass = tramoPagado ? "bg-success" : "bg-secondary";
+            const pagadoLabel = tramoPagado ? "Tramo Pagado" : "Pago Pendiente";
+
             return `
                 <div class="card border mb-3 p-3">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <span class="fw-bold text-primary">${escapeHtml(titulo)}</span>
-                        <span class="badge ${badgeClass}">${escapeHtml(String(tramo.estadoViaje || "Pendiente").replaceAll("_", " "))}</span>
+                        <div class="d-flex gap-2">
+                            <span class="badge ${badgeClass}">${escapeHtml(String(tramo.estadoViaje || "Pendiente").replaceAll("_", " "))}</span>
+                            <span class="badge ${pagadoBadgeClass}">${pagadoLabel}</span>
+                        </div>
                     </div>
                     <div class="row g-2 mb-3 small">
                         <div class="col-md-6"><strong>Camión:</strong> ${escapeHtml(tramo.camionPlaca ? `${tramo.camionNombre || ""} (${tramo.camionPlaca})` : "-")}</div>
@@ -433,26 +533,50 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         viajeViewBody.innerHTML = `
-            <div class="mb-3">
-                <h5 class="fw-bold text-dark mb-1">${escapeHtml(data.nombreViaje || "Sin Nombre")}</h5>
-                <p class="text-muted small mb-0">Contenedores: <span class="fw-bold text-dark">${escapeHtml(lotesLabel)}</span></p>
+            <div class="mb-3 border-bottom pb-2 d-flex justify-content-between align-items-start">
+                <div>
+                    <h5 class="fw-bold text-dark mb-1">${escapeHtml(data.nombreViaje || "Sin Nombre")}</h5>
+                    <p class="text-muted small mb-0">Contenedores: <span class="fw-bold text-dark">${escapeHtml(lotesLabel)}</span></p>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-secondary p-2">ID Viaje: ${data.idViaje}</span>
+                </div>
             </div>
             <div class="row">
                 <div class="col-md-6">${renderTramo("🚛 Tramo Ida", ida)}</div>
                 <div class="col-md-6">${renderTramo("↩ Tramo Vuelta", vuelta)}</div>
             </div>
-            <div class="mt-2 border-top pt-3">
+            <div class="mt-3 border-top pt-3">
+                <h6 class="fw-bold text-secondary mb-3 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.8px;">Resumen Consolidado del Viaje</h6>
                 <div class="row g-3 text-center">
-                    <div class="col-md-4 col-sm-6">
+                    <div class="col-md-3 col-sm-6">
                         <div class="border rounded p-2 bg-light">
                             <div class="small text-muted mb-1">Duración Total</div>
                             <strong class="fs-6">${escapeHtml(duracionTotal)}</strong>
                         </div>
                     </div>
-                    <div class="col-md-4 col-sm-6">
+                    <div class="col-md-3 col-sm-6">
+                        <div class="border rounded p-2 bg-light">
+                            <div class="small text-muted mb-1">Valor Contenedores</div>
+                            <strong class="fs-6 text-primary">${formatMoney(valorTotalLotes)}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
                         <div class="border rounded p-2 bg-light">
                             <div class="small text-muted mb-1">Total Gastado</div>
                             <strong class="fs-6 text-danger">${formatMoney(totalGastos)}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="border rounded p-2 bg-light">
+                            <div class="small text-muted mb-1">IVA Retenido (13%)</div>
+                            <strong class="fs-6 text-warning">${formatMoney(totalIva)}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-12 mx-auto mt-3">
+                        <div class="border rounded p-3 bg-white border-2 border-primary shadow-sm">
+                            <div class="small text-secondary fw-bold mb-1">Ganancia Neta Final</div>
+                            <strong class="fs-4 ${gananciaCalculada >= 0 ? 'text-success' : 'text-danger'}">${formatMoney(gananciaCalculada)}</strong>
                         </div>
                     </div>
                 </div>
@@ -466,25 +590,98 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = "/viajes/formulario";
     });
 
+    // Toggle pagado/iva directly from the list
+    async function handleToggle(btn) {
+        const field = btn.dataset.toggleField;
+        const tramoId = btn.dataset.tramoId;
+        const viajeId = btn.dataset.viajeId;
+        if (!field || !tramoId) return;
+
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content || '';
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+        const isOn = btn.classList.contains('tleg-toggle-on') || btn.classList.contains('tleg-toggle-iva-on');
+        const newVal = !isOn;
+
+        // Optimistic UI
+        btn.disabled = true;
+        if (field === 'pagado') {
+            btn.classList.toggle('tleg-toggle-on', newVal);
+            btn.classList.toggle('tleg-toggle-off', !newVal);
+        } else {
+            btn.classList.toggle('tleg-toggle-iva-on', newVal);
+            btn.classList.toggle('tleg-toggle-off', !newVal);
+        }
+        btn.title = newVal ? (field === 'pagado' ? 'Marcar como pendiente' : 'Quitar IVA') : (field === 'pagado' ? 'Marcar como pagado' : 'Aplicar IVA 13%');
+
+        try {
+            const res = await fetch(`/api/viajes/tramo/${tramoId}/${field}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+                credentials: 'same-origin',
+                body: JSON.stringify({ valor: newVal })
+            });
+            if (!res.ok) throw new Error('Error al guardar');
+            // Update the cache so re-renders stay in sync
+            const vId = Number(viajeId);
+            const cached = viajesCache.find(v => (v.id_viaje ?? v.idViaje) === vId);
+            if (cached) {
+                ['listaIDa', 'listaVuelta'].forEach(key => {
+                    const tramo = Array.isArray(cached[key]) ? cached[key][0] : null;
+                    if (tramo && String(tramo.id) === String(tramoId)) tramo[field] = newVal;
+                });
+            }
+        } catch (err) {
+            console.error(err);
+            // Revert optimistic update
+            if (field === 'pagado') {
+                btn.classList.toggle('tleg-toggle-on', isOn);
+                btn.classList.toggle('tleg-toggle-off', !isOn);
+            } else {
+                btn.classList.toggle('tleg-toggle-iva-on', isOn);
+                btn.classList.toggle('tleg-toggle-off', !isOn);
+            }
+            notify('error', 'No se pudo guardar el cambio', 'Error');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
     listaViajes?.addEventListener("click", event => {
-        const actionBtn = event.target.closest("[data-viaje-action]");
-        if (actionBtn) {
+        // Toggle buttons
+        const toggleBtn = event.target.closest('[data-toggle-field]');
+        if (toggleBtn) {
             event.preventDefault();
             event.stopPropagation();
-            const action = actionBtn.dataset.viajeAction;
-            const viajeId = actionBtn.dataset.viajeId;
-            if (action === "view") {
-                abrirModalVerViaje(viajeId);
-            } else {
-                window.location.href = "/viajes/formulario?id=" + viajeId;
-            }
+            handleToggle(toggleBtn);
             return;
         }
 
-        const tr = event.target.closest("tr[data-viaje-id]");
-        if (!tr) return;
-        const viajeId = tr.dataset.viajeId;
-        window.location.href = "/viajes/formulario?id=" + viajeId;
+        // Stats card → open detail modal
+        const statsCard = event.target.closest('[data-viaje-action="view"]');
+        if (statsCard) {
+            event.preventDefault();
+            event.stopPropagation();
+            abrirModalVerViaje(statsCard.dataset.viajeId);
+            return;
+        }
+
+        // Edit button
+        const actionBtn = event.target.closest('[data-viaje-action="edit"]');
+        if (actionBtn) {
+            event.preventDefault();
+            event.stopPropagation();
+            window.location.href = '/viajes/formulario?id=' + actionBtn.dataset.viajeId;
+            return;
+        }
+
+        // Tramo card click → edit
+        const tramoCard = event.target.closest('.tleg-card');
+        if (tramoCard) {
+            event.preventDefault();
+            const viajeId = tramoCard.dataset.viajeIdEdit;
+            if (viajeId) window.location.href = '/viajes/formulario?id=' + viajeId;
+            return;
+        }
     });
 
     // Pager listeners
@@ -573,28 +770,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- INITIALIZATION ---
-    const inputInicio = document.getElementById("filtroFechaInicioViajes");
-    const inputFin = document.getElementById("filtroFechaFinViajes");
-    const today = new Date();
-    const addDays = (date, days) => {
-        const copy = new Date(date);
-        copy.setDate(copy.getDate() + days);
-        return copy;
-    };
-    const formatDateInput = date => {
-        const pad = num => String(num).padStart(2, "0");
-        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-    };
-
-    if (inputInicio && !inputInicio.value) {
-        inputInicio.value = formatDateInput(today);
-        filtrosViajes.fechaInicio = inputInicio.value;
-    }
-    if (inputFin && !inputFin.value) {
-        inputFin.value = formatDateInput(addDays(today, 14));
-        filtrosViajes.fechaFin = inputFin.value;
-    }
-
+    // No default date filters — load all trips on first load
     cargarEstadosViaje();
     cargarViajes(0);
 });

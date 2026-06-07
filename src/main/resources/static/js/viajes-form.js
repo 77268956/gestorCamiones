@@ -213,7 +213,10 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+
         lotesSeleccionados.forEach((lote, idx) => {
+
+
             const id = getLoteId(lote);
             const tramo = lote.tipoTramo || "ida";
             const pagado = Boolean(lote.pagado);
@@ -221,6 +224,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const tramoBgStyle = tramo === "vuelta" ? "background:#7c3aed;color:white" : "background:#2563eb;color:white";
             const tramoLabel = tramo === "vuelta" ? "↩ Vuelta" : "🚛 Ida";
+
+            console.log(tramoLabel)
+            console.log(tramoBgStyle)
 
             card.className = "card border-start border-3 p-3";
             card.style.borderLeftColor = tramo === "vuelta" ? "#7c3aed" : "#2563eb";
@@ -240,19 +246,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </div>
                 <div class="row g-2 align-items-center mt-1">
-                    <div class="col-sm-6">
+                    <div class="col-12">
                         <div class="input-group input-group-sm">
                             <label class="input-group-text" style="font-size:0.75rem;">Tramo</label>
                             <select class="form-select form-select-sm" data-lote-tramo="${idx}" style="font-size:0.75rem;">
-                                <option value="ida" ${tramo === 'ida' ? 'selected' : ''}>🚛 Ida</option>
-                                <option value="vuelta" ${tramo === 'vuelta' ? 'selected' : ''}>↩ Vuelta</option>
+                                <option value="ida" ${tramo === 'ida' ? 'selected' : ''}>Comenzar Ida</option>
+                                <option value="vuelta" ${tramo === 'vuelta' ? 'selected' : ''}>Comenzar Vuelta</option>
                             </select>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" id="lotePagado_${idx}" data-lote-pagado-check="${idx}" ${pagado ? 'checked' : ''}>
-                            <label class="form-check-label small fw-semibold" for="lotePagado_${idx}">Lote Pagado</label>
                         </div>
                     </div>
                 </div>
@@ -267,17 +267,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (lotesSeleccionados[idx]) {
                     lotesSeleccionados[idx].tipoTramo = sel.value;
                     renderLotesAsociados();
-                }
-            });
-        });
-
-        // Listeners for pagado check
-        cont.querySelectorAll('[data-lote-pagado-check]').forEach(check => {
-            check.addEventListener('change', () => {
-                const idx = Number(check.dataset.lotePagadoCheck);
-                if (lotesSeleccionados[idx]) {
-                    lotesSeleccionados[idx].pagado = check.checked;
-                    actualizarResumen();
                 }
             });
         });
@@ -1116,7 +1105,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!tbody) return;
         const list = getLotesFiltradosModal();
         if (!list.length) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No hay lotes disponibles</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No hay lotes disponibles</td></tr>';
             return;
         }
         const tramoDefault = document.getElementById("tramoDefaultLoteViaje")?.value || "ida";
@@ -1142,11 +1131,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             <option value="ida" ${tramoDefault === 'ida' ? 'selected' : ''}>Ida</option>
                             <option value="vuelta" ${tramoDefault === 'vuelta' ? 'selected' : ''}>Vuelta</option>
                         </select>
-                    </td>
-                    <td>
-                        <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" id="pagadoRow_${escapeHtml(String(id))}" data-pagado-row="${escapeHtml(String(id))}">
-                        </div>
                     </td>
                     <td class="text-end">${btn}</td>
                 </tr>
@@ -1191,14 +1175,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const match = lotesDisponibles.find(l => getLoteId(l) === id);
 
         const tramoSel = document.querySelector(`[data-tramo-row="${id}"]`);
-        const pagadoSel = document.querySelector(`[data-pagado-row="${id}"]`);
         const tramoElegido = tramoSel?.value || document.getElementById("tramoDefaultLoteViaje")?.value || "ida";
-        const pagadoElegido = pagadoSel ? pagadoSel.checked : false;
 
         lotesSeleccionados.push({
             ...(match || {idLote: id, numeroLote: `Lote #${id}`}),
             tipoTramo: tramoElegido,
-            pagado: pagadoElegido
+            pagado: false
         });
         renderLotesAsociados();
         renderLotesViajeModal();
@@ -1250,7 +1232,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const peso = container.querySelector("[data-lote-peso]")?.value || null;
         const valorDeclarado = container.querySelector("[data-lote-valor]")?.value || null;
         const tipoTramoInline = container.querySelector("[data-lote-tramo-inline]")?.value || "ida";
-        const pagadoInline = container.querySelector("[data-lote-pagado-inline]")?.checked ?? false;
 
         let valid = true;
         const checkField = (selector, condition) => {
@@ -1298,7 +1279,7 @@ document.addEventListener("DOMContentLoaded", () => {
             lotesSeleccionados.push({
                 ...nuevoLote,
                 tipoTramo: tipoTramoInline,
-                pagado: pagadoInline
+                pagado: false
             });
 
             renderLotesAsociados();
@@ -1313,7 +1294,6 @@ document.addEventListener("DOMContentLoaded", () => {
             container.querySelector("[data-lote-peso]").value = "";
             container.querySelector("[data-lote-valor]").value = "";
             container.querySelector("[data-lote-tramo-inline]").value = "ida";
-            container.querySelector("[data-lote-pagado-inline]").checked = false;
             container.style.display = "none";
 
             notify("success", "Lote creado y asociado con éxito.", "Viajes");
@@ -1326,9 +1306,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- FINANCIAL SUMMARY & CALCULATIONS ---
     const actualizarResumen = () => {
+        const pagadoIda = document.getElementById("idaPagado")?.checked ?? false;
+        const pagadoVuelta = document.getElementById("vueltaPagado")?.checked ?? false;
+
         let valorLotes = 0;
         lotesSeleccionados.forEach(l => {
-            if (l.pagado) { // sum declared value only if marked as paid
+            const tramo = l.tipoTramo || "ida";
+            if ((tramo === "ida" && pagadoIda) || (tramo === "vuelta" && pagadoVuelta)) {
                 valorLotes += parseFloat(l.valorDeclarado || l.valor_declarado) || 0;
             }
         });
@@ -1364,6 +1348,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.getElementById("ivaPorcentaje")?.addEventListener("input", () => {
+        actualizarResumen();
+    });
+
+    document.getElementById("idaPagado")?.addEventListener("change", () => {
+        actualizarResumen();
+    });
+
+    document.getElementById("vueltaPagado")?.addEventListener("change", () => {
         actualizarResumen();
     });
 
@@ -1648,8 +1640,8 @@ document.addEventListener("DOMContentLoaded", () => {
             id_vieje: Number(viajeId) || 0,
             nombreViaje: document.getElementById("nombreViaje")?.value || "",
             loteIds: lotesSeleccionados.map(getLoteId).filter(Boolean),
-            lotes: lotesSeleccionados.map(l => ({
-                id: getLoteId(l),
+            lotesAsignados: lotesSeleccionados.map(l => ({
+                idLote: getLoteId(l),
                 tipoTramo: l.tipoTramo || "ida",
                 pagado: Boolean(l.pagado)
             })),
@@ -1683,9 +1675,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Lotes
             loteIdsPendientes = Array.isArray(data.loteIds) ? data.loteIds.map(Number).filter(Boolean) : [];
-            lotesPendientesConDatos = Array.isArray(data.lotes)
-                ? data.lotes.map(l => ({
-                    id: Number(l.id || l.idLote),
+            lotesPendientesConDatos = Array.isArray(data.lotesAsignados)
+                ? data.lotesAsignados.map(l => ({
+                    id: Number(l.idLote || l.id),
                     tipoTramo: l.tipoTramo || "ida",
                     pagado: Boolean(l.pagado)
                   }))
