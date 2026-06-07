@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!tramo) {
             const label = tipoKey === 'ida' ? 'Ida' : 'Vuelta';
             return `<div class="tleg-empty">
-                <span class="tleg-empty-icon">${tipoKey === 'ida' ? '🚛' : '↩'}</span>
+                <span class="tleg-empty-icon">${tipoKey === 'ida' ? '' : ''}</span>
                 <span>Sin tramo de ${escapeHtml(label)}</span>
             </div>`;
         }
@@ -157,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const isIdaClass    = tipoKey === 'ida' ? 'tleg-ida'     : 'tleg-vuelta';
         const indicatorCls  = tipoKey === 'ida' ? 'tleg-ind-ida' : 'tleg-ind-vuelta';
-        const emoji         = tipoKey === 'ida' ? '🚛' : '↩';
+        const emoji         = tipoKey === 'ida' ? '' : '';
         const tipoLabel     = tipoKey === 'ida' ? 'Ida' : 'Vuelta';
 
         return `
@@ -288,7 +288,7 @@ document.addEventListener("DOMContentLoaded", () => {
                          data-viaje-action="view"
                          data-viaje-id="${escapeHtml(String(idViaje))}"
                          title="Ver detalle completo">
-                        <div class="vcard-stats-header">📊 Estadísticas</div>
+                        <div class="vcard-stats-header">Estadísticas</div>
                         <div class="vcard-stat-row">
                             <span class="vcard-stat-label">Lotes</span>
                             <span class="vcard-stat-val">${totalLotes}</span>
