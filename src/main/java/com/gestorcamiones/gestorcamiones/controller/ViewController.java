@@ -122,6 +122,9 @@ public class ViewController {
     @GetMapping("/viajes")
     public String viajes() { return "view/Viajes"; }
 
+    @GetMapping("/viajes/formulario")
+    public String formularioViajes() { return "view/viaje-form"; }
+
     @GetMapping("/lotes")
     public String lotes() { return "view/lotes"; }
 

@@ -91,6 +91,7 @@ public class LoteController {
         dto.setPeso(lote.getPeso());
         dto.setDescripcion(lote.getDescripcion());
         dto.setValorDeclarado(lote.getValorDeclarado());
+        //dto.setTipoTramo(lote.get);
         return dto;
     }
 

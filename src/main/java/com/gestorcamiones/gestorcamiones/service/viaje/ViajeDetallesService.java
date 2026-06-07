@@ -17,10 +17,8 @@ import com.gestorcamiones.gestorcamiones.service.gasto.GastosViajeServicie;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Servicio para crear/actualizar tramos de viaje.
@@ -68,6 +66,84 @@ public class ViajeDetallesService implements IViajeDetalleService {
 
     @Override
     public void actualizarTramos(List<TramoDTO> tramos, Viaje viaje, Usuario usuarioAdmin) {
+        // Validaciones iniciales
+        if (tramos == null || tramos.isEmpty()) {
+            // Considera si deberías eliminar todos los tramos existentes
+            viaje.getDetalles().clear();
+            viajesDetallerRepository.saveAll(viaje.getDetalles());
+            return;
+        }
+
+        if (usuarioAdmin == null) {
+            throw new IllegalArgumentException("Usuario administrador requerido");
+        }
+
+        Set<Long> idsRecibidos = new HashSet<>();
+
+        for (TramoDTO dto : tramos) {
+            ViajeDetalle detalle;
+
+            if (dto.getId() > 0) {
+                // Actualizar existente
+                detalle = viajesDetallerRepository.findById(dto.getId())
+                        .orElseThrow(() -> new IllegalArgumentException(
+                                String.format("Detalle de viaje no encontrado: %d", dto.getId())));
+
+                if (!viaje.getIdViaje().equals(detalle.getViaje().getIdViaje())) {
+                    throw new IllegalArgumentException(
+                            String.format("El detalle %d no pertenece al viaje %d",
+                                    dto.getId(), viaje.getIdViaje()));
+                }
+                idsRecibidos.add(detalle.getIdViajeDetalle());
+
+            } else {
+                // Crear nuevo: usa un identificador temporal más robusto
+                String tempKey = dto.getTipoTramo() + "_" + dto.getTipoTramo();
+
+                // Buscar por tipo y orden para evitar duplicados
+                detalle = viaje.getDetalles().stream()
+                        .filter(d -> d.getTipoTramo() == dto.getTipoTramo()
+                                && Objects.equals(d.getIdViajeDetalle(), dto.getTipoTramo()))
+                        .findFirst()
+                        .orElseGet(() -> {
+                            ViajeDetalle nuevo = new ViajeDetalle();
+                            nuevo.setViaje(viaje);
+                            return nuevo;
+                        });
+            }
+
+            // Aplicar cambios
+            aplicarTramo(detalle, dto, detalle.getIdViajeDetalle());
+            detalle = viajesDetallerRepository.save(detalle);
+
+            // Sincronizar gastos con transacción separada si es necesario
+            syncGastos(detalle, dto.getGastos(), usuarioAdmin);
+
+            // Agregar al viaje si es nuevo
+            if (!viaje.getDetalles().contains(detalle)) {
+                viaje.addDetalle(detalle);
+            } else if (detalle.getIdViajeDetalle() != null) {
+                idsRecibidos.add(detalle.getIdViajeDetalle());
+            }
+        }
+
+        // Eliminar tramos que no están en la lista actual
+        List<ViajeDetalle> paraEliminar = viaje.getDetalles().stream()
+                .filter(d -> d.getIdViajeDetalle() != null
+                        && !idsRecibidos.contains(d.getIdViajeDetalle()))
+                .collect(Collectors.toList());
+
+        if (!paraEliminar.isEmpty()) {
+            viaje.getDetalles().removeAll(paraEliminar);
+            viajesDetallerRepository.deleteAll(paraEliminar);
+        }
+    }
+
+     /*Mentodo original para editar (No borarr) para probar una mejora*/
+
+    /*
+    *  @Override
+    public void actualizarTramos(List<TramoDTO> tramos, Viaje viaje, Usuario usuarioAdmin) {
         if (tramos == null || tramos.isEmpty()) return;
         for (TramoDTO dto : tramos) {
             ViajeDetalle detalle;
@@ -98,6 +174,8 @@ public class ViajeDetallesService implements IViajeDetalleService {
             }
         }
     }
+    *
+    * */
 
     private void aplicarTramo(ViajeDetalle detalle, TramoDTO dto, Long idDetalleExistente) {
         if (dto == null) return;
