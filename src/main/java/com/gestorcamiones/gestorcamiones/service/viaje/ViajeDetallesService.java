@@ -57,7 +57,7 @@ public class ViajeDetallesService implements IViajeDetalleService {
         for (TramoDTO dto : tramos) {
             ViajeDetalle detalle = new ViajeDetalle();
             detalle.setViaje(viaje);
-            aplicarTramo(detalle, dto, null);
+            aplicarTramo(detalle, dto, null, viaje.getIdViaje());
             detalle = viajesDetallerRepository.save(detalle);
             syncGastos(detalle, dto.getGastos(), usuarioAdmin);
             viaje.addDetalle(detalle);
@@ -97,13 +97,11 @@ public class ViajeDetallesService implements IViajeDetalleService {
                 idsRecibidos.add(detalle.getIdViajeDetalle());
 
             } else {
-                // Crear nuevo: usa un identificador temporal más robusto
-                String tempKey = dto.getTipoTramo() + "_" + dto.getTipoTramo();
-
-                // Buscar por tipo y orden para evitar duplicados
+                // Reutilizar el tramo del mismo tipo si ya existe; si no, crear uno nuevo.
                 detalle = viaje.getDetalles().stream()
-                        .filter(d -> d.getTipoTramo() == dto.getTipoTramo()
-                                && Objects.equals(d.getIdViajeDetalle(), dto.getTipoTramo()))
+                        .filter(d -> d.getTipoTramo() != null
+                                && dto.getTipoTramo() != null
+                                && d.getTipoTramo() == dto.getTipoTramo())
                         .findFirst()
                         .orElseGet(() -> {
                             ViajeDetalle nuevo = new ViajeDetalle();
@@ -113,7 +111,7 @@ public class ViajeDetallesService implements IViajeDetalleService {
             }
 
             // Aplicar cambios
-            aplicarTramo(detalle, dto, detalle.getIdViajeDetalle());
+            aplicarTramo(detalle, dto, detalle.getIdViajeDetalle(), viaje.getIdViaje());
             detalle = viajesDetallerRepository.save(detalle);
 
             // Sincronizar gastos con transacción separada si es necesario
@@ -177,7 +175,7 @@ public class ViajeDetallesService implements IViajeDetalleService {
     *
     * */
 
-    private void aplicarTramo(ViajeDetalle detalle, TramoDTO dto, Long idDetalleExistente) {
+    private void aplicarTramo(ViajeDetalle detalle, TramoDTO dto, Long idDetalleExistente, Long idViajeExistente) {
         if (dto == null) return;
 
         // Validar que las fechas sean coherentes
@@ -188,7 +186,14 @@ public class ViajeDetallesService implements IViajeDetalleService {
             }
         }
 
-        validarDisponibilidad(dto.getIdCamion(), dto.getIdConductor(), dto.getFechaSalida(), dto.getFechaEntrada(), idDetalleExistente);
+        validarDisponibilidad(
+                dto.getIdCamion(),
+                dto.getIdConductor(),
+                dto.getFechaSalida(),
+                dto.getFechaEntrada(),
+                idDetalleExistente,
+                idViajeExistente
+        );
 
         detalle.setTipoTramo(dto.getTipoTramo());
         detalle.setEstado(dto.getEstadoViaje());
@@ -224,10 +229,11 @@ public class ViajeDetallesService implements IViajeDetalleService {
                                       long idConductor,
                                       LocalDateTime fechaSalida,
                                       LocalDateTime fechaLlegada,
-                                      Long idDetalleExistente) {
+                                      Long idDetalleExistente,
+                                      Long idViajeExistente) {
         if (idCamion > 0) {
             boolean noDisponible = (idDetalleExistente != null && idDetalleExistente > 0)
-                    ? camionRepository.camionNoDisponibleExcluyendoDetalle(idCamion, fechaSalida, fechaLlegada, idDetalleExistente)
+                    ? camionRepository.camionNoDisponibleExcluyendoDetalle(idCamion, fechaSalida, fechaLlegada, idDetalleExistente, idViajeExistente)
                     : camionRepository.camionNoDisponible(idCamion, fechaSalida, fechaLlegada);
             if (noDisponible) {
                 throw new IllegalArgumentException("Camion ya asignado a un viaje");
@@ -236,7 +242,7 @@ public class ViajeDetallesService implements IViajeDetalleService {
 
         if (idConductor > 0) {
             boolean noDisponible = (idDetalleExistente != null && idDetalleExistente > 0)
-                    ? usuarioRepository.choferNoDisponibleExcluyendoDetalle(idConductor, fechaSalida, fechaLlegada, idDetalleExistente)
+                    ? usuarioRepository.choferNoDisponibleExcluyendoDetalle(idConductor, fechaSalida, fechaLlegada, idDetalleExistente, idViajeExistente)
                     : usuarioRepository.choferNoDisponible(idConductor, fechaSalida, fechaLlegada);
             if (noDisponible) {
                 throw new IllegalArgumentException("El conductor ya esta en un viaje");

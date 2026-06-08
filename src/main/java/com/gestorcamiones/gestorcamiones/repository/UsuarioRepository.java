@@ -101,18 +101,22 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     @Query(
             value = """
-        SELECT EXISTS (
-            SELECT 1
-            FROM viaje_detalle
-            WHERE id_chofer = :idChofer
-              AND id_viaje_detalle <> :idViajeDetalle
-              AND deleted_at IS NULL
-              AND estado NOT IN ('cancelado', 'completado')
-              AND (
-                    (:fechaSalida BETWEEN fecha_salida AND COALESCE(fecha_llegada, :fechaSalida))
-                 OR (:fechaLlegada BETWEEN fecha_salida AND COALESCE(fecha_llegada, :fechaLlegada))
-                 OR (fecha_salida BETWEEN :fechaSalida AND :fechaLlegada)
-              )
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM viaje_detalle
+                    WHERE id_chofer = :idChofer
+                      AND id_viaje_detalle <> :idViajeDetalle
+                      AND deleted_at IS NULL
+                      AND estado NOT IN ('cancelado', 'completado')
+                      AND (
+                            CAST(:idViaje AS BIGINT) IS NULL
+                         OR id_viaje <> CAST(:idViaje AS BIGINT)
+                      )
+                      AND (
+                            (:fechaSalida BETWEEN fecha_salida AND COALESCE(fecha_llegada, :fechaSalida))
+                         OR (:fechaLlegada BETWEEN fecha_salida AND COALESCE(fecha_llegada, :fechaLlegada))
+                         OR (fecha_salida BETWEEN :fechaSalida AND :fechaLlegada)
+                      )
         )
     """,
             nativeQuery = true
@@ -121,7 +125,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
             @Param("idChofer") long idChofer,
             @Param("fechaSalida") LocalDateTime fechaSalida,
             @Param("fechaLlegada") LocalDateTime fechaLlegada,
-            @Param("idViajeDetalle") long idViajeDetalle
+            @Param("idViajeDetalle") long idViajeDetalle,
+            @Param("idViaje") Long idViaje
     );
 
 }
