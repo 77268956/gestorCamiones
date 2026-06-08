@@ -266,12 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span class="vcard-id">Viaje #${escapeHtml(String(idViaje))}</span>
                         <h3 class="vcard-name">${escapeHtml(viaje.nombreVieje || 'Sin nombre')}</h3>
                     </div>
-                    <div class="vcard-header-actions" onclick="event.stopPropagation();">
-                        <button type="button" class="btn btn-outline-light btn-sm rounded-pill px-3"
-                            data-viaje-action="edit" data-viaje-id="${escapeHtml(String(idViaje))}">
-                            Editar
-                        </button>
-                    </div>
+
                 </div>
 
                 <!-- BODY: tramos | stats -->
@@ -763,7 +758,53 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // --- INIT ---
+    //----------------------------
+
+    function actualizarMetricas() {
+        let gastosTotales = 0;
+        let tramosActivos = 0;
+        let lotesEnTransito = 0;
+
+        const estadosActivos = ['cargando', 'en_camino', 'descargando', 'con_fallas'];
+
+        viajesCache.forEach(viaje => {
+            // Gastos: suma gastoTotal de ida + vuelta
+            const ida    = Array.isArray(viaje.listaIDa)    ? viaje.listaIDa[0]    : null;
+            const vuelta = Array.isArray(viaje.listaVuelta) ? viaje.listaVuelta[0] : null;
+
+            gastosTotales += parseNumber(ida?.gastoTotal)    || 0;
+            gastosTotales += parseNumber(vuelta?.gastoTotal) || 0;
+
+            // Tramos activos: cualquier tramo cuyo estado NO sea completado/cancelado
+            [ida, vuelta].forEach(t => {
+                if (!t) return;
+                const estado = String(t.estadoViaje || t.estado || '').toLowerCase().replaceAll(' ', '_');
+                if (estadosActivos.includes(estado)) tramosActivos++;
+            });
+
+            // Lotes en tránsito: lotes de viajes que tienen al menos un tramo activo
+            const tieneTramoActivo = [ida, vuelta].some(t => {
+                if (!t) return false;
+                const estado = String(t.estadoViaje || t.estado || '').toLowerCase().replaceAll(' ', '_');
+                return estadosActivos.includes(estado);
+            });
+            if (tieneTramoActivo) {
+                const lotes = Array.isArray(viaje.lotes) ? viaje.lotes : [];
+                lotesEnTransito += Number(viaje.totalLotes ?? lotes.length) || lotes.length;
+            }
+        });
+
+        const elGastos  = document.getElementById('metricGastos');
+        const elActivos = document.getElementById('metricActivos');
+        const elLotes   = document.getElementById('metricLotes');
+
+        if (elGastos)  elGastos.textContent  = formatMoney(gastosTotales);
+        if (elActivos) elActivos.textContent = tramosActivos;
+        if (elLotes)   elLotes.textContent   = lotesEnTransito;
+    }
+
+
+    actualizarMetricas();
     cargarEstadosViaje();
     cargarViajes(0);
 });
