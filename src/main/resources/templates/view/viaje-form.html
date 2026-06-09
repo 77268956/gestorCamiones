@@ -297,6 +297,7 @@
                                         <label class="form-label mb-1">Estado</label>
                                         <select class="form-select form-select-sm" id="editLoteEstado"></select>
                                     </div>
+
                                     <div class="col-md-4">
                                         <label class="form-label mb-1">Peso</label>
                                         <input type="number" step="0.01" class="form-control form-control-sm"
@@ -929,7 +930,7 @@
                 </div>
 
                 <!-- Formulario inline para crear lote sin salir de la vista -->
-                <div id="nuevoLoteInlineForm"
+                <form id="nuevoLoteInlineForm"
                      style="display:none; margin-top: 16px; border: 2px dashed var(--mp-blue); border-radius: 12px; padding: 16px; background: rgba(26,58,143,0.03);">
                     <h6 class="fw-bold text-primary mb-3">Crear y Asociar Nuevo Lote Inline</h6>
                     <div class="row g-3">
@@ -959,6 +960,14 @@
                                    placeholder="ID del cliente">
                             <div class="invalid-feedback">Remitente obligatorio</div>
                         </div>
+
+                        <div class="col-md-4 col-sm-6">
+                            <label class="form-label small mb-1">ID Cliente Destinatario *</label>
+                            <input type="number" class="form-control form-control-sm" data-lote-destinatario
+                                   placeholder="ID del cliente que recibe">
+                            <div class="invalid-feedback">Destinatario obligatorio</div>
+                        </div>
+
                         <div class="col-md-4 col-sm-6">
                             <label class="form-label small mb-1">Peso (kg)</label>
                             <input type="number" step="0.01" min="0" class="form-control form-control-sm" data-lote-peso
@@ -977,8 +986,8 @@
                         <div class="col-md-4 col-sm-6">
                             <label class="form-label small mb-1">Tramo de lote</label>
                             <select class="form-select form-select-sm" data-lote-tramo-inline>
-                                <option value="ida">🚛 Ida</option>
-                                <option value="vuelta">↩ Vuelta</option>
+                                <option value="ida">Ida</option>
+                                <option value="vuelta">Vuelta</option>
                             </select>
                         </div>
 
@@ -991,7 +1000,7 @@
                             </button>
                         </div>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     </div>

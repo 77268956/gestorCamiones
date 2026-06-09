@@ -199,28 +199,57 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+
+
+
+
     const loadEstadosLote = async () => {
-        if (data.lotesEstadosCargados) return;
+        if (data.lotesEstadosCargados) {
+            // Ya cargados, solo llenar el select de edición si existe
+            const selectEdit = $("editLoteEstado");
+            if (selectEdit && !selectEdit.options.length) {
+                fillEstadosSelect(selectEdit);
+            }
+            return;
+        }
         try {
             const estados = await requestJson("/api/lotes/estados");
-            setSelectOptions($("#filtroEstadoLotesViajeModal"), "Todos los estados", estados);
-            const selectEdit = $("#editLoteEstado");
-            if (selectEdit) {
-                const current = selectEdit.value;
-                selectEdit.innerHTML = '<option value="">Seleccione estado</option>';
-                estados.forEach(estado => {
-                    const option = document.createElement("option");
-                    option.value = estado;
-                    option.textContent = String(estado).replaceAll("_", " ");
-                    selectEdit.appendChild(option);
-                });
-                if (current) selectEdit.value = current;
-            }
+            data.estadosLotesCache = estados; // guardar para reusar
+
+            setSelectOptions($("filtroEstadoLotesViajeModal"), "Todos los estados", estados);
+
+            const selectEdit = $("editLoteEstado");
+            if (selectEdit) fillEstadosSelect(selectEdit, estados);
+
+            const selectInline = document.querySelector("#nuevoLoteInlineForm [data-lote-estado]");
+            if (selectInline) fillEstadosSelect(selectInline, estados);
+
             data.lotesEstadosCargados = true;
         } catch (error) {
             console.error(error);
         }
     };
+
+    const fillEstadosSelect = (select, estados) => {
+        const estadosData = estados || data.estadosLotesCache || [];
+        select.innerHTML = '<option value="">Seleccione estado</option>';
+        estadosData.forEach(estado => {
+            const option = document.createElement("option");
+            option.value = estado;
+            option.textContent = String(estado).replaceAll("_", " ");
+            select.appendChild(option);
+        });
+    };
+
+
+
+
+
+
+
+
+
+
 
     const loadCategorias = async () => {
         if (data.categoriasCargadas) return;
@@ -232,7 +261,7 @@ document.addEventListener("DOMContentLoaded", () => {
             select.innerHTML = '<option value="">Seleccione categoria</option>';
             (Array.isArray(categorias) ? categorias : []).forEach(cat => {
                 const option = document.createElement("option");
-                option.value = String(cat.id);
+                option.value = String(cat.idCategoria);
                 option.textContent = cat.nombre || `Cat #${cat.id}`;
                 select.appendChild(option);
             });
@@ -242,6 +271,10 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error(error);
         }
     };
+
+
+
+
 
     const renderGastos = tramo => {
         const tbody = $(`${tramo}GastosBody`);
@@ -683,16 +716,27 @@ document.addEventListener("DOMContentLoaded", () => {
             setValue("editLoteValor", lote.valorDeclarado || 0);
             setValue("editLoteEncargado", lote.nombreEncargado || "");
             setValue("editLoteDescripcion", lote.descripcion || "");
+
             await loadEstadosLote();
+
+            // Forzar llenado si el select está vacío
+            const selectEdit = $("editLoteEstado");
+            if (selectEdit && selectEdit.options.length <= 1) {
+                fillEstadosSelect(selectEdit);
+            }
             setValue("editLoteEstado", lote.estado || "");
+
             $("loteEditFormContainer")?.style.setProperty("display", "block");
             $("loteEditFormContainer")?.scrollIntoView({behavior: "smooth"});
+
+            $("modalBuscarLoteViaje")?.addEventListener("hidden.bs.modal", () => {
+                focusReturnTarget?.focus();
+            });
         } catch (error) {
             console.error(error);
             notify("error", "Error al cargar la informacion del lote para editar.", "Viajes");
         }
     };
-
     const saveLoteEdit = async () => {
         if (!data.editLoteCurrentData) return;
         const idLote = Number($("editLoteId")?.value || 0);
@@ -1369,17 +1413,25 @@ document.addEventListener("DOMContentLoaded", () => {
         const form = $("nuevoLoteInlineForm");
         if (!form) return;
         const numero = form.querySelector("[data-lote-numero]")?.value?.trim();
-        const estado = form.querySelector("[data-lote-estado]")?.value;
+        const estado = form.querySelector("[data-lote-estado]")?.value?.trim();
         const idCategoria = Number(form.querySelector("[data-lote-categoria]")?.value || 0);
         const idClienteRemitente = Number(form.querySelector("[data-lote-remitente]")?.value || 0);
         const descripcion = form.querySelector("[data-lote-descripcion]")?.value || "";
         const peso = num(form.querySelector("[data-lote-peso]")?.value);
         const valorDeclarado = num(form.querySelector("[data-lote-valor]")?.value);
         const tipoTramo = form.querySelector("[data-lote-tramo-inline]")?.value || "ida";
-        if (!numero || !estado || !idCategoria || !idClienteRemitente) {
-            notify("warning", "Completa los campos obligatorios del lote.", "Viajes");
+        const errores = [];
+
+        if (!numero) errores.push("• Número de lote");
+        if (!estado) errores.push("• Estado del lote");
+        if (!idCategoria || idCategoria === 0) errores.push("• Categoría");
+        if (!idClienteRemitente || idClienteRemitente === 0) errores.push("• Cliente remitente");
+
+        if (errores.length > 0) {
+            notify("warning", `Campos obligatorios pendientes:\n${errores.join("\n")}`, "Viajes");
             return;
         }
+
         try {
             const nuevoLote = await requestJson("/api/lotes", {
                 method: "POST",
