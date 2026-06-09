@@ -1474,4 +1474,125 @@ document.addEventListener("DOMContentLoaded", () => {
         updateDuraciones();
         updateResumen();
     })();
+
+
+
+
+
+
+ // parte del los clientes
+
+
+
+
+    let clientePickerTarget = null;
+
+    document.querySelectorAll("[data-cliente-picker]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            clientePickerTarget = btn.dataset.clientePicker;
+            bootstrap.Modal.getOrCreateInstance($("modalSeleccionCliente")).show();
+            cargarClientePicker(clientePicker.page - 1);
+        });
+    });
+
+    const clientePicker = {
+        target: null,
+        page: 0,
+        size: 10,
+        totalPages: 1,
+        totalElements: 0,
+        sort: "id,desc",
+        q: ""
+    };
+
+    const clientePickerRefs = {
+        q: document.getElementById("clientePickerQ"),
+        size: document.getElementById("clientePickerSize"),
+        body: document.getElementById("clientePickerBody"),
+        prev: document.getElementById("clientePickerPrev"),
+        next: document.getElementById("clientePickerNext"),
+        info: document.getElementById("clientePickerInfo")
+    };
+
+    const renderClientePicker = (clientes) => {
+        const body = clientePickerRefs.body;
+        if (!body) return;
+        if (!clientes.length) {
+            body.innerHTML = '<tr><td colspan="6" class="text-center">No hay clientes</td></tr>';
+            return;
+        }
+        body.innerHTML = clientes.map(c => `
+        <tr>
+            <td><button type="button" class="btn btn-sm btn-primary btn-select-cliente"
+                data-id="${c.id}" data-nombre="${esc(c.nombre || "")}">Seleccionar</button></td>
+            <td>${esc(c.nombre || "-")}</td>
+            <td>${esc(c.telefono || "-")}</td>
+            <td>${esc(c.correo || "-")}</td>
+            <td>${esc(c.direccion || "-")}</td>
+            <td>${c.id}</td>
+        </tr>
+    `).join("");
+    };
+
+    const actualizarClientePickerFooter = () => {
+        if (clientePickerRefs.info)
+            clientePickerRefs.info.textContent = `Pagina ${clientePicker.page + 1} de ${clientePicker.totalPages}`;
+        if (clientePickerRefs.prev) clientePickerRefs.prev.disabled = clientePicker.page <= 0;
+        if (clientePickerRefs.next) clientePickerRefs.next.disabled = clientePicker.page >= clientePicker.totalPages - 1;
+    };
+
+    const cargarClientePicker = async (page = 0) => {
+        const body = clientePickerRefs.body;
+        if (!body) return;
+        body.innerHTML = '<tr><td colspan="6" class="text-center">Cargando clientes...</td></tr>';
+        try {
+            const query = new URLSearchParams({
+                page: String(Math.max(0, page)),
+                size: String(clientePicker.size),
+                sort: clientePicker.sort
+            });
+            if (clientePicker.q) query.set("q", clientePicker.q);
+            const res = await fetch(`/api/clientes?${query}`, {credentials: "same-origin"});
+            if (!res.ok) throw new Error("Error al cargar clientes");
+            const data = await res.json();
+            clientePicker.page = Number(data?.number ?? page);
+            clientePicker.totalPages = Math.max(1, Number(data?.totalPages ?? 1));
+            clientePicker.totalElements = Number(data?.totalElements ?? 0);
+            renderClientePicker(Array.isArray(data?.content) ? data.content : []);
+            actualizarClientePickerFooter();
+        } catch (e) {
+            console.error(e);
+            body.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al cargar clientes</td></tr>';
+        }
+    };
+
+// Eventos del picker
+    clientePickerRefs.body?.addEventListener("click", ev => {
+        const btn = ev.target.closest(".btn-select-cliente");
+        if (!btn) return;
+        const id = btn.dataset.id;
+        const nombre = btn.dataset.nombre;
+        if (clientePickerTarget === "remitente") {
+            $("nuevoRemitenteId").value = id;
+            $("nuevoRemitenteNombre").value = nombre;
+        } else if (clientePickerTarget === "destinatario") {
+            $("nuevoDestinatarioId").value = id;
+            $("nuevoDestinatarioNombre").value = nombre;
+        }
+        bootstrap.Modal.getInstance($("modalSeleccionCliente"))?.hide();
+    });
+
+    $("btnClientePickerBuscar")?.addEventListener("click", () => {
+        clientePicker.q = clientePickerRefs.q?.value.trim() || "";
+        cargarClientePicker(0);
+    });
+    clientePickerRefs.prev?.addEventListener("click", () => cargarClientePicker(clientePicker.page - 1));
+    clientePickerRefs.next?.addEventListener("click", () => cargarClientePicker(clientePicker.page + 1));
+
+
+
+
+
+
+
 });

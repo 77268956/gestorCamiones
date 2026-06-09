@@ -931,7 +931,7 @@
 
                 <!-- Formulario inline para crear lote sin salir de la vista -->
                 <form id="nuevoLoteInlineForm"
-                     style="display:none; margin-top: 16px; border: 2px dashed var(--mp-blue); border-radius: 12px; padding: 16px; background: rgba(26,58,143,0.03);">
+                      style="display:none; margin-top: 16px; border: 2px dashed var(--mp-blue); border-radius: 12px; padding: 16px; background: rgba(26,58,143,0.03);">
                     <h6 class="fw-bold text-primary mb-3">Crear y Asociar Nuevo Lote Inline</h6>
                     <div class="row g-3">
                         <div class="col-md-4 col-sm-6">
@@ -954,19 +954,37 @@
                             </select>
                             <div class="invalid-feedback">Categoría obligatoria</div>
                         </div>
-                        <div class="col-md-4 col-sm-6">
-                            <label class="form-label small mb-1">ID Cliente Remitente *</label>
-                            <input type="number" class="form-control form-control-sm" data-lote-remitente
-                                   placeholder="ID del cliente">
-                            <div class="invalid-feedback">Remitente obligatorio</div>
+
+                        <!-- Cliente remitente -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small mb-1">Cliente remitente *</label>
+                            <div class="input-group">
+                                <input id="nuevoRemitenteNombre" type="text" class="form-control form-control-sm"
+                                       placeholder="Sin seleccionar" readonly>
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                        data-cliente-picker="remitente">Buscar</button>
+                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                        data-cliente-clear="remitente">✕</button>
+                            </div>
+                            <input type="hidden" id="nuevoRemitenteId" data-lote-remitente>
                         </div>
 
-                        <div class="col-md-4 col-sm-6">
-                            <label class="form-label small mb-1">ID Cliente Destinatario *</label>
-                            <input type="number" class="form-control form-control-sm" data-lote-destinatario
-                                   placeholder="ID del cliente que recibe">
-                            <div class="invalid-feedback">Destinatario obligatorio</div>
+                        <!-- Cliente destinatario -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small mb-1">Cliente destinatario</label>
+                            <div class="input-group">
+                                <input id="nuevoDestinatarioNombre" type="text" class="form-control form-control-sm"
+                                       placeholder="Sin seleccionar" readonly>
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                        data-cliente-picker="destinatario">Buscar</button>
+                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                        data-cliente-clear="destinatario">✕</button>
+                            </div>
+                            <input type="hidden" id="nuevoDestinatarioId">
                         </div>
+
+
+
 
                         <div class="col-md-4 col-sm-6">
                             <label class="form-label small mb-1">Peso (kg)</label>
@@ -1006,7 +1024,67 @@
     </div>
 </div>
 
+
+    <!-- Modal: Selector de Cliente (Remitente / Destinatario) -->
+    <div class="modal fade" id="modalSeleccionCliente" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content mp-modal-content">
+                <div class="modal-header mp-modal-header">
+                    <h5 class="modal-title" id="modalSeleccionClienteLabel">Seleccionar cliente</h5>
+                    <button type="button" class="btn-close mp-modal-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-12 col-md-7">
+                            <label class="form-label">Buscar</label>
+                            <input id="clientePickerQ" type="text" class="form-control" placeholder="Nombre, telefono, correo...">
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label">Tamano</label>
+                            <select id="clientePickerSize" class="form-select">
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2 d-flex gap-2">
+                            <button id="btnClientePickerBuscar" type="button" class="btn btn-primary w-100">Buscar</button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive mt-3">
+                        <table class="table mp-table align-middle">
+                            <thead>
+                            <tr>
+                                <th style="width: 90px;">Accion</th>
+                                <th>Nombre</th>
+                                <th>Telefono</th>
+                                <th>Correo</th>
+                                <th>Direccion</th>
+                                <th style="width: 90px;">ID</th>
+                            </tr>
+                            </thead>
+                            <tbody id="clientePickerBody">
+                            <tr><td colspan="6" class="text-center">Cargando clientes...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer d-flex justify-content-between align-items-center">
+                    <span id="clientePickerInfo" class="text-muted small">Pagina 1 de 1</span>
+                    <div class="d-flex gap-2">
+                        <button id="clientePickerPrev" type="button" class="btn btn-outline-secondary">Anterior</button>
+                        <button id="clientePickerNext" type="button" class="btn btn-outline-secondary">Siguiente</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 <th:block th:replace="fragments/assets :: globalScripts"></th:block>
+
 <script th:src="@{/js/viajes-form.js(v=20260609)}" defer></script>
+
 </body>
 </html>
