@@ -403,14 +403,25 @@ document.addEventListener("DOMContentLoaded", () => {
             const vuelta = firstTramo(getViajeList(viaje, "listaVuelta")) || firstTramo(getViajeList(viaje, "lista_vuelta"));
             const lotes = Array.isArray(viaje.lotes) ? viaje.lotes : [];
             const totalLotes = Number(viaje.totalLotes ?? lotes.length) || lotes.length;
-            const valorLotes = lotes.reduce((sum, l) => sum + num(l?.valorDeclarado ?? l?.valor_declarado), 0);
+            const valorLotesIda = lotes.filter(l => String(l.tipoTramo || l.tipo_tramo).toLowerCase() === "ida")
+                .reduce((sum, l) => sum + num(l?.valorDeclarado ?? l?.valor_declarado), 0);
+            const valorLotesVuelta = lotes.filter(l => String(l.tipoTramo || l.tipo_tramo).toLowerCase() === "vuelta")
+                .reduce((sum, l) => sum + num(l?.valorDeclarado ?? l?.valor_declarado), 0);
+            const valorLotes = valorLotesIda + valorLotesVuelta;
  
             const gastoIda = num(ida?.gastoTotal);
             const gastoVuelta = num(vuelta?.gastoTotal);
             const totalGasto = gastoIda + gastoVuelta;
-            const ingresoExtraTotal = num(viaje.ingresoExtraTotal);
-            const iva = (ida?.iva ? valorLotes * 0.13 : 0) + (vuelta?.iva ? valorLotes * 0.13 : 0);
-            const ganancia = valorLotes + ingresoExtraTotal - totalGasto - iva;
+
+            const ingresosExtraIda = num(ida?.ingresoExtraTotal);
+            const ingresosExtraVuelta = num(vuelta?.ingresoExtraTotal);
+            const ingresoExtraTotal = ingresosExtraIda + ingresosExtraVuelta;
+
+            const ivaIda = (ida?.iva ? (valorLotesIda + ingresosExtraIda) * 0.13 : 0);
+            const ivaVuelta = (vuelta?.iva ? (valorLotesVuelta + ingresosExtraVuelta) * 0.13 : 0);
+            const iva = ivaIda + ivaVuelta;
+
+            const ganancia = valorLotes + ingresoExtraTotal + iva - totalGasto;
  
             return `
                 <div class="vcard" data-viaje-id="${escapeHtml(String(getViajeId(viaje)))}">
@@ -537,11 +548,23 @@ document.addEventListener("DOMContentLoaded", () => {
             const duracion = salida && llegada ? durationHuman(salida, llegada) : "-";
 
             const lotesAsignados = Array.isArray(data.lotesAsignados) ? data.lotesAsignados : [];
-            const valorLotes = lotesAsignados.reduce((sum, l) => sum + num(l?.valorDeclarado), 0);
+            const valorLotesIda = lotesAsignados.filter(l => String(l.tipoTramo).toLowerCase() === "ida")
+                .reduce((sum, l) => sum + num(l?.valorDeclarado), 0);
+            const valorLotesVuelta = lotesAsignados.filter(l => String(l.tipoTramo).toLowerCase() === "vuelta")
+                .reduce((sum, l) => sum + num(l?.valorDeclarado), 0);
+            const valorLotes = valorLotesIda + valorLotesVuelta;
+
             const gastosTotales = tramos.reduce((sum, t) => sum + num(t?.gastoTotal), 0);
             const ingresosExtraTotales = tramos.reduce((sum, t) => sum + num(t?.ingresoExtraTotal), 0);
-            const iva = tramos.some(t => Boolean(t?.iva)) ? valorLotes * 0.13 : 0;
-            const ganancia = valorLotes + ingresosExtraTotales - gastosTotales - iva;
+
+            const ingresosExtraIda = num(ida?.ingresoExtraTotal);
+            const ingresosExtraVuelta = num(vuelta?.ingresoExtraTotal);
+
+            const ivaIda = (ida?.iva ? (valorLotesIda + ingresosExtraIda) * 0.13 : 0);
+            const ivaVuelta = (vuelta?.iva ? (valorLotesVuelta + ingresosExtraVuelta) * 0.13 : 0);
+            const iva = ivaIda + ivaVuelta;
+
+            const ganancia = valorLotes + ingresosExtraTotales + iva - gastosTotales;
  
             els.viewBody.innerHTML = `
                 <div class="mb-3 border-bottom pb-2 d-flex justify-content-between align-items-start">
@@ -584,7 +607,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                         <div class="col-md col-sm-6">
                             <div class="border rounded p-2 bg-light h-100">
-                                <div class="small text-muted mb-1">IVA Retenido (13%)</div>
+                                <div class="small text-muted mb-1">IVA (+13%)</div>
                                 <strong class="fs-6 text-warning">${money(iva)}</strong>
                             </div>
                         </div>

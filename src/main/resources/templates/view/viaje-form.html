@@ -250,7 +250,7 @@
         <div class="row g-4">
             <!-- Columna Izquierda: Información General y Lotes -->
             <div class="col-lg-5 col-12">
-                <div class="card-clean h-100">
+                <div class="card-clean">
                     <h5 class="section-title">Información General</h5>
 
                     <div class="mb-4">
@@ -331,6 +331,38 @@
                         <label class="form-label fw-bold">Estado General del Viaje</label>
                         <div class="form-control form-control-sm trip-readonly text-secondary">Calculado automáticamente
                             por el estado de los tramos (Ida/Vuelta).
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen Financiero General -->
+                <div class="card-clean resumen-section mt-3">
+                    <h5 class="section-title">Resumen Financiero General</h5>
+
+                    <div class="resumen-grid">
+                        <div class="resumen-card card-ingreso">
+                            <div class="small text-secondary fw-semibold">Valor Lotes</div>
+                            <strong id="resumenValorLotes" class="fs-6">$0.00</strong>
+                        </div>
+                        <div class="resumen-card card-ingreso">
+                            <div class="small text-secondary fw-semibold">Ingresos Extra</div>
+                            <strong id="resumenIngresosExtra" class="fs-6">$0.00</strong>
+                        </div>
+                        <div class="resumen-card card-gasto">
+                            <div class="small text-secondary fw-semibold">Gastos Totales</div>
+                            <strong id="totalGastado" class="fs-6">$0.00</strong>
+                        </div>
+                        <div class="resumen-card card-iva">
+                            <div class="small text-secondary fw-semibold">IVA (+13%)</div>
+                            <strong id="resumenIVA" class="fs-6">$0.00</strong>
+                        </div>
+                        <div class="resumen-card card-ganancia" style="grid-column: span 2;">
+                            <div class="small text-secondary fw-bold">Balance General</div>
+                            <strong id="resumenGanancia">$0.00</strong>
+                        </div>
+                        <div class="resumen-card" style="grid-column: span 2;">
+                            <div class="small text-secondary fw-semibold">Total Lotes</div>
+                            <strong id="resumenLotes" class="fs-6">0</strong>
                         </div>
                     </div>
                 </div>
@@ -427,10 +459,14 @@
                                 <textarea id="idaObservaciones" class="form-control form-control-sm" rows="2"
                                           placeholder="Notas sobre el tramo de ida..."></textarea>
                             </div>
-                            <div class="col-12 mt-2">
+                            <div class="col-12 mt-2 d-flex gap-4">
                                 <div class="form-check form-switch">
                                     <input id="idaPagado" class="form-check-input" type="checkbox">
                                     <label class="form-check-label" for="idaPagado"><strong>Tramo pagado (Ida)</strong></label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input id="idaIva" class="form-check-input" type="checkbox">
+                                    <label class="form-check-label" for="idaIva"><strong>Aplicar IVA (Ida)</strong></label>
                                 </div>
                             </div>
                         </div>
@@ -565,6 +601,45 @@
                                 </table>
                             </div>
                         </div>
+
+                        <!-- Resumen Financiero por Tramo (Ida) -->
+                        <div class="resumen-tramo-section mt-4 border-top pt-3">
+                            <h6 class="fw-bold text-secondary mb-3 text-uppercase" style="font-size:0.8rem; letter-spacing:0.5px;">
+                                Resumen Financiero del Tramo (Ida)
+                            </h6>
+                            <div class="row g-2 text-center">
+                                <div class="col-6 col-md-3">
+                                    <div class="border rounded p-2 bg-light">
+                                        <div class="small text-muted mb-1 text-truncate" style="font-size: 0.75rem;">Valor Lotes</div>
+                                        <strong id="tramoIdaValorLotes" class="fs-6 text-dark">$0.00</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="border rounded p-2 bg-light">
+                                        <div class="small text-muted mb-1 text-truncate" style="font-size: 0.75rem;">Ingresos Extra</div>
+                                        <strong id="tramoIdaIngresosExtra" class="fs-6 text-success">$0.00</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="border rounded p-2 bg-light">
+                                        <div class="small text-muted mb-1 text-truncate" style="font-size: 0.75rem;">Gastos</div>
+                                        <strong id="tramoIdaGastos" class="fs-6 text-danger">$0.00</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="border rounded p-2 bg-light">
+                                        <div class="small text-muted mb-1 text-truncate" style="font-size: 0.75rem;">IVA (+13%)</div>
+                                        <strong id="tramoIdaIVA" class="fs-6 text-warning">$0.00</strong>
+                                    </div>
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <div class="border rounded p-2 bg-white border-2 border-primary shadow-sm d-flex justify-content-between align-items-center px-3">
+                                        <span class="small text-secondary fw-bold">Balance del Tramo (Ida)</span>
+                                        <strong id="tramoIdaGanancia" class="fs-6 text-primary">$0.00</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- PANE TRAMO VUELTA -->
@@ -643,11 +718,14 @@
                                 <textarea id="vueltaObservaciones" class="form-control form-control-sm" rows="2"
                                           placeholder="Notas sobre el tramo de vuelta..."></textarea>
                             </div>
-                            <div class="col-12 mt-2">
+                            <div class="col-12 mt-2 d-flex gap-4">
                                 <div class="form-check form-switch">
                                     <input id="vueltaPagado" class="form-check-input" type="checkbox">
-                                    <label class="form-check-label" for="vueltaPagado"><strong>Tramo pagado
-                                        (Vuelta)</strong></label>
+                                    <label class="form-check-label" for="vueltaPagado"><strong>Tramo pagado (Vuelta)</strong></label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input id="vueltaIva" class="form-check-input" type="checkbox">
+                                    <label class="form-check-label" for="vueltaIva"><strong>Aplicar IVA (Vuelta)</strong></label>
                                 </div>
                             </div>
                         </div>
@@ -782,56 +860,44 @@
                                 </table>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Resumen Financiero -->
-                <div class="card-clean resumen-section">
-                    <h5 class="section-title">Resumen Financiero</h5>
-                    <div class="iva-config mb-3">
-                        <div class="form-check form-switch">
-                            <input id="ivaActivoResumen" class="form-check-input" type="checkbox">
-                            <label class="form-check-label fw-bold" for="ivaActivoResumen">Aplicar IVA</label>
-                        </div>
-                        <div class="ms-3 d-flex align-items-center gap-1">
-                            <label class="form-label mb-0" for="ivaPorcentaje">% IVA</label>
-                            <input id="ivaPorcentaje" type="number" min="0" max="100" step="0.5" value="13"
-                                   class="form-control form-control-sm text-center" style="width:70px" disabled>
-                        </div>
-                    </div>
-
-                    <div class="resumen-grid">
-                        <div class="resumen-card card-ingreso">
-                            <div class="small text-secondary fw-semibold">Valor Lotes</div>
-                            <strong id="resumenValorLotes" class="fs-6">$0.00</strong>
-                        </div>
-                        <div class="resumen-card card-ingreso" style="border-color: #16a34a; background: rgba(22, 163, 74, 0.05);">
-                            <div class="small text-secondary fw-semibold">Ingresos Extra</div>
-                            <strong id="resumenIngresosExtra" class="fs-6" style="color: #15803d;">$0.00</strong>
-                        </div>
-                        <div class="resumen-card card-gasto">
-                            <div class="small text-secondary fw-semibold">Gastos Ida</div>
-                            <strong id="resumenGastosIda" class="fs-6">$0.00</strong>
-                        </div>
-                        <div class="resumen-card card-gasto">
-                            <div class="small text-secondary fw-semibold">Gastos Vuelta</div>
-                            <strong id="resumenGastosVuelta" class="fs-6">$0.00</strong>
-                        </div>
-                        <div class="resumen-card card-gasto animate-fade">
-                            <div class="small text-secondary fw-semibold">Total Gastos</div>
-                            <strong id="totalGastado" class="fs-6">$0.00</strong>
-                        </div>
-                        <div class="resumen-card card-iva">
-                            <div class="small text-secondary fw-semibold">IVA Retenido</div>
-                            <strong id="resumenIVA" class="fs-6">$0.00</strong>
-                        </div>
-                        <div class="resumen-card card-ganancia">
-                            <div class="small text-secondary fw-bold">Ganancia Neta</div>
-                            <strong id="resumenGanancia">$0.00</strong>
-                        </div>
-                        <div class="resumen-card">
-                            <div class="small text-secondary fw-semibold">Total Lotes</div>
-                            <strong id="resumenLotes" class="fs-6">0</strong>
+                        <!-- Resumen Financiero por Tramo (Vuelta) -->
+                        <div class="resumen-tramo-section mt-4 border-top pt-3">
+                            <h6 class="fw-bold text-secondary mb-3 text-uppercase" style="font-size:0.8rem; letter-spacing:0.5px;">
+                                Resumen Financiero del Tramo (Vuelta)
+                            </h6>
+                            <div class="row g-2 text-center">
+                                <div class="col-6 col-md-3">
+                                    <div class="border rounded p-2 bg-light">
+                                        <div class="small text-muted mb-1 text-truncate" style="font-size: 0.75rem;">Valor Lotes</div>
+                                        <strong id="tramoVueltaValorLotes" class="fs-6 text-dark">$0.00</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="border rounded p-2 bg-light">
+                                        <div class="small text-muted mb-1 text-truncate" style="font-size: 0.75rem;">Ingresos Extra</div>
+                                        <strong id="tramoVueltaIngresosExtra" class="fs-6 text-success">$0.00</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="border rounded p-2 bg-light">
+                                        <div class="small text-muted mb-1 text-truncate" style="font-size: 0.75rem;">Gastos</div>
+                                        <strong id="tramoVueltaGastos" class="fs-6 text-danger">$0.00</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="border rounded p-2 bg-light">
+                                        <div class="small text-muted mb-1 text-truncate" style="font-size: 0.75rem;">IVA (+13%)</div>
+                                        <strong id="tramoVueltaIVA" class="fs-6 text-warning">$0.00</strong>
+                                    </div>
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <div class="border rounded p-2 bg-white border-2 border-primary shadow-sm d-flex justify-content-between align-items-center px-3">
+                                        <span class="small text-secondary fw-bold">Balance del Tramo (Vuelta)</span>
+                                        <strong id="tramoVueltaGanancia" class="fs-6 text-primary">$0.00</strong>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

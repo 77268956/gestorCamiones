@@ -445,15 +445,18 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const updateResumen = () => {
-        const idaPagado = $("idaPagado")?.checked ?? false;
-        const vueltaPagado = $("vueltaPagado")?.checked ?? false;
-        let valorLotes = 0;
+        let valorLotesIda = 0;
+        let valorLotesVuelta = 0;
         data.lotesSeleccionados.forEach(lote => {
             const tramo = normalizeTipoTramo(lote.tipoTramo) || "ida";
-            if ((tramo === "ida" && idaPagado) || (tramo === "vuelta" && vueltaPagado)) {
-                valorLotes += num(lote.valorDeclarado ?? lote.valor_declarado);
+            const val = num(lote.valorDeclarado ?? lote.valor_declarado);
+            if (tramo === "ida") {
+                valorLotesIda += val;
+            } else if (tramo === "vuelta") {
+                valorLotesVuelta += val;
             }
         });
+        const totalValorLotes = valorLotesIda + valorLotesVuelta;
 
         const gastosIda = state.ida.gastos.reduce((acc, gasto) => acc + num(gasto.monto), 0);
         const gastosVuelta = state.vuelta.gastos.reduce((acc, gasto) => acc + num(gasto.monto), 0);
@@ -461,26 +464,64 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const ingresosExtraIda = state.ida.ingresosExtra.reduce((acc, ing) => acc + num(ing.monto), 0);
         const ingresosExtraVuelta = state.vuelta.ingresosExtra.reduce((acc, ing) => acc + num(ing.monto), 0);
-        const totalIngresosExtra = (idaPagado ? ingresosExtraIda : 0) + (vueltaPagado ? ingresosExtraVuelta : 0);
+        const totalIngresosExtra = ingresosExtraIda + ingresosExtraVuelta;
 
-        const ivaActivo = $("ivaActivoResumen")?.checked ?? false;
-        const ivaPorcentaje = num($("ivaPorcentaje")?.value || 13);
-        const valorLotesConExtras = valorLotes + totalIngresosExtra;
-        const totalIva = ivaActivo ? valorLotesConExtras * (ivaPorcentaje / 100) : 0;
-        const ganancia = valorLotesConExtras - totalGastos - totalIva;
+        const ivaIdaActivo = $("idaIva")?.checked ?? false;
+        const ivaVueltaActivo = $("vueltaIva")?.checked ?? false;
 
+        // Cálculos Tramo Ida
+        const ivaIda = ivaIdaActivo ? (valorLotesIda + ingresosExtraIda) * 0.13 : 0;
+        const gananciaIda = (valorLotesIda + ingresosExtraIda + ivaIda) - gastosIda;
+
+        // Cálculos Tramo Vuelta
+        const ivaVuelta = ivaVueltaActivo ? (valorLotesVuelta + ingresosExtraVuelta) * 0.13 : 0;
+        const gananciaVuelta = (valorLotesVuelta + ingresosExtraVuelta + ivaVuelta) - gastosVuelta;
+
+        // Cálculos Generales
+        const totalIva = ivaIda + ivaVuelta;
+        const totalGanancia = gananciaIda + gananciaVuelta;
+
+        // Actualizar badges en las cabeceras de gastos/ingresos
         setText("idaTotalGastos", formatMoney(gastosIda));
         setText("vueltaTotalGastos", formatMoney(gastosVuelta));
         setText("idaTotalIngresosExtra", formatMoney(ingresosExtraIda));
         setText("vueltaTotalIngresosExtra", formatMoney(ingresosExtraVuelta));
-        setText("resumenValorLotes", formatMoney(valorLotes));
+
+        // Actualizar Resumen Financiero General
+        setText("resumenValorLotes", formatMoney(totalValorLotes));
         setText("resumenIngresosExtra", formatMoney(totalIngresosExtra));
-        setText("resumenGastosIda", formatMoney(gastosIda));
-        setText("resumenGastosVuelta", formatMoney(gastosVuelta));
         setText("totalGastado", formatMoney(totalGastos));
         setText("resumenIVA", formatMoney(totalIva));
-        setText("resumenGanancia", formatMoney(ganancia));
+        setText("resumenGanancia", formatMoney(totalGanancia));
         setText("resumenLotes", String(data.lotesSeleccionados.length));
+
+        // Actualizar Resumen Financiero por Tramo (Ida)
+        setText("tramoIdaValorLotes", formatMoney(valorLotesIda));
+        setText("tramoIdaIngresosExtra", formatMoney(ingresosExtraIda));
+        setText("tramoIdaGastos", formatMoney(gastosIda));
+        setText("tramoIdaIVA", formatMoney(ivaIda));
+        setText("tramoIdaGanancia", formatMoney(gananciaIda));
+
+        // Actualizar Resumen Financiero por Tramo (Vuelta)
+        setText("tramoVueltaValorLotes", formatMoney(valorLotesVuelta));
+        setText("tramoVueltaIngresosExtra", formatMoney(ingresosExtraVuelta));
+        setText("tramoVueltaGastos", formatMoney(gastosVuelta));
+        setText("tramoVueltaIVA", formatMoney(ivaVuelta));
+        setText("tramoVueltaGanancia", formatMoney(gananciaVuelta));
+
+        // Actualizar color dinámico de balance (ganancia/pérdida)
+        const updateGananciaColor = (id, val) => {
+            const el = $(id);
+            if (!el) return;
+            if (val >= 0) {
+                el.style.setProperty("color", "#16a34a", "important"); // Verde
+            } else {
+                el.style.setProperty("color", "#dc2626", "important"); // Rojo
+            }
+        };
+        updateGananciaColor("resumenGanancia", totalGanancia);
+        updateGananciaColor("tramoIdaGanancia", gananciaIda);
+        updateGananciaColor("tramoVueltaGanancia", gananciaVuelta);
     };
 
     const renderLotesAsociados = () => {
@@ -961,7 +1002,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setValue(`${tramoKey}Estado`, tramo.estadoViaje || tramo.estado_viaje || "");
         const pagado = $( `${tramoKey}Pagado` );
         if (pagado) pagado.checked = Boolean(tramo.pagado);
-        const iva = $("ivaActivoResumen");
+        const iva = $(`${tramoKey}Iva`);
         if (iva && typeof tramo.iva === "boolean") iva.checked = Boolean(tramo.iva);
         state[tramoKey].gastos = Array.isArray(tramo.gastos) ? tramo.gastos.map(gasto => ({
             id: Number(gasto.id || 0),
@@ -1135,7 +1176,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const observaciones = getFieldValue(tramo, "Observaciones");
         const estadoViaje = getFieldValue(tramo, "Estado");
         const pagado = $( `${tramo}Pagado` )?.checked ?? false;
-        const iva = $("ivaActivoResumen")?.checked ?? false;
+        const iva = $(`${tramo}Iva`)?.checked ?? false;
         const gastos = state[tramo].gastos.map(gasto => ({
             id: Number(gasto.id || 0),
             idTipoGasto: Number(gasto.tipoId || 0),
@@ -1388,11 +1429,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    $("ivaActivoResumen")?.addEventListener("change", event => {
-        $("ivaPorcentaje").disabled = !event.target.checked;
-        updateResumen();
-    });
-    $("ivaPorcentaje")?.addEventListener("input", updateResumen);
+    $("idaIva")?.addEventListener("change", updateResumen);
+    $("vueltaIva")?.addEventListener("change", updateResumen);
     $("idaPagado")?.addEventListener("change", updateResumen);
     $("vueltaPagado")?.addEventListener("change", updateResumen);
     ["idaSalida", "idaLlegada", "vueltaSalida", "vueltaLlegada"].forEach(id => $(id)?.addEventListener("input", () => {
