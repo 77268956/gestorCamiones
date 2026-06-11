@@ -94,6 +94,9 @@ public class ViajeDetalle {
     @OneToMany(mappedBy = "viajeDetalle", cascade = CascadeType.ALL)
     private List<GastoViaje> gastos;
 
+    @OneToMany(mappedBy = "viajeDetalle", cascade = CascadeType.ALL)
+    private List<IngresoExtraViaje> ingresosExtra;
+
     // 🔹 Auditoría
 
     @Column(name = "created_at", insertable = false, updatable = false)

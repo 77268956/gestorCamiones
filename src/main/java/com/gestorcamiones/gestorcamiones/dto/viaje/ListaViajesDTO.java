@@ -26,6 +26,7 @@ public class ListaViajesDTO {
     private long id_admin;
 
     private BigDecimal gastoTotal = BigDecimal.ZERO;
+    private BigDecimal ingresoExtraTotal = BigDecimal.ZERO;
 
     private int viajesTotales;
     private int viajesActivos;

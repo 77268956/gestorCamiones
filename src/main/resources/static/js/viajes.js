@@ -141,8 +141,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const isPagado = Boolean(tramo.pagado);
         const isIva = Boolean(tramo.iva);
         const gasto = num(tramo.gastoTotal);
-        const ingreso = num(tramo.precioTramo ?? tramo.precio);
-        const ganancia = ingreso - gasto;
+        const tramoIngresosExtra = num(tramo.ingresoExtraTotal);
+        const ganancia = tramoIngresosExtra - gasto;
         const tipoLabel = tipo === "ida" ? "Ida" : "Vuelta";
         const indicatorClass = tipo === "ida" ? "tleg-ind-ida" : "tleg-ind-vuelta";
         const cardClass = tipo === "ida" ? "tleg-ida" : "tleg-vuelta";
@@ -176,7 +176,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span class="tleg-fin-val text-danger">${money(gasto)}</span>
                     </div>
                     <div class="tleg-fin-row">
-                        <span class="tleg-fin-label">Ganancia</span>
+                        <span class="tleg-fin-label">Ing. Extra</span>
+                        <span class="tleg-fin-val text-success">${money(tramoIngresosExtra)}</span>
+                    </div>
+                    <div class="tleg-fin-row">
+                        <span class="tleg-fin-label">Balance</span>
                         <span class="tleg-fin-val ${ganancia >= 0 ? "text-success" : "text-danger"}">${money(ganancia)}</span>
                     </div>
                     <div class="mt-1">
@@ -219,6 +223,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const gastos = Array.isArray(tramo.gastos) ? tramo.gastos : [];
         const totalGastos = gastos.reduce((sum, g) => sum + num(g?.monto), 0);
+        const ingresos = Array.isArray(tramo.ingresosExtra) ? tramo.ingresosExtra : [];
+        const totalIngresos = ingresos.reduce((sum, i) => sum + num(i?.monto), 0);
         const pagadoBadge = tramo.pagado ? "bg-success" : "bg-secondary";
         const pagadoLabel = tramo.pagado ? "Tramo Pagado" : "Pago Pendiente";
         const estadoBadge = normState(tramo.estadoViaje || tramo.estado) === "completado" ? "bg-success" : "bg-warning text-dark";
@@ -237,6 +243,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     </tr>`;
             }).join("")
             : `<tr><td colspan="5" class="text-center text-muted">Sin gastos registrados.</td></tr>`;
+
+        const ingresosRows = ingresos.length
+            ? ingresos.map(i => {
+                return `
+                    <tr>
+                        <td>${escapeHtml(i.categoriaNombre || `Categoría #${i.idCategoriaIngresoExtra}`)}</td>
+                        <td>${escapeHtml(i.descripcion || "-")}</td>
+                        <td class="text-end fw-semibold text-success">${money(i.monto)}</td>
+                        <td>${escapeHtml(i.fechaIngreso || "-")}</td>
+                    </tr>`;
+            }).join("")
+            : `<tr><td colspan="4" class="text-center text-muted">Sin ingresos extra.</td></tr>`;
 
         return `
             <div class="card border mb-3 p-3">
@@ -269,6 +287,22 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </tr>
                             </thead>
                             <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="border-top pt-2 mt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold small text-secondary">Ingresos Extra:</span>
+                        <span class="fw-bold text-success small">${money(totalIngresos)}</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle mb-0" style="font-size:0.85rem">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Categoría</th><th>Descripcion</th><th class="text-end">Monto</th><th>Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody>${ingresosRows}</tbody>
                         </table>
                     </div>
                 </div>
@@ -370,13 +404,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const lotes = Array.isArray(viaje.lotes) ? viaje.lotes : [];
             const totalLotes = Number(viaje.totalLotes ?? lotes.length) || lotes.length;
             const valorLotes = lotes.reduce((sum, l) => sum + num(l?.valorDeclarado ?? l?.valor_declarado), 0);
-
+ 
             const gastoIda = num(ida?.gastoTotal);
             const gastoVuelta = num(vuelta?.gastoTotal);
             const totalGasto = gastoIda + gastoVuelta;
+            const ingresoExtraTotal = num(viaje.ingresoExtraTotal);
             const iva = (ida?.iva ? valorLotes * 0.13 : 0) + (vuelta?.iva ? valorLotes * 0.13 : 0);
-            const ganancia = valorLotes - totalGasto - iva;
-
+            const ganancia = valorLotes + ingresoExtraTotal - totalGasto - iva;
+ 
             return `
                 <div class="vcard" data-viaje-id="${escapeHtml(String(getViajeId(viaje)))}">
                     <div class="vcard-header">
@@ -399,6 +434,10 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="vcard-stat-row">
                                 <span class="vcard-stat-label">Valor lotes</span>
                                 <span class="vcard-stat-val">${money(valorLotes)}</span>
+                            </div>
+                            <div class="vcard-stat-row">
+                                <span class="vcard-stat-label">Ingresos Extra</span>
+                                <span class="vcard-stat-val text-success">${money(ingresoExtraTotal)}</span>
                             </div>
                             <div class="vcard-stat-divider"></div>
                             <div class="vcard-stat-row">
@@ -500,9 +539,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const lotesAsignados = Array.isArray(data.lotesAsignados) ? data.lotesAsignados : [];
             const valorLotes = lotesAsignados.reduce((sum, l) => sum + num(l?.valorDeclarado), 0);
             const gastosTotales = tramos.reduce((sum, t) => sum + num(t?.gastoTotal), 0);
+            const ingresosExtraTotales = tramos.reduce((sum, t) => sum + num(t?.ingresoExtraTotal), 0);
             const iva = tramos.some(t => Boolean(t?.iva)) ? valorLotes * 0.13 : 0;
-            const ganancia = valorLotes - gastosTotales - iva;
-
+            const ganancia = valorLotes + ingresosExtraTotales - gastosTotales - iva;
+ 
             els.viewBody.innerHTML = `
                 <div class="mb-3 border-bottom pb-2 d-flex justify-content-between align-items-start">
                     <div>
@@ -518,26 +558,32 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="mt-3 border-top pt-3">
                     <h6 class="fw-bold text-secondary mb-3 text-uppercase" style="font-size:0.85rem;letter-spacing:0.8px;">Resumen Consolidado del Viaje</h6>
                     <div class="row g-3 text-center">
-                        <div class="col-md-3 col-sm-6">
-                            <div class="border rounded p-2 bg-light">
+                        <div class="col-md col-sm-6">
+                            <div class="border rounded p-2 bg-light h-100">
                                 <div class="small text-muted mb-1">Duracion Total</div>
                                 <strong class="fs-6">${escapeHtml(duracion)}</strong>
                             </div>
                         </div>
-                        <div class="col-md-3 col-sm-6">
-                            <div class="border rounded p-2 bg-light">
+                        <div class="col-md col-sm-6">
+                            <div class="border rounded p-2 bg-light h-100">
                                 <div class="small text-muted mb-1">Valor Contenedores</div>
                                 <strong class="fs-6 text-primary">${money(valorLotes)}</strong>
                             </div>
                         </div>
-                        <div class="col-md-3 col-sm-6">
-                            <div class="border rounded p-2 bg-light">
+                        <div class="col-md col-sm-6">
+                            <div class="border rounded p-2 bg-light h-100">
+                                <div class="small text-muted mb-1">Ingresos Extra</div>
+                                <strong class="fs-6 text-success">${money(ingresosExtraTotales)}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md col-sm-6">
+                            <div class="border rounded p-2 bg-light h-100">
                                 <div class="small text-muted mb-1">Total Gastado</div>
                                 <strong class="fs-6 text-danger">${money(gastosTotales)}</strong>
                             </div>
                         </div>
-                        <div class="col-md-3 col-sm-6">
-                            <div class="border rounded p-2 bg-light">
+                        <div class="col-md col-sm-6">
+                            <div class="border rounded p-2 bg-light h-100">
                                 <div class="small text-muted mb-1">IVA Retenido (13%)</div>
                                 <strong class="fs-6 text-warning">${money(iva)}</strong>
                             </div>

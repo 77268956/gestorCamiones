@@ -2,7 +2,10 @@ package com.gestorcamiones.gestorcamiones.service.viaje;
 
 import com.gestorcamiones.gestorcamiones.dto.gasto.GastoViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.tramo.TramoDTO;
+import com.gestorcamiones.gestorcamiones.dto.ingreso.IngresoExtraDTO;
 import com.gestorcamiones.gestorcamiones.entity.GastoViaje;
+import com.gestorcamiones.gestorcamiones.entity.IngresoExtraViaje;
+import com.gestorcamiones.gestorcamiones.entity.CategoriaIngresoExtra;
 import com.gestorcamiones.gestorcamiones.entity.TipoGasto;
 import com.gestorcamiones.gestorcamiones.entity.Usuario;
 import com.gestorcamiones.gestorcamiones.entity.Viaje;
@@ -10,6 +13,8 @@ import com.gestorcamiones.gestorcamiones.entity.ViajeDetalle;
 import com.gestorcamiones.gestorcamiones.mapper.GastosViajesMapper;
 import com.gestorcamiones.gestorcamiones.repository.CamionRepository;
 import com.gestorcamiones.gestorcamiones.repository.GastosViajeRepository;
+import com.gestorcamiones.gestorcamiones.repository.IngresoExtraViajeRepository;
+import com.gestorcamiones.gestorcamiones.repository.CategoriaIngresoExtraRepository;
 import com.gestorcamiones.gestorcamiones.repository.TipoGastoRepository;
 import com.gestorcamiones.gestorcamiones.repository.UsuarioRepository;
 import com.gestorcamiones.gestorcamiones.repository.ViajesDetallerRepository;
@@ -34,6 +39,8 @@ public class ViajeDetallesService implements IViajeDetalleService {
     private final UsuarioRepository usuarioRepository;
     private final TipoGastoRepository tipoGastoRepository;
     private final GastosViajeRepository gastosViajeRepository;
+    private final IngresoExtraViajeRepository ingresoExtraViajeRepository;
+    private final CategoriaIngresoExtraRepository categoriaIngresoExtraRepository;
 
     public ViajeDetallesService(ViajesDetallerRepository viajesDetallerRepository,
                                GastosViajeServicie gastosService,
@@ -41,7 +48,9 @@ public class ViajeDetallesService implements IViajeDetalleService {
                                CamionRepository camionRepository,
                                UsuarioRepository usuarioRepository,
                                TipoGastoRepository tipoGastoRepository,
-                               GastosViajeRepository gastosViajeRepository) {
+                               GastosViajeRepository gastosViajeRepository,
+                               IngresoExtraViajeRepository ingresoExtraViajeRepository,
+                               CategoriaIngresoExtraRepository categoriaIngresoExtraRepository) {
         this.viajesDetallerRepository = viajesDetallerRepository;
         this.gastosService = gastosService;
         this.mapper = mapper;
@@ -49,6 +58,8 @@ public class ViajeDetallesService implements IViajeDetalleService {
         this.usuarioRepository = usuarioRepository;
         this.tipoGastoRepository = tipoGastoRepository;
         this.gastosViajeRepository = gastosViajeRepository;
+        this.ingresoExtraViajeRepository = ingresoExtraViajeRepository;
+        this.categoriaIngresoExtraRepository = categoriaIngresoExtraRepository;
     }
 
     @Override
@@ -60,6 +71,7 @@ public class ViajeDetallesService implements IViajeDetalleService {
             aplicarTramo(detalle, dto, null, viaje.getIdViaje());
             detalle = viajesDetallerRepository.save(detalle);
             syncGastos(detalle, dto.getGastos(), usuarioAdmin);
+            syncIngresosExtra(detalle, dto.getIngresosExtra());
             viaje.addDetalle(detalle);
         }
     }
@@ -116,6 +128,7 @@ public class ViajeDetallesService implements IViajeDetalleService {
 
             // Sincronizar gastos con transacción separada si es necesario
             syncGastos(detalle, dto.getGastos(), usuarioAdmin);
+            syncIngresosExtra(detalle, dto.getIngresosExtra());
 
             // Agregar al viaje si es nuevo
             if (!viaje.getDetalles().contains(detalle)) {
@@ -299,6 +312,56 @@ public class ViajeDetallesService implements IViajeDetalleService {
             gasto.setFechaGasto(gastoDTO.getFechaGasto());
 
             gastosService.guardarGasto(gasto);
+        }
+    }
+
+    private void syncIngresosExtra(ViajeDetalle detalle, List<IngresoExtraDTO> incoming) {
+        if (detalle == null) return;
+        final List<IngresoExtraDTO> nuevos = incoming != null ? incoming : List.of();
+
+        if (detalle.getIngresosExtra() == null) {
+            detalle.setIngresosExtra(new ArrayList<>());
+        }
+
+        Map<Long, IngresoExtraViaje> existentes = new HashMap<>();
+        for (IngresoExtraViaje i : detalle.getIngresosExtra()) {
+            if (i.getIdIngresoExtraViaje() != null) {
+                existentes.put(i.getIdIngresoExtraViaje(), i);
+            }
+        }
+
+        // Soft-delete los que ya no vienen en el payload (edicion real, sin borrar/recrear el detalle).
+        for (IngresoExtraViaje i : List.copyOf(detalle.getIngresosExtra())) {
+            Long id = i.getIdIngresoExtraViaje();
+            if (id == null) continue;
+            boolean sigue = nuevos.stream().anyMatch(dto -> dto != null && dto.getId() > 0 && dto.getId() == id);
+            if (!sigue) {
+                detalle.getIngresosExtra().remove(i);
+                ingresoExtraViajeRepository.delete(i);
+            }
+        }
+
+        for (IngresoExtraDTO ingresoDTO : nuevos) {
+            if (ingresoDTO == null) continue;
+
+            IngresoExtraViaje ingreso;
+            if (ingresoDTO.getId() > 0 && existentes.containsKey(ingresoDTO.getId())) {
+                ingreso = existentes.get(ingresoDTO.getId());
+            } else {
+                ingreso = new IngresoExtraViaje();
+                ingreso.setIdIngresoExtraViaje(null);
+                ingreso.setViajeDetalle(detalle);
+                detalle.getIngresosExtra().add(ingreso);
+            }
+
+            CategoriaIngresoExtra categoria = categoriaIngresoExtraRepository.findById(ingresoDTO.getIdCategoriaIngresoExtra())
+                    .orElseThrow(() -> new IllegalArgumentException("CategoriaIngresoExtra no encontrada"));
+            ingreso.setCategoriaIngresoExtra(categoria);
+            ingreso.setMonto(ingresoDTO.getMonto());
+            ingreso.setDescripcion(ingresoDTO.getDescripcion());
+            ingreso.setFechaIngreso(ingresoDTO.getFechaIngreso());
+
+            ingresoExtraViajeRepository.save(ingreso);
         }
     }
 }

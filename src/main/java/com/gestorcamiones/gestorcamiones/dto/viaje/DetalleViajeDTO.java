@@ -33,6 +33,7 @@ public class DetalleViajeDTO {
     private Boolean pagado;
     private Boolean iva;
     private BigDecimal gastoTotal;
+    private BigDecimal ingresoExtraTotal;
 
     // Ubicación (V2)
     private Pais paisSalida;

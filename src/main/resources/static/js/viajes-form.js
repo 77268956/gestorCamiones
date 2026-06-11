@@ -17,8 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const viajeId = new URLSearchParams(window.location.search).get("id");
 
     const state = {
-        ida: {detalleId: 0, gastos: [], editIndex: null},
-        vuelta: {detalleId: 0, gastos: [], editIndex: null}
+        ida: {detalleId: 0, gastos: [], ingresosExtra: [], editIndex: null, editIngresoIndex: null},
+        vuelta: {detalleId: 0, gastos: [], ingresosExtra: [], editIndex: null, editIngresoIndex: null}
     };
 
     const data = {
@@ -28,6 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
         editLoteCurrentData: null,
         tiposGasto: [],
         tiposGastoMap: {},
+        categoriasIngresoExtra: [],
+        categoriasIngresoExtraMap: {},
         estadosViajeCargados: false,
         paisesCargados: false,
         lotesEstadosCargados: false,
@@ -174,6 +176,38 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    const getIngresoCategoriaLabel = catId => {
+        const match = data.categoriasIngresoExtra.find(c => Number(c.idCategoriaIngresoExtra) === Number(catId));
+        return match?.nombre || `Categoría #${catId}`;
+    };
+
+    const loadCategoriasIngresoExtra = async () => {
+        if (data.categoriasIngresoExtra.length) return;
+        try {
+            const categorias = await requestJson("/api/viajes/categorias-ingreso-extra");
+            data.categoriasIngresoExtra = Array.isArray(categorias) ? categorias : [];
+            data.categoriasIngresoExtraMap = {};
+            data.categoriasIngresoExtra.forEach(cat => {
+                if (cat?.nombre != null) {
+                    data.categoriasIngresoExtraMap[String(cat.nombre).toLowerCase()] = Number(cat.idCategoriaIngresoExtra);
+                }
+            });
+            qsa("[data-ingreso-tipo]").forEach(select => {
+                const current = select.value;
+                select.innerHTML = '<option value="">Seleccione</option>';
+                data.categoriasIngresoExtra.forEach(cat => {
+                    const option = document.createElement("option");
+                    option.value = String(cat.idCategoriaIngresoExtra);
+                    option.textContent = cat.nombre;
+                    select.appendChild(option);
+                });
+                if (current) select.value = current;
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     const loadEstadosViaje = async () => {
         if (data.estadosViajeCargados) return;
         try {
@@ -299,6 +333,70 @@ document.addEventListener("DOMContentLoaded", () => {
         updateResumen();
     };
 
+    const renderIngresosExtra = tramo => {
+        const tbody = $(`${tramo}IngresosBody`);
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        state[tramo].ingresosExtra.forEach((ingreso, index) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${esc(ingreso.categoriaLabel)}</td>
+                <td>${esc(ingreso.descripcion || "-")}</td>
+                <td class="text-end fw-semibold text-success">${formatMoney(ingreso.monto)}</td>
+                <td>${esc(ingreso.fecha || "-")}</td>
+                <td class="text-center">
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-edit-ingreso="${tramo}" data-index="${index}">Editar</button>
+                        <button type="button" class="btn btn-danger btn-sm text-white" data-delete-ingreso="${tramo}" data-index="${index}">Eliminar</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        updateResumen();
+    };
+
+    const resetIngresoForm = tramo => {
+        const form = $(`${tramo}IngresoForm`);
+        if (!form) return;
+        const tipo = form.querySelector("[data-ingreso-tipo]");
+        const desc = form.querySelector("[data-ingreso-desc]");
+        const monto = form.querySelector("[data-ingreso-monto]");
+        const fecha = form.querySelector("[data-ingreso-fecha]");
+        if (tipo) tipo.value = "";
+        if (desc) desc.value = "";
+        if (monto) monto.value = "";
+        if (fecha) fecha.value = "";
+        state[tramo].editIngresoIndex = null;
+        form.classList.remove("is-open");
+    };
+
+    const saveIngreso = tramo => {
+        const form = $(`${tramo}IngresoForm`);
+        if (!form) return;
+        const tipoSelect = form.querySelector("[data-ingreso-tipo]");
+        const rawTipo = tipoSelect?.value || "";
+        const catId = Number(rawTipo) || data.categoriasIngresoExtraMap[String(rawTipo).toLowerCase()] || 0;
+        const descripcion = form.querySelector("[data-ingreso-desc]")?.value || "";
+        const monto = num(form.querySelector("[data-ingreso-monto]")?.value);
+        const fecha = form.querySelector("[data-ingreso-fecha]")?.value || "";
+        if (!catId || monto <= 0) return;
+
+        const ingreso = {
+            id: state[tramo].editIngresoIndex !== null ? Number(state[tramo].ingresosExtra[state[tramo].editIngresoIndex]?.id || 0) : 0,
+            categoriaId: catId,
+            categoriaLabel: tipoSelect?.selectedOptions?.[0]?.textContent?.trim() || getIngresoCategoriaLabel(catId),
+            categoriaRaw: rawTipo,
+            descripcion,
+            monto,
+            fecha
+        };
+        if (state[tramo].editIngresoIndex !== null) state[tramo].ingresosExtra[state[tramo].editIngresoIndex] = ingreso;
+        else state[tramo].ingresosExtra.push(ingreso);
+        renderIngresosExtra(tramo);
+        resetIngresoForm(tramo);
+    };
+
     const resetGastoForm = tramo => {
         const form = $(`${tramo}GastoForm`);
         if (!form) return;
@@ -361,14 +459,22 @@ document.addEventListener("DOMContentLoaded", () => {
         const gastosVuelta = state.vuelta.gastos.reduce((acc, gasto) => acc + num(gasto.monto), 0);
         const totalGastos = gastosIda + gastosVuelta;
 
+        const ingresosExtraIda = state.ida.ingresosExtra.reduce((acc, ing) => acc + num(ing.monto), 0);
+        const ingresosExtraVuelta = state.vuelta.ingresosExtra.reduce((acc, ing) => acc + num(ing.monto), 0);
+        const totalIngresosExtra = (idaPagado ? ingresosExtraIda : 0) + (vueltaPagado ? ingresosExtraVuelta : 0);
+
         const ivaActivo = $("ivaActivoResumen")?.checked ?? false;
         const ivaPorcentaje = num($("ivaPorcentaje")?.value || 13);
-        const totalIva = ivaActivo ? valorLotes * (ivaPorcentaje / 100) : 0;
-        const ganancia = valorLotes - totalGastos - totalIva;
+        const valorLotesConExtras = valorLotes + totalIngresosExtra;
+        const totalIva = ivaActivo ? valorLotesConExtras * (ivaPorcentaje / 100) : 0;
+        const ganancia = valorLotesConExtras - totalGastos - totalIva;
 
         setText("idaTotalGastos", formatMoney(gastosIda));
         setText("vueltaTotalGastos", formatMoney(gastosVuelta));
+        setText("idaTotalIngresosExtra", formatMoney(ingresosExtraIda));
+        setText("vueltaTotalIngresosExtra", formatMoney(ingresosExtraVuelta));
         setText("resumenValorLotes", formatMoney(valorLotes));
+        setText("resumenIngresosExtra", formatMoney(totalIngresosExtra));
         setText("resumenGastosIda", formatMoney(gastosIda));
         setText("resumenGastosVuelta", formatMoney(gastosVuelta));
         setText("totalGastado", formatMoney(totalGastos));
@@ -796,7 +902,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const idaPagado = $("idaPagado");
         const vueltaPagado = $("vueltaPagado");
         if (idaPagado && vueltaPagado) vueltaPagado.checked = idaPagado.checked;
+        state.vuelta.ingresosExtra = state.ida.ingresosExtra.map(ing => ({...ing, id: 0}));
         renderGastos("vuelta");
+        renderIngresosExtra("vuelta");
         updateDuraciones();
         updateResumen();
     };
@@ -814,8 +922,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const resetFormulario = () => {
         viajeForm?.reset();
         delete viajeForm.dataset.viajeId;
-        state.ida = {detalleId: 0, gastos: [], editIndex: null};
-        state.vuelta = {detalleId: 0, gastos: [], editIndex: null};
+        state.ida = {detalleId: 0, gastos: [], ingresosExtra: [], editIndex: null, editIngresoIndex: null};
+        state.vuelta = {detalleId: 0, gastos: [], ingresosExtra: [], editIndex: null, editIngresoIndex: null};
         data.lotesSeleccionados = [];
         data.lotesOriginalIds = new Set();
         data.editLoteCurrentData = null;
@@ -825,6 +933,8 @@ document.addEventListener("DOMContentLoaded", () => {
         $("vueltaChoferId").value = "";
         renderGastos("ida");
         renderGastos("vuelta");
+        renderIngresosExtra("ida");
+        renderIngresosExtra("vuelta");
         renderLotesAsociados();
         updateDuraciones();
         updateResumen();
@@ -863,7 +973,17 @@ document.addEventListener("DOMContentLoaded", () => {
             fecha: gasto.fechaGasto || gasto.fecha_gasto || gasto.fecha || "",
             evidencia: gasto.evidenciaUrl || gasto.evidencia_url || ""
         })) : [];
+        state[tramoKey].ingresosExtra = Array.isArray(tramo.ingresosExtra) ? tramo.ingresosExtra.map(ingreso => ({
+            id: Number(ingreso.id || 0),
+            categoriaId: Number(ingreso.idCategoriaIngresoExtra || 0),
+            categoriaLabel: ingreso.categoriaNombre || getIngresoCategoriaLabel(ingreso.idCategoriaIngresoExtra),
+            categoriaRaw: String(ingreso.idCategoriaIngresoExtra || ""),
+            descripcion: ingreso.descripcion || "",
+            monto: num(ingreso.monto),
+            fecha: ingreso.fechaIngreso || ingreso.fecha || ""
+        })) : [];
         renderGastos(tramoKey);
+        renderIngresosExtra(tramoKey);
     };
 
     const cargarViajeDetalle = async id => {
@@ -875,6 +995,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (btnGuardarViaje) btnGuardarViaje.disabled = true;
         try {
             await loadTiposGasto();
+            await loadCategoriasIngresoExtra();
             await loadEstadosViaje();
             await loadPaises();
             await loadLotesDisponibles();
@@ -1024,10 +1145,18 @@ document.addEventListener("DOMContentLoaded", () => {
             fechaGasto: gasto.fecha || null
         }));
 
+        const ingresosExtra = state[tramo].ingresosExtra.map(ingreso => ({
+            id: Number(ingreso.id || 0),
+            idCategoriaIngresoExtra: Number(ingreso.categoriaId || 0),
+            monto: num(ingreso.monto),
+            descripcion: ingreso.descripcion || "",
+            fechaIngreso: ingreso.fecha || null
+        }));
+
         const hasData = Boolean(
             idCamion || idConductor || fechaSalida || fechaEntrada || estadoViaje ||
             paisSalida || paisDestino || direccionSalida || direccionDestino || observaciones ||
-            pagado || iva || gastos.length
+            pagado || iva || gastos.length || ingresosExtra.length
         );
         if (!hasData) return null;
 
@@ -1046,7 +1175,8 @@ document.addEventListener("DOMContentLoaded", () => {
             direccionSalida,
             direccionDestino,
             observaciones,
-            gastos
+            gastos,
+            ingresosExtra
         };
     };
 
@@ -1217,6 +1347,43 @@ document.addEventListener("DOMContentLoaded", () => {
                 const tramo = del.dataset.deleteGasto;
                 state[tramo].gastos.splice(Number(del.dataset.index), 1);
                 renderGastos(tramo);
+            }
+        });
+    });
+
+    qsa("[data-ingreso-btn]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            $(`${btn.dataset.ingresoBtn}IngresoForm`)?.classList.add("is-open");
+        });
+    });
+    qsa("[data-ingreso-cancelar]").forEach(btn => {
+        btn.addEventListener("click", () => resetIngresoForm(btn.dataset.ingresoCancelar));
+    });
+    qsa("[data-ingreso-guardar]").forEach(btn => {
+        btn.addEventListener("click", () => saveIngreso(btn.dataset.ingresoGuardar));
+    });
+    qsa("[id$='IngresosBody']").forEach(tbody => {
+        tbody.addEventListener("click", event => {
+            const edit = event.target.closest("[data-edit-ingreso]");
+            if (edit) {
+                const tramo = edit.dataset.editIngreso;
+                const index = Number(edit.dataset.index);
+                const ingreso = state[tramo].ingresosExtra[index];
+                if (!ingreso) return;
+                const form = $(`${tramo}IngresoForm`);
+                form.querySelector("[data-ingreso-tipo]").value = ingreso.categoriaRaw;
+                form.querySelector("[data-ingreso-desc]").value = ingreso.descripcion || "";
+                form.querySelector("[data-ingreso-monto]").value = ingreso.monto || "";
+                form.querySelector("[data-ingreso-fecha]").value = ingreso.fecha || "";
+                state[tramo].editIngresoIndex = index;
+                form.classList.add("is-open");
+                return;
+            }
+            const del = event.target.closest("[data-delete-ingreso]");
+            if (del) {
+                const tramo = del.dataset.deleteIngreso;
+                state[tramo].ingresosExtra.splice(Number(del.dataset.index), 1);
+                renderIngresosExtra(tramo);
             }
         });
     });
@@ -1465,7 +1632,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Initial load
     (async () => {
-        await Promise.all([loadTiposGasto(), loadEstadosViaje(), loadPaises(), loadEstadosLote(), loadCategorias(), loadLotesDisponibles()]);
+        await Promise.all([loadTiposGasto(), loadEstadosViaje(), loadPaises(), loadEstadosLote(), loadCategorias(), loadLotesDisponibles(), loadCategoriasIngresoExtra()]);
         if (viajeId) await cargarViajeDetalle(viajeId);
         else {
             if (formTitle) formTitle.textContent = "Agregar viaje";

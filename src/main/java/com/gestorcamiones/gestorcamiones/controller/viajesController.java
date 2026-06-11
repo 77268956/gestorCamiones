@@ -4,11 +4,14 @@ import com.gestorcamiones.gestorcamiones.dto.viaje.ActualizarViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.CrearViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ListaViajesDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ViajeUpsertDTO;
+import com.gestorcamiones.gestorcamiones.entity.CategoriaIngresoExtra;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
 import com.gestorcamiones.gestorcamiones.entity.Enum.Pais;
 import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
+import com.gestorcamiones.gestorcamiones.repository.CategoriaIngresoExtraRepository;
 import com.gestorcamiones.gestorcamiones.security.CustomUserDetails;
 import com.gestorcamiones.gestorcamiones.service.viaje.ViajeService;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,10 +38,12 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/api/viajes")
 public class viajesController {
-    private ViajeService viajeService;
+    private final ViajeService viajeService;
+    private final CategoriaIngresoExtraRepository categoriaIngresoExtraRepository;
 
-    public viajesController(ViajeService viajeService) {
+    public viajesController(ViajeService viajeService, CategoriaIngresoExtraRepository categoriaIngresoExtraRepository) {
         this.viajeService = viajeService;
+        this.categoriaIngresoExtraRepository = categoriaIngresoExtraRepository;
     }
 
     @GetMapping("/estados")
@@ -54,6 +59,11 @@ public class viajesController {
     @GetMapping("/tipos-tramo")
     public TipoTramo[] listarTiposTramo() {
         return TipoTramo.values();
+    }
+
+    @GetMapping("/categorias-ingreso-extra")
+    public List<CategoriaIngresoExtra> listarCategoriasIngresoExtra() {
+        return categoriaIngresoExtraRepository.findAll();
     }
 
     @GetMapping

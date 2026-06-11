@@ -504,6 +504,67 @@
                                 </table>
                             </div>
                         </div>
+
+                        <!-- Ingresos Extra Ida -->
+                        <div class="gastos-section border-top pt-3 mt-4">
+                            <div class="gastos-header">
+                                <div>
+                                    <strong class="text-success">Ingresos Extra / Estadías (Ida):</strong>
+                                    <span id="idaTotalIngresosExtra" class="badge bg-success ms-2 fs-6">$0.00</span>
+                                </div>
+                                <button type="button" class="btn btn-outline-success btn-sm" data-ingreso-btn="ida">
+                                    <i class="fas fa-plus me-1"></i> Agregar ingreso
+                                </button>
+                            </div>
+
+                            <div id="idaIngresoForm" class="gasto-form" style="border-color: #16a34a; background: rgba(22, 163, 74, 0.02);">
+                                <div class="gasto-form-grid">
+                                    <div>
+                                        <label class="form-label">Categoría</label>
+                                        <select class="form-select form-select-sm" data-ingreso-tipo required>
+                                            <option value="">Seleccione</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Descripción</label>
+                                        <input type="text" class="form-control form-control-sm" data-ingreso-desc
+                                               placeholder="Detalle...">
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Monto</label>
+                                        <input type="number" min="0" step="0.01" class="form-control form-control-sm"
+                                               data-ingreso-monto placeholder="0.00" required>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Fecha</label>
+                                        <input type="date" class="form-control form-control-sm" data-ingreso-fecha>
+                                    </div>
+                                    <div class="gasto-form-actions">
+                                        <button type="button" class="btn btn-success btn-sm text-white" data-ingreso-guardar="ida">
+                                            Guardar
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                data-ingreso-cancelar="ida">Cancelar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive mt-3">
+                                <table class="table table-hover table-sm">
+                                    <thead>
+                                    <tr>
+                                        <th>Categoría</th>
+                                        <th>Descripción</th>
+                                        <th class="text-end">Monto</th>
+                                        <th>Fecha</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="idaIngresosBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- PANE TRAMO VUELTA -->
@@ -660,6 +721,67 @@
                                 </table>
                             </div>
                         </div>
+
+                        <!-- Ingresos Extra Vuelta -->
+                        <div class="gastos-section border-top pt-3 mt-4">
+                            <div class="gastos-header">
+                                <div>
+                                    <strong class="text-success">Ingresos Extra / Estadías (Vuelta):</strong>
+                                    <span id="vueltaTotalIngresosExtra" class="badge bg-success ms-2 fs-6">$0.00</span>
+                                </div>
+                                <button type="button" class="btn btn-outline-success btn-sm" data-ingreso-btn="vuelta">
+                                    <i class="fas fa-plus me-1"></i> Agregar ingreso
+                                </button>
+                            </div>
+
+                            <div id="vueltaIngresoForm" class="gasto-form" style="border-color: #16a34a; background: rgba(22, 163, 74, 0.02);">
+                                <div class="gasto-form-grid">
+                                    <div>
+                                        <label class="form-label">Categoría</label>
+                                        <select class="form-select form-select-sm" data-ingreso-tipo required>
+                                            <option value="">Seleccione</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Descripción</label>
+                                        <input type="text" class="form-control form-control-sm" data-ingreso-desc
+                                               placeholder="Detalle...">
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Monto</label>
+                                        <input type="number" min="0" step="0.01" class="form-control form-control-sm"
+                                               data-ingreso-monto placeholder="0.00" required>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Fecha</label>
+                                        <input type="date" class="form-control form-control-sm" data-ingreso-fecha>
+                                    </div>
+                                    <div class="gasto-form-actions">
+                                        <button type="button" class="btn btn-success btn-sm text-white" data-ingreso-guardar="vuelta">
+                                            Guardar
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                data-ingreso-cancelar="vuelta">Cancelar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive mt-3">
+                                <table class="table table-hover table-sm">
+                                    <thead>
+                                    <tr>
+                                        <th>Categoría</th>
+                                        <th>Descripción</th>
+                                        <th class="text-end">Monto</th>
+                                        <th>Fecha</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="vueltaIngresosBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -682,6 +804,10 @@
                         <div class="resumen-card card-ingreso">
                             <div class="small text-secondary fw-semibold">Valor Lotes</div>
                             <strong id="resumenValorLotes" class="fs-6">$0.00</strong>
+                        </div>
+                        <div class="resumen-card card-ingreso" style="border-color: #16a34a; background: rgba(22, 163, 74, 0.05);">
+                            <div class="small text-secondary fw-semibold">Ingresos Extra</div>
+                            <strong id="resumenIngresosExtra" class="fs-6" style="color: #15803d;">$0.00</strong>
                         </div>
                         <div class="resumen-card card-gasto">
                             <div class="small text-secondary fw-semibold">Gastos Ida</div>
@@ -982,9 +1108,6 @@
                             </div>
                             <input type="hidden" id="nuevoDestinatarioId">
                         </div>
-
-
-
 
                         <div class="col-md-4 col-sm-6">
                             <label class="form-label small mb-1">Peso (kg)</label>

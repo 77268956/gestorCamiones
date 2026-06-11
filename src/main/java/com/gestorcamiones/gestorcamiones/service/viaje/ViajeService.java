@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gestorcamiones.gestorcamiones.dto.auditoria.ViajeAuditoriaDTO;
 import com.gestorcamiones.gestorcamiones.dto.gasto.GastoViajeDTO;
+import com.gestorcamiones.gestorcamiones.dto.ingreso.IngresoExtraDTO;
 import com.gestorcamiones.gestorcamiones.dto.lote.LoteResumenDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ActualizarViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.CrearViajeDTO;
@@ -12,7 +13,13 @@ import com.gestorcamiones.gestorcamiones.dto.viaje.ListaViajesDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ViajeLoteAsignacionDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ViajeUpsertDTO;
 import com.gestorcamiones.gestorcamiones.dto.tramo.TramoDTO;
-import com.gestorcamiones.gestorcamiones.entity.*;
+import com.gestorcamiones.gestorcamiones.entity.Viaje;
+import com.gestorcamiones.gestorcamiones.entity.ViajeDetalle;
+import com.gestorcamiones.gestorcamiones.entity.ViajeLote;
+import com.gestorcamiones.gestorcamiones.entity.Lote;
+import com.gestorcamiones.gestorcamiones.entity.Usuario;
+import com.gestorcamiones.gestorcamiones.entity.GastoViaje;
+import com.gestorcamiones.gestorcamiones.entity.IngresoExtraViaje;
 import com.gestorcamiones.gestorcamiones.entity.Enum.AccionAuditoria;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
 import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
@@ -29,7 +36,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 /**
  * Servicio de viajes para V2.
@@ -60,6 +67,7 @@ public class ViajeService implements IViajeService {
         this.auditori = auditori;
         this.objectMapper = objectMapper;
     }
+
 
     @Override
     public Page<ListaViajesDTO> listaViejes(Pageable pageable,
@@ -97,6 +105,7 @@ public class ViajeService implements IViajeService {
             List<DetalleViajeDTO> vuelta = new ArrayList<>();
 
             BigDecimal gastoTotal = BigDecimal.ZERO;
+            BigDecimal ingresoExtraTotal = BigDecimal.ZERO;
 
             int contador = 0;
             for (ViajeDetalle detalle : viaje.getDetalles()) {
@@ -117,6 +126,14 @@ public class ViajeService implements IViajeService {
                     }
                 }
 
+                if (detalle.getIngresosExtra() != null) {
+                    for (IngresoExtraViaje ingreso : detalle.getIngresosExtra()) {
+                        if (ingreso.getMonto() != null) {
+                            ingresoExtraTotal = ingresoExtraTotal.add(ingreso.getMonto());
+                        }
+                    }
+                }
+
                 if (detalle.getEstado() != EstadoViaje.cancelado && detalle.getEstado() != EstadoViaje.completado) {
                     contador++;
                 }
@@ -129,6 +146,7 @@ public class ViajeService implements IViajeService {
             dto.setViajesTotales(ida.size() + vuelta.size());
 
             dto.setGastoTotal(gastoTotal);
+            dto.setIngresoExtraTotal(ingresoExtraTotal);
 
             // V2: Lotes asociados al viaje
             List<LoteResumenDTO> lotesDTO = new ArrayList<>();
@@ -290,6 +308,24 @@ public class ViajeService implements IViajeService {
                 tramo.setGastos(gastos);
             }
 
+            if (detalle.getIngresosExtra() != null) {
+                List<IngresoExtraDTO> ingresosExtra = new ArrayList<>();
+                for (IngresoExtraViaje ingreso : detalle.getIngresosExtra()) {
+                    IngresoExtraDTO ingresoDTO = new IngresoExtraDTO();
+                    ingresoDTO.setId(ingreso.getIdIngresoExtraViaje());
+                    ingresoDTO.setIdViajeDetalle(detalle.getIdViajeDetalle());
+                    if (ingreso.getCategoriaIngresoExtra() != null) {
+                        ingresoDTO.setIdCategoriaIngresoExtra(ingreso.getCategoriaIngresoExtra().getIdCategoriaIngresoExtra());
+                        ingresoDTO.setCategoriaNombre(ingreso.getCategoriaIngresoExtra().getNombre());
+                    }
+                    ingresoDTO.setMonto(ingreso.getMonto());
+                    ingresoDTO.setDescripcion(ingreso.getDescripcion());
+                    ingresoDTO.setFechaIngreso(ingreso.getFechaIngreso());
+                    ingresosExtra.add(ingresoDTO);
+                }
+                tramo.setIngresosExtra(ingresosExtra);
+            }
+
             tramos.add(tramo);
         }
         dto.setTramos(tramos);
@@ -412,6 +448,16 @@ public class ViajeService implements IViajeService {
             }
         }
         dto.setGastoTotal(gastosTotal);
+
+        BigDecimal ingresosExtraTotal = BigDecimal.ZERO;
+        if (detalle.getIngresosExtra() != null) {
+            for (IngresoExtraViaje ingreso : detalle.getIngresosExtra()) {
+                if (ingreso.getMonto() != null) {
+                    ingresosExtraTotal = ingresosExtraTotal.add(ingreso.getMonto());
+                }
+            }
+        }
+        dto.setIngresoExtraTotal(ingresosExtraTotal);
 
         dto.setFechaSalida(detalle.getFechaSalida());
         dto.setFechaEntrada(detalle.getFechaLlegada());
