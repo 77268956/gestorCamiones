@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return match?.numeroLote || `#${loteId}`;
     };
 
-    const tramoCard = (tramo, tipo, viajeId) => {
+    const tramoCard = (tramo, tipo, viajeId, lotes) => {
         if (!tramo) {
             const label = tipo === "ida" ? "Ida" : "Vuelta";
             return `
@@ -142,7 +142,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const isIva = Boolean(tramo.iva);
         const gasto = num(tramo.gastoTotal);
         const tramoIngresosExtra = num(tramo.ingresoExtraTotal);
-        const ganancia = tramoIngresosExtra - gasto;
+
+        const lotesTramo = Array.isArray(lotes) ? lotes.filter(l => String(l.tipoTramo || l.tipo_tramo || (tipo === "ida" ? "ida" : "")).toLowerCase() === tipo) : [];
+        const valorLotesTramo = lotesTramo.reduce((sum, l) => sum + num(l?.valorDeclarado ?? l?.valor_declarado), 0);
+        const ivaTramo = isIva ? (valorLotesTramo + tramoIngresosExtra) * 0.13 : 0;
+        const ganancia = (valorLotesTramo + tramoIngresosExtra + ivaTramo) - gasto;
         const tipoLabel = tipo === "ida" ? "Ida" : "Vuelta";
         const indicatorClass = tipo === "ida" ? "tleg-ind-ida" : "tleg-ind-vuelta";
         const cardClass = tipo === "ida" ? "tleg-ida" : "tleg-vuelta";
@@ -209,7 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>`;
     };
 
-    const tramoDetalle = (titulo, tramo) => {
+    const tramoDetalle = (titulo, tramo, lotesAsignadosTramo) => {
         if (!tramo) {
             return `
                 <div class="card bg-light border-0 mb-3 p-3">
@@ -225,6 +229,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const totalGastos = gastos.reduce((sum, g) => sum + num(g?.monto), 0);
         const ingresos = Array.isArray(tramo.ingresosExtra) ? tramo.ingresosExtra : [];
         const totalIngresos = ingresos.reduce((sum, i) => sum + num(i?.monto), 0);
+        const lotes = Array.isArray(lotesAsignadosTramo) ? lotesAsignadosTramo : [];
+        const totalLotesValor = lotes.reduce((sum, l) => sum + num(l?.valorDeclarado), 0);
         const pagadoBadge = tramo.pagado ? "bg-success" : "bg-secondary";
         const pagadoLabel = tramo.pagado ? "Tramo Pagado" : "Pago Pendiente";
         const estadoBadge = normState(tramo.estadoViaje || tramo.estado) === "completado" ? "bg-success" : "bg-warning text-dark";
@@ -256,6 +262,17 @@ document.addEventListener("DOMContentLoaded", () => {
             }).join("")
             : `<tr><td colspan="4" class="text-center text-muted">Sin ingresos extra.</td></tr>`;
 
+        const lotesRows = lotes.length
+            ? lotes.map(l => {
+                return `
+                    <tr>
+                        <td>${escapeHtml(l.numeroLote || "-")}</td>
+                        <td>${escapeHtml(l.nombreEncargado ? `Encargado: ${l.nombreEncargado}` : "-")}</td>
+                        <td class="text-end fw-semibold text-primary">${money(l.valorDeclarado)}</td>
+                    </tr>`;
+            }).join("")
+            : `<tr><td colspan="3" class="text-center text-muted">Sin contenedores asignados.</td></tr>`;
+
         return `
             <div class="card border mb-3 p-3">
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -273,6 +290,22 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="col-md-6"><strong>Duracion:</strong> ${escapeHtml(durationHuman(tramo.fechaSalida, tramo.fechaEntrada))}</div>
                     <div class="col-md-6"><strong>Ruta:</strong> ${escapeHtml([tramo.paisSalida, tramo.paisDestino].filter(Boolean).join(" -> ") || "-")}</div>
                     <div class="col-12"><strong>Observaciones:</strong> ${escapeHtml(tramo.observaciones || "-")}</div>
+                </div>
+                <div class="border-top pt-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold small text-secondary">Contenedores / Lotes:</span>
+                        <span class="fw-bold text-primary small">${money(totalLotesValor)}</span>
+                    </div>
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm table-bordered align-middle mb-0" style="font-size:0.85rem">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Número Lote</th><th>Descripción</th><th class="text-end">Valor Declarado</th>
+                                </tr>
+                            </thead>
+                            <tbody>${lotesRows}</tbody>
+                        </table>
+                    </div>
                 </div>
                 <div class="border-top pt-2">
                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -403,9 +436,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const vuelta = firstTramo(getViajeList(viaje, "listaVuelta")) || firstTramo(getViajeList(viaje, "lista_vuelta"));
             const lotes = Array.isArray(viaje.lotes) ? viaje.lotes : [];
             const totalLotes = Number(viaje.totalLotes ?? lotes.length) || lotes.length;
-            const valorLotesIda = lotes.filter(l => String(l.tipoTramo || l.tipo_tramo).toLowerCase() === "ida")
+            const valorLotesIda = lotes.filter(l => String(l.tipoTramo || l.tipo_tramo || "ida").toLowerCase() === "ida")
                 .reduce((sum, l) => sum + num(l?.valorDeclarado ?? l?.valor_declarado), 0);
-            const valorLotesVuelta = lotes.filter(l => String(l.tipoTramo || l.tipo_tramo).toLowerCase() === "vuelta")
+            const valorLotesVuelta = lotes.filter(l => String(l.tipoTramo || l.tipo_tramo || "").toLowerCase() === "vuelta")
                 .reduce((sum, l) => sum + num(l?.valorDeclarado ?? l?.valor_declarado), 0);
             const valorLotes = valorLotesIda + valorLotesVuelta;
  
@@ -433,8 +466,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                     <div class="vcard-body">
                         <div class="vcard-legs">
-                            ${tramoCard(ida, "ida", getViajeId(viaje))}
-                            ${tramoCard(vuelta, "vuelta", getViajeId(viaje))}
+                            ${tramoCard(ida, "ida", getViajeId(viaje), lotes)}
+                            ${tramoCard(vuelta, "vuelta", getViajeId(viaje), lotes)}
                         </div>
                         <div class="vcard-stats" data-viaje-action="view" data-viaje-id="${escapeHtml(String(getViajeId(viaje)))}" title="Ver detalle completo">
                             <div class="vcard-stats-header">Estadisticas</div>
@@ -548,23 +581,29 @@ document.addEventListener("DOMContentLoaded", () => {
             const duracion = salida && llegada ? durationHuman(salida, llegada) : "-";
 
             const lotesAsignados = Array.isArray(data.lotesAsignados) ? data.lotesAsignados : [];
-            const valorLotesIda = lotesAsignados.filter(l => String(l.tipoTramo).toLowerCase() === "ida")
+            const valorLotesIda = lotesAsignados.filter(l => String(l.tipoTramo || "ida").toLowerCase() === "ida")
                 .reduce((sum, l) => sum + num(l?.valorDeclarado), 0);
-            const valorLotesVuelta = lotesAsignados.filter(l => String(l.tipoTramo).toLowerCase() === "vuelta")
+            const valorLotesVuelta = lotesAsignados.filter(l => String(l.tipoTramo || "").toLowerCase() === "vuelta")
                 .reduce((sum, l) => sum + num(l?.valorDeclarado), 0);
             const valorLotes = valorLotesIda + valorLotesVuelta;
 
-            const gastosTotales = tramos.reduce((sum, t) => sum + num(t?.gastoTotal), 0);
-            const ingresosExtraTotales = tramos.reduce((sum, t) => sum + num(t?.ingresoExtraTotal), 0);
+            const tramoGasto = t => Array.isArray(t?.gastos) ? t.gastos.reduce((sum, g) => sum + num(g?.monto), 0) : 0;
+            const tramoIngresoExtra = t => Array.isArray(t?.ingresosExtra) ? t.ingresosExtra.reduce((sum, i) => sum + num(i?.monto), 0) : 0;
 
-            const ingresosExtraIda = num(ida?.ingresoExtraTotal);
-            const ingresosExtraVuelta = num(vuelta?.ingresoExtraTotal);
+            const gastosTotales = tramoGasto(ida) + tramoGasto(vuelta);
+            const ingresosExtraTotales = tramoIngresoExtra(ida) + tramoIngresoExtra(vuelta);
+
+            const ingresosExtraIda = tramoIngresoExtra(ida);
+            const ingresosExtraVuelta = tramoIngresoExtra(vuelta);
 
             const ivaIda = (ida?.iva ? (valorLotesIda + ingresosExtraIda) * 0.13 : 0);
             const ivaVuelta = (vuelta?.iva ? (valorLotesVuelta + ingresosExtraVuelta) * 0.13 : 0);
             const iva = ivaIda + ivaVuelta;
 
             const ganancia = valorLotes + ingresosExtraTotales + iva - gastosTotales;
+
+            const lotesIda = lotesAsignados.filter(l => String(l.tipoTramo || "ida").toLowerCase() === "ida");
+            const lotesVuelta = lotesAsignados.filter(l => String(l.tipoTramo || "").toLowerCase() === "vuelta");
  
             els.viewBody.innerHTML = `
                 <div class="mb-3 border-bottom pb-2 d-flex justify-content-between align-items-start">
@@ -575,8 +614,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span class="badge bg-secondary p-2">ID Viaje: ${escapeHtml(String(getViajeId(data)))}</span>
                 </div>
                 <div class="row">
-                    <div class="col-md-6">${tramoDetalle("Tramo Ida", ida)}</div>
-                    <div class="col-md-6">${tramoDetalle("Tramo Vuelta", vuelta)}</div>
+                    <div class="col-md-6">${tramoDetalle("Tramo Ida", ida, lotesIda)}</div>
+                    <div class="col-md-6">${tramoDetalle("Tramo Vuelta", vuelta, lotesVuelta)}</div>
                 </div>
                 <div class="mt-3 border-top pt-3">
                     <h6 class="fw-bold text-secondary mb-3 text-uppercase" style="font-size:0.85rem;letter-spacing:0.8px;">Resumen Consolidado del Viaje</h6>
