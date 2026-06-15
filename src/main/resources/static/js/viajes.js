@@ -456,15 +456,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const ganancia = valorLotes + ingresoExtraTotal + iva - totalGasto;
  
+            // Determinar estado general y camión para el header
+            let overallEstadoKey = "pendiente";
+            let overallEstadoLabel = "Pendiente";
+            const estadoIdaKey = ida ? normState(ida.estadoViaje || ida.estado) : null;
+            const estadoVueltaKey = vuelta ? normState(vuelta.estadoViaje || vuelta.estado) : null;
+            const activeStates = ["con_fallas", "cargando", "descargando", "en_camino"];
+            
+            // Priorizar mostrar estados activos, sino si ambos completados, etc.
+            if (activeStates.includes(estadoIdaKey)) { overallEstadoKey = estadoIdaKey; overallEstadoLabel = String(ida.estadoViaje || ida.estado).replaceAll("_", " "); }
+            else if (activeStates.includes(estadoVueltaKey)) { overallEstadoKey = estadoVueltaKey; overallEstadoLabel = String(vuelta.estadoViaje || vuelta.estado).replaceAll("_", " "); }
+            else if (estadoIdaKey === "completado" && (!vuelta || estadoVueltaKey === "completado" || estadoVueltaKey === "cancelado")) { overallEstadoKey = "completado"; overallEstadoLabel = "Completado"; }
+            else if (estadoVueltaKey === "completado" && (!ida || estadoIdaKey === "completado" || estadoIdaKey === "cancelado")) { overallEstadoKey = "completado"; overallEstadoLabel = "Completado"; }
+            else if (estadoIdaKey === "cancelado" && estadoVueltaKey === "cancelado") { overallEstadoKey = "cancelado"; overallEstadoLabel = "Cancelado"; }
+            else if (estadoIdaKey) { overallEstadoKey = estadoIdaKey; overallEstadoLabel = String(ida.estadoViaje || ida.estado).replaceAll("_", " "); }
+            
+            const camionGeneral = (ida?.camionNombre || vuelta?.camionNombre || "");
+
             return `
                 <div class="vcard" data-viaje-id="${escapeHtml(String(getViajeId(viaje)))}">
-                    <div class="vcard-header">
+                    <div class="vcard-header" data-toggle-viaje="${escapeHtml(String(getViajeId(viaje)))}">
                         <div class="vcard-title-group">
                             <span class="vcard-id">Viaje #${escapeHtml(String(getViajeId(viaje)))}</span>
                             <h3 class="vcard-name">${escapeHtml(getViajeNombre(viaje))}</h3>
                         </div>
+                        <div class="vcard-header-status-group">
+                            ${camionGeneral ? `<span class="vcard-header-truck"><i class="fas fa-truck"></i> ${escapeHtml(camionGeneral)}</span>` : ""}
+                            <span class="status-badge status-${escapeHtml(overallEstadoKey)}">${escapeHtml(overallEstadoLabel)}</span>
+                        </div>
+                        <button class="vcard-toggle-btn" data-toggle-viaje="${escapeHtml(String(getViajeId(viaje)))}" title="Expandir / Colapsar" type="button" aria-expanded="true">
+                            <svg class="vcard-toggle-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
                     </div>
-                    <div class="vcard-body">
+                    <div class="vcard-body" id="vcard-body-${escapeHtml(String(getViajeId(viaje)))}">
                         <div class="vcard-legs">
                             ${tramoCard(ida, "ida", getViajeId(viaje), lotes)}
                             ${tramoCard(vuelta, "vuelta", getViajeId(viaje), lotes)}
@@ -765,6 +791,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     els.lista?.addEventListener("click", event => {
+        // Toggle de Acordeón
+        const toggleHeader = event.target.closest('[data-toggle-viaje]');
+        if (toggleHeader) {
+            event.preventDefault();
+            event.stopPropagation();
+            const viajeId = toggleHeader.dataset.toggleViaje;
+            const vcard = toggleHeader.closest('.vcard');
+            const btn = vcard.querySelector('.vcard-toggle-btn');
+            
+            if (vcard) {
+                const isCollapsed = vcard.classList.toggle('is-collapsed');
+                if (btn) btn.setAttribute('aria-expanded', !isCollapsed);
+            }
+            return;
+        }
+
         const toggleBtn = event.target.closest("[data-toggle-field]");
         if (toggleBtn) {
             event.preventDefault();
