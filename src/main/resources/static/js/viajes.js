@@ -53,6 +53,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const n = Number.parseFloat(value);
         return Number.isNaN(n) ? 0 : n;
     };
+
+    // ── Helpers de fecha ────────────────────────────────────────────────────
+    const toISODate = d => d.toISOString().split('T')[0];
+    /** Devuelve { inicio, fin } para el mes de la fecha dada. */
+    const rangoMesActual = (fecha = new Date()) => {
+        const y = fecha.getFullYear();
+        const m = fecha.getMonth(); // 0-based
+        const inicio = new Date(y, m, 1);
+        const fin    = new Date(y, m + 1, 0); // último día del mes
+        return { inicio: toISODate(inicio), fin: toISODate(fin) };
+    };
     const escapeHtml = value => {
         if (value === null || value === undefined) return "";
         return String(value)
@@ -747,11 +758,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function limpiarFiltros() {
-        state.filters = {q: "", estado: "", fechaInicio: "", fechaFin: "", excluirCompletados: false};
-        if (els.filtroQ) els.filtroQ.value = "";
-        if (els.filtroInicio) els.filtroInicio.value = "";
-        if (els.filtroFin) els.filtroFin.value = "";
-        if (els.filtroEstado) els.filtroEstado.value = "";
+        const rango = rangoMesActual();
+        state.filters = {q: "", estado: "__activos__", fechaInicio: rango.inicio, fechaFin: rango.fin, excluirCompletados: true};
+        if (els.filtroQ)      els.filtroQ.value      = "";
+        if (els.filtroInicio) els.filtroInicio.value = rango.inicio;
+        if (els.filtroFin)    els.filtroFin.value    = rango.fin;
+        if (els.filtroEstado) els.filtroEstado.value = "__activos__";
         state.page = 0;
         cargarViajes(0);
     }
@@ -842,6 +854,19 @@ document.addEventListener("DOMContentLoaded", () => {
     async function init() {
         await cargarEstados();
         await cargarTiposGasto();
+
+        // Por defecto: viajes activos del mes actual
+        const rango = rangoMesActual();
+        if (els.filtroInicio) els.filtroInicio.value = rango.inicio;
+        if (els.filtroFin)    els.filtroFin.value    = rango.fin;
+        if (els.filtroEstado) els.filtroEstado.value = "__activos__";
+
+        // Inicializar state con activos + mes actual
+        state.filters.fechaInicio        = rango.inicio;
+        state.filters.fechaFin           = rango.fin;
+        state.filters.estado             = "";
+        state.filters.excluirCompletados = true;
+
         await cargarViajes(0);
     }
 
