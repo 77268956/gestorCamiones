@@ -4,14 +4,22 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gestorcamiones.gestorcamiones.dto.auditoria.ViajeAuditoriaDTO;
 import com.gestorcamiones.gestorcamiones.dto.gasto.GastoViajeDTO;
+import com.gestorcamiones.gestorcamiones.dto.ingreso.IngresoExtraDTO;
 import com.gestorcamiones.gestorcamiones.dto.lote.LoteResumenDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ActualizarViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.CrearViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.DetalleViajeDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ListaViajesDTO;
+import com.gestorcamiones.gestorcamiones.dto.viaje.ViajeLoteAsignacionDTO;
 import com.gestorcamiones.gestorcamiones.dto.viaje.ViajeUpsertDTO;
 import com.gestorcamiones.gestorcamiones.dto.tramo.TramoDTO;
-import com.gestorcamiones.gestorcamiones.entity.*;
+import com.gestorcamiones.gestorcamiones.entity.Viaje;
+import com.gestorcamiones.gestorcamiones.entity.ViajeDetalle;
+import com.gestorcamiones.gestorcamiones.entity.ViajeLote;
+import com.gestorcamiones.gestorcamiones.entity.Lote;
+import com.gestorcamiones.gestorcamiones.entity.Usuario;
+import com.gestorcamiones.gestorcamiones.entity.GastoViaje;
+import com.gestorcamiones.gestorcamiones.entity.IngresoExtraViaje;
 import com.gestorcamiones.gestorcamiones.entity.Enum.AccionAuditoria;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
 import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
@@ -28,7 +36,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 /**
  * Servicio de viajes para V2.
@@ -59,6 +67,7 @@ public class ViajeService implements IViajeService {
         this.auditori = auditori;
         this.objectMapper = objectMapper;
     }
+
 
     @Override
     public Page<ListaViajesDTO> listaViejes(Pageable pageable,
@@ -96,6 +105,7 @@ public class ViajeService implements IViajeService {
             List<DetalleViajeDTO> vuelta = new ArrayList<>();
 
             BigDecimal gastoTotal = BigDecimal.ZERO;
+            BigDecimal ingresoExtraTotal = BigDecimal.ZERO;
 
             int contador = 0;
             for (ViajeDetalle detalle : viaje.getDetalles()) {
@@ -116,6 +126,14 @@ public class ViajeService implements IViajeService {
                     }
                 }
 
+                if (detalle.getIngresosExtra() != null) {
+                    for (IngresoExtraViaje ingreso : detalle.getIngresosExtra()) {
+                        if (ingreso.getMonto() != null) {
+                            ingresoExtraTotal = ingresoExtraTotal.add(ingreso.getMonto());
+                        }
+                    }
+                }
+
                 if (detalle.getEstado() != EstadoViaje.cancelado && detalle.getEstado() != EstadoViaje.completado) {
                     contador++;
                 }
@@ -128,13 +146,14 @@ public class ViajeService implements IViajeService {
             dto.setViajesTotales(ida.size() + vuelta.size());
 
             dto.setGastoTotal(gastoTotal);
+            dto.setIngresoExtraTotal(ingresoExtraTotal);
 
             // V2: Lotes asociados al viaje
             List<LoteResumenDTO> lotesDTO = new ArrayList<>();
             if (viaje.getViajeLotes() != null) {
                 for (ViajeLote vl : viaje.getViajeLotes()) {
                     if (vl.getLote() != null) {
-                        lotesDTO.add(toLoteResumenDTO(vl.getLote()));
+                        lotesDTO.add(toLoteResumenDTO(vl.getLote(), vl.getTipoTramo()));
                     }
                 }
             }
@@ -161,7 +180,7 @@ public class ViajeService implements IViajeService {
         viajeDetallesService.crearTramos(dto.getTramos(), viaje, usuario);
 
         // V2: Asociar lotes al viaje
-        syncLotes(viaje, dto.getLoteIds());
+        syncLotes(viaje, dto.getLotesAsignados(), dto.getLoteIds());
 
         return dto;
     }
@@ -213,7 +232,7 @@ public class ViajeService implements IViajeService {
         }
 
         // V2: Sincronizar lotes
-        syncLotes(viaje, dto.getLoteIds());
+        syncLotes(viaje, dto.getLotesAsignados(), dto.getLoteIds());
 
         viajeRepository.save(viaje);
 
@@ -289,20 +308,41 @@ public class ViajeService implements IViajeService {
                 tramo.setGastos(gastos);
             }
 
+            if (detalle.getIngresosExtra() != null) {
+                List<IngresoExtraDTO> ingresosExtra = new ArrayList<>();
+                for (IngresoExtraViaje ingreso : detalle.getIngresosExtra()) {
+                    IngresoExtraDTO ingresoDTO = new IngresoExtraDTO();
+                    ingresoDTO.setId(ingreso.getIdIngresoExtraViaje());
+                    ingresoDTO.setIdViajeDetalle(detalle.getIdViajeDetalle());
+                    if (ingreso.getCategoriaIngresoExtra() != null) {
+                        ingresoDTO.setIdCategoriaIngresoExtra(ingreso.getCategoriaIngresoExtra().getIdCategoriaIngresoExtra());
+                        ingresoDTO.setCategoriaNombre(ingreso.getCategoriaIngresoExtra().getNombre());
+                    }
+                    ingresoDTO.setMonto(ingreso.getMonto());
+                    ingresoDTO.setDescripcion(ingreso.getDescripcion());
+                    ingresoDTO.setFechaIngreso(ingreso.getFechaIngreso());
+                    ingresosExtra.add(ingresoDTO);
+                }
+                tramo.setIngresosExtra(ingresosExtra);
+            }
+
             tramos.add(tramo);
         }
         dto.setTramos(tramos);
 
         // V2: Incluir IDs de lotes asociados
         List<Long> loteIds = new ArrayList<>();
+        List<ViajeLoteAsignacionDTO> lotesAsignados = new ArrayList<>();
         if (viaje.getViajeLotes() != null) {
             for (ViajeLote vl : viaje.getViajeLotes()) {
                 if (vl.getLote() != null) {
                     loteIds.add(vl.getLote().getIdLote());
+                    lotesAsignados.add(toViajeLoteAsignacionDTO(vl));
                 }
             }
         }
         dto.setLoteIds(loteIds);
+        dto.setLotesAsignados(lotesAsignados);
 
         return dto;
     }
@@ -312,23 +352,38 @@ public class ViajeService implements IViajeService {
      * Elimina las asociaciones actuales y crea las nuevas.
      */
     @Transactional
-    protected void syncLotes(Viaje viaje, List<Long> loteIds) {
-        if (loteIds == null) return;
+    protected void syncLotes(Viaje viaje, List<ViajeLoteAsignacionDTO> lotesAsignados, List<Long> loteIds) {
+        if (lotesAsignados == null && loteIds == null) return;
 
         // Limpiar asociaciones existentes
         viaje.getViajeLotes().clear();
         viajeLoteRepository.deleteByViaje_IdViaje(viaje.getIdViaje());
         viajeLoteRepository.flush();
 
-        if (loteIds.isEmpty()) return;
+        if ((lotesAsignados == null || lotesAsignados.isEmpty()) && (loteIds == null || loteIds.isEmpty())) return;
 
-        // Buscar lotes válidos
-        List<Lote> lotes = loteRepository.findAllByIdLoteInAndDeletedAtIsNull(loteIds);
+        List<ViajeLoteAsignacionDTO> asignaciones = lotesAsignados != null && !lotesAsignados.isEmpty()
+                ? lotesAsignados
+                : loteIds.stream()
+                    .filter(java.util.Objects::nonNull)
+                    .map(id -> new ViajeLoteAsignacionDTO(id, null, null, null, null, TipoTramo.ida))
+                    .toList();
 
-        for (Lote lote : lotes) {
+        java.util.Set<Long> vistos = new java.util.HashSet<>();
+        for (ViajeLoteAsignacionDTO asignacion : asignaciones) {
+            if (asignacion == null || asignacion.getIdLote() == null) {
+                continue;
+            }
+            if (!vistos.add(asignacion.getIdLote())) {
+                throw new IllegalArgumentException("No se puede asignar el mismo lote mas de una vez en el mismo viaje");
+            }
+
+            Lote lote = loteRepository.findByIdLoteAndDeletedAtIsNull(asignacion.getIdLote())
+                    .orElseThrow(() -> new IllegalArgumentException("Lote no encontrado: " + asignacion.getIdLote()));
             ViajeLote vl = new ViajeLote();
             vl.setViaje(viaje);
             vl.setLote(lote);
+            vl.setTipoTramo(asignacion.getTipoTramo() != null ? asignacion.getTipoTramo() : TipoTramo.ida);
             viajeLoteRepository.save(vl);
             viaje.getViajeLotes().add(vl);
         }
@@ -394,6 +449,16 @@ public class ViajeService implements IViajeService {
         }
         dto.setGastoTotal(gastosTotal);
 
+        BigDecimal ingresosExtraTotal = BigDecimal.ZERO;
+        if (detalle.getIngresosExtra() != null) {
+            for (IngresoExtraViaje ingreso : detalle.getIngresosExtra()) {
+                if (ingreso.getMonto() != null) {
+                    ingresosExtraTotal = ingresosExtraTotal.add(ingreso.getMonto());
+                }
+            }
+        }
+        dto.setIngresoExtraTotal(ingresosExtraTotal);
+
         dto.setFechaSalida(detalle.getFechaSalida());
         dto.setFechaEntrada(detalle.getFechaLlegada());
         if (detalle.getCamion() != null) {
@@ -413,7 +478,7 @@ public class ViajeService implements IViajeService {
     /**
      * Convierte un Lote a su DTO resumido para la vista de viajes.
      */
-    private LoteResumenDTO toLoteResumenDTO(Lote lote) {
+    private LoteResumenDTO toLoteResumenDTO(Lote lote, TipoTramo tipoTramo) {
         LoteResumenDTO dto = new LoteResumenDTO();
         dto.setIdLote(lote.getIdLote());
         dto.setNumeroLote(lote.getNumeroLote());
@@ -422,6 +487,7 @@ public class ViajeService implements IViajeService {
         dto.setPeso(lote.getPeso());
         dto.setValorDeclarado(lote.getValorDeclarado());
         dto.setDescripcion(lote.getDescripcion());
+        dto.setTipoTramo(tipoTramo != null ? tipoTramo.getDbValue() : null);
 
         if (lote.getCategoria() != null) {
             dto.setCategoriaNombre(lote.getCategoria().getNombre());
@@ -432,6 +498,21 @@ public class ViajeService implements IViajeService {
         if (lote.getClienteDestinatario() != null) {
             dto.setDestinatarioNombre(lote.getClienteDestinatario().getNombre());
         }
+        return dto;
+    }
+
+    private ViajeLoteAsignacionDTO toViajeLoteAsignacionDTO(ViajeLote viajeLote) {
+        ViajeLoteAsignacionDTO dto = new ViajeLoteAsignacionDTO();
+        if (viajeLote == null || viajeLote.getLote() == null) {
+            return dto;
+        }
+        Lote lote = viajeLote.getLote();
+        dto.setIdLote(lote.getIdLote());
+        dto.setNumeroLote(lote.getNumeroLote());
+        dto.setEstado(lote.getEstado() != null ? lote.getEstado().getDbValue() : null);
+        dto.setNombreEncargado(lote.getNombreEncargado());
+        dto.setValorDeclarado(lote.getValorDeclarado());
+        dto.setTipoTramo(viajeLote.getTipoTramo());
         return dto;
     }
 

@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
  * Endpoints de Lotes (V2).
  * Se usa principalmente por el frontend de Viajes para asociar lotes a un viaje (viaje_lote).
  */
+
 @RestController
 @RequestMapping("/api/lotes")
 public class LoteController {
@@ -91,6 +92,7 @@ public class LoteController {
         dto.setPeso(lote.getPeso());
         dto.setDescripcion(lote.getDescripcion());
         dto.setValorDeclarado(lote.getValorDeclarado());
+        //dto.setTipoTramo(lote.get);
         return dto;
     }
 

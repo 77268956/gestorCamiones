@@ -1,4 +1,5 @@
 # Configuración de la base de datos de Render
+$env:APP_PROFILE="produccion"
 $env:DB_URL="jdbc:postgresql://dpg-d8hqspddt1ts73ejt63g-a.ohio-postgres.render.com:5432/gestor_camiones?sslmode=require&stringtype=unspecified"
 $env:DB_USERNAME="transportemp"
 $env:DB_PASSWORD="TMLv3UBMz8HY34HY7Yh5yOm596yuXqUz"

@@ -17,5 +17,6 @@ public class LoteUpsertDTO {
     private BigDecimal peso;
     private String descripcion;
     private BigDecimal valorDeclarado;
+    private String tipoTramo;
 }
 

@@ -27,4 +27,5 @@ public class LoteResumenDTO {
     private BigDecimal valorDeclarado;
     private String descripcion;
     private boolean asignado;
+    private String tipoTramo;
 }

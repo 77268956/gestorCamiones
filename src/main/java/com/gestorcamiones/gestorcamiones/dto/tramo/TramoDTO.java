@@ -1,6 +1,7 @@
 package com.gestorcamiones.gestorcamiones.dto.tramo;
 
 import com.gestorcamiones.gestorcamiones.dto.gasto.GastoViajeDTO;
+import com.gestorcamiones.gestorcamiones.dto.ingreso.IngresoExtraDTO;
 import com.gestorcamiones.gestorcamiones.entity.Enum.EstadoViaje;
 import com.gestorcamiones.gestorcamiones.entity.Enum.Pais;
 import com.gestorcamiones.gestorcamiones.entity.Enum.TipoTramo;
@@ -43,4 +44,5 @@ public class TramoDTO {
     private LocalDateTime fechaEntrada;
 
     private List<GastoViajeDTO> gastos;
+    private List<IngresoExtraDTO> ingresosExtra;
 }
