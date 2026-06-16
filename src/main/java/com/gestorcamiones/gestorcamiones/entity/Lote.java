@@ -42,6 +42,7 @@ public class Lote {
     private String numeroLote;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "estado", nullable = false, columnDefinition = "estado_lote_enum")
     private EstadoLote estado;
 

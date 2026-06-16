@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -41,10 +42,12 @@ public class ViajeDetalle {
     // 🔹 Enums
 
     @Convert(converter = TipoTramoConverter.class)
+    @ColumnTransformer(write = "?::tipo_tramo_enum")
     @Column(name = "tipo_tramo", nullable = false, columnDefinition = "tipo_tramo_enum")
     private TipoTramo tipoTramo;
 
     @Convert(converter = EstadoViajeConverter.class)
+    @ColumnTransformer(write = "?::estado_viaje_enum")
     @Column(name = "estado", nullable = false, columnDefinition = "estado_viaje_enum")
     private EstadoViaje estado;
 
@@ -57,10 +60,12 @@ public class ViajeDetalle {
     // 🔹 Ubicación (nuevo en V2)
 
     @Convert(converter = PaisConverter.class)
+    @ColumnTransformer(write = "?::paises_enum")
     @Column(name = "pais_salida", columnDefinition = "paises_enum")
     private Pais paisSalida;
 
     @Convert(converter = PaisConverter.class)
+    @ColumnTransformer(write = "?::paises_enum")
     @Column(name = "pais_destino", columnDefinition = "paises_enum")
     private Pais paisDestino;
 
