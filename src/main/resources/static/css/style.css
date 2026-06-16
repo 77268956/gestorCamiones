@@ -629,3 +629,83 @@ a:hover      { color: var(--mp-orange); }
     color: inherit;
     cursor: pointer;
 }
+
+/* ═════════════════════════
+   GLOBAL RESPONSIVE HELPERS
+═════════════════════════ */
+
+/* Tablet pequeña (≤768px) */
+@media (max-width: 768px) {
+    body {
+        padding-top: 60px;
+    }
+
+    .mp-table-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: .75rem 1rem;
+    }
+
+    .mp-toolbar {
+        padding: .9rem 1rem;
+    }
+
+    .mp-title {
+        font-size: 1.1rem;
+    }
+
+    /* Botones de acción de tabla más pequeños */
+    .btn-edit, .btn-del, .btn-gastos {
+        padding: .2rem .55rem;
+        font-size: .78rem;
+    }
+
+    /* Tabla: ocultar algunas columnas en móvil si es necesario */
+    .mp-table thead th,
+    .mp-table tbody td {
+        padding: .6rem .7rem;
+        font-size: .85rem;
+    }
+
+    /* Modales Bootstrap: más anchos en móvil */
+    .modal-dialog {
+        margin: .5rem;
+    }
+
+    .modal-dialog.modal-xl,
+    .modal-dialog.modal-lg {
+        max-width: calc(100vw - 1rem);
+    }
+}
+
+/* Móvil (≤576px) */
+@media (max-width: 576px) {
+    body {
+        padding-top: 56px;
+    }
+
+    .mp-alert-host {
+        width: calc(100vw - 1rem);
+        left: .5rem;
+        right: .5rem;
+        top: .5rem;
+    }
+
+    /* Pagination más compacta */
+    .pagination-sm .page-link {
+        padding: .28rem .5rem;
+        font-size: .8rem;
+    }
+
+    /* Cards con menos padding en móvil */
+    .card {
+        border-radius: 0.6rem;
+    }
+    .card-header {
+        padding: .75rem 1rem;
+    }
+    .card-body {
+        padding: .75rem 1rem;
+    }
+}

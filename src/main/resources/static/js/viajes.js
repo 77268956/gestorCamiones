@@ -53,6 +53,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const n = Number.parseFloat(value);
         return Number.isNaN(n) ? 0 : n;
     };
+
+    // ── Helpers de fecha ────────────────────────────────────────────────────
+    const toISODate = d => d.toISOString().split('T')[0];
+    /** Devuelve { inicio, fin } para el mes de la fecha dada. */
+    const rangoMesActual = (fecha = new Date()) => {
+        const y = fecha.getFullYear();
+        const m = fecha.getMonth(); // 0-based
+        const inicio = new Date(y, m, 1);
+        const fin    = new Date(y, m + 1, 0); // último día del mes
+        return { inicio: toISODate(inicio), fin: toISODate(fin) };
+    };
     const escapeHtml = value => {
         if (value === null || value === undefined) return "";
         return String(value)
@@ -398,10 +409,60 @@ document.addEventListener("DOMContentLoaded", () => {
         return match?.tipoGasto || `Tipo #${idTipo}`;
     }
 
+    // ── Skeleton helpers ───────────────────────────────────────────
+    function skeletonVcard() {
+        return `
+        <div class="skeleton-vcard">
+            <div class="skeleton-vcard-header">
+                <span class="skeleton skeleton-block skeleton-w-30" style="height:10px"></span>
+                <span class="skeleton skeleton-block skeleton-w-70" style="height:18px"></span>
+            </div>
+            <div class="skeleton-vcard-body">
+                <div class="skeleton-row">
+                    <span class="skeleton" style="width:62px;height:26px;border-radius:999px"></span>
+                    <span class="skeleton skeleton-block skeleton-w-50" style="height:13px;margin:0"></span>
+                    <span class="skeleton skeleton-block skeleton-w-30" style="height:13px;margin:0"></span>
+                </div>
+                <div class="skeleton-row">
+                    <span class="skeleton" style="width:62px;height:26px;border-radius:999px"></span>
+                    <span class="skeleton skeleton-block skeleton-w-70" style="height:13px;margin:0"></span>
+                </div>
+                <div class="skeleton-row" style="gap:6px">
+                    <span class="skeleton" style="width:80px;height:24px;border-radius:999px"></span>
+                    <span class="skeleton" style="width:60px;height:24px;border-radius:999px"></span>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function skeletonMetricas() {
+        [els.metricGastos, els.metricActivos, els.metricLotes].forEach(el => {
+            if (el) el.innerHTML = '<span class="skeleton" style="display:block;height:24px;border-radius:6px;background:rgba(255,255,255,.25)"></span>';
+        });
+    }
+
+    function setLoadingUI(loading) {
+        // Botón aplicar filtros
+        if (els.btnAplicar) {
+            els.btnAplicar.classList.toggle("btn-loading", loading);
+            els.btnAplicar.disabled = loading;
+        }
+        // Paginación
+        [els.btnPrev, els.btnNext].forEach(btn => {
+            if (btn) btn.disabled = loading;
+        });
+        // Select de página
+        if (els.sizeSelect) els.sizeSelect.disabled = loading;
+    }
+
     async function cargarViajes(page = state.page) {
         if (!els.lista) return;
         state.page = Math.max(0, Number(page) || 0);
-        els.lista.innerHTML = '<div class="text-center py-4 text-muted">Cargando viajes...</div>';
+
+        // Mostrar skeletons en la lista y métricas
+        els.lista.innerHTML = [1,2,3].map(() => skeletonVcard()).join("");
+        skeletonMetricas();
+        setLoadingUI(true);
 
         try {
             const res = await fetch(`/api/viajes?${getQuery()}`, {credentials: "same-origin"});
@@ -417,14 +478,29 @@ document.addEventListener("DOMContentLoaded", () => {
             renderViajes();
         } catch (error) {
             console.error(error);
-            els.lista.innerHTML = '<div class="text-center py-4 text-danger">Error al cargar viajes</div>';
+            els.lista.innerHTML = `
+                <div class="text-center py-5 text-danger">
+                    <div style="font-size:2rem;margin-bottom:8px">⚠️</div>
+                    <div style="font-weight:600">No se pudieron cargar los viajes</div>
+                    <div style="font-size:.85rem;opacity:.7;margin-top:4px">${error.message}</div>
+                    <button onclick="location.reload()" class="btn btn-sm btn-outline-primary mt-3">Reintentar</button>
+                </div>`;
+            // Resetear métricas en error
+            [els.metricGastos, els.metricActivos, els.metricLotes].forEach(el => { if (el) el.textContent = "-"; });
+        } finally {
+            setLoadingUI(false);
         }
     }
 
     function renderViajes() {
         if (!els.lista) return;
         if (!state.viajes.length) {
-            els.lista.innerHTML = '<div class="text-center py-4 text-muted">No se encontraron viajes.</div>';
+            els.lista.innerHTML = `
+                <div class="text-center py-5" style="color:#9ca3af">
+                    <div style="font-size:2.5rem;margin-bottom:10px">🚛</div>
+                    <div style="font-weight:600;font-size:1rem">No se encontraron viajes</div>
+                    <div style="font-size:.85rem;margin-top:4px">Prueba cambiando los filtros o el rango de fechas</div>
+                </div>`;
             if (els.total) els.total.textContent = "Mostrando 0 viajes";
             actualizarMetricas();
             actualizarPaginacion();
@@ -456,15 +532,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const ganancia = valorLotes + ingresoExtraTotal + iva - totalGasto;
  
+            // Determinar estado general y camión para el header
+            let overallEstadoKey = "pendiente";
+            let overallEstadoLabel = "Pendiente";
+            const estadoIdaKey = ida ? normState(ida.estadoViaje || ida.estado) : null;
+            const estadoVueltaKey = vuelta ? normState(vuelta.estadoViaje || vuelta.estado) : null;
+            const activeStates = ["con_fallas", "cargando", "descargando", "en_camino"];
+            
+            // Priorizar mostrar estados activos, sino si ambos completados, etc.
+            if (activeStates.includes(estadoIdaKey)) { overallEstadoKey = estadoIdaKey; overallEstadoLabel = String(ida.estadoViaje || ida.estado).replaceAll("_", " "); }
+            else if (activeStates.includes(estadoVueltaKey)) { overallEstadoKey = estadoVueltaKey; overallEstadoLabel = String(vuelta.estadoViaje || vuelta.estado).replaceAll("_", " "); }
+            else if (estadoIdaKey === "completado" && (!vuelta || estadoVueltaKey === "completado" || estadoVueltaKey === "cancelado")) { overallEstadoKey = "completado"; overallEstadoLabel = "Completado"; }
+            else if (estadoVueltaKey === "completado" && (!ida || estadoIdaKey === "completado" || estadoIdaKey === "cancelado")) { overallEstadoKey = "completado"; overallEstadoLabel = "Completado"; }
+            else if (estadoIdaKey === "cancelado" && estadoVueltaKey === "cancelado") { overallEstadoKey = "cancelado"; overallEstadoLabel = "Cancelado"; }
+            else if (estadoIdaKey) { overallEstadoKey = estadoIdaKey; overallEstadoLabel = String(ida.estadoViaje || ida.estado).replaceAll("_", " "); }
+            
+            const camionGeneral = (ida?.camionNombre || vuelta?.camionNombre || "");
+
             return `
                 <div class="vcard" data-viaje-id="${escapeHtml(String(getViajeId(viaje)))}">
-                    <div class="vcard-header">
+                    <div class="vcard-header" data-toggle-viaje="${escapeHtml(String(getViajeId(viaje)))}">
                         <div class="vcard-title-group">
                             <span class="vcard-id">Viaje #${escapeHtml(String(getViajeId(viaje)))}</span>
                             <h3 class="vcard-name">${escapeHtml(getViajeNombre(viaje))}</h3>
                         </div>
+                        <div class="vcard-header-status-group">
+                            ${camionGeneral ? `<span class="vcard-header-truck"><i class="fas fa-truck"></i> ${escapeHtml(camionGeneral)}</span>` : ""}
+                            <span class="status-badge status-${escapeHtml(overallEstadoKey)}">${escapeHtml(overallEstadoLabel)}</span>
+                        </div>
+                        <button class="vcard-toggle-btn" data-toggle-viaje="${escapeHtml(String(getViajeId(viaje)))}" title="Expandir / Colapsar" type="button" aria-expanded="true">
+                            <svg class="vcard-toggle-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
                     </div>
-                    <div class="vcard-body">
+                    <div class="vcard-body" id="vcard-body-${escapeHtml(String(getViajeId(viaje)))}">
                         <div class="vcard-legs">
                             ${tramoCard(ida, "ida", getViajeId(viaje), lotes)}
                             ${tramoCard(vuelta, "vuelta", getViajeId(viaje), lotes)}
@@ -560,7 +662,12 @@ document.addEventListener("DOMContentLoaded", () => {
     async function abrirModalDetalle(viajeId) {
         if (!els.viewModal || !els.viewBody) return;
         els.viewModal.classList.add("is-open");
-        els.viewBody.innerHTML = "Cargando...";
+        // Spinner mientras carga
+        els.viewBody.innerHTML = `
+            <div class="mp-modal-spinner">
+                <div class="mp-modal-spinner-ring"></div>
+                <div class="mp-modal-spinner-text">Cargando detalle del viaje…</div>
+            </div>`;
         if (els.viewTitle) els.viewTitle.textContent = "Detalle del viaje";
 
         try {
@@ -721,11 +828,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function limpiarFiltros() {
-        state.filters = {q: "", estado: "", fechaInicio: "", fechaFin: "", excluirCompletados: false};
-        if (els.filtroQ) els.filtroQ.value = "";
-        if (els.filtroInicio) els.filtroInicio.value = "";
-        if (els.filtroFin) els.filtroFin.value = "";
-        if (els.filtroEstado) els.filtroEstado.value = "";
+        const rango = rangoMesActual();
+        state.filters = {q: "", estado: "__activos__", fechaInicio: rango.inicio, fechaFin: rango.fin, excluirCompletados: true};
+        if (els.filtroQ)      els.filtroQ.value      = "";
+        if (els.filtroInicio) els.filtroInicio.value = rango.inicio;
+        if (els.filtroFin)    els.filtroFin.value    = rango.fin;
+        if (els.filtroEstado) els.filtroEstado.value = "__activos__";
         state.page = 0;
         cargarViajes(0);
     }
@@ -765,6 +873,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     els.lista?.addEventListener("click", event => {
+        // Toggle de Acordeón
+        const toggleHeader = event.target.closest('[data-toggle-viaje]');
+        if (toggleHeader) {
+            event.preventDefault();
+            event.stopPropagation();
+            const viajeId = toggleHeader.dataset.toggleViaje;
+            const vcard = toggleHeader.closest('.vcard');
+            const btn = vcard.querySelector('.vcard-toggle-btn');
+            
+            if (vcard) {
+                const isCollapsed = vcard.classList.toggle('is-collapsed');
+                if (btn) btn.setAttribute('aria-expanded', !isCollapsed);
+            }
+            return;
+        }
+
         const toggleBtn = event.target.closest("[data-toggle-field]");
         if (toggleBtn) {
             event.preventDefault();
@@ -800,6 +924,19 @@ document.addEventListener("DOMContentLoaded", () => {
     async function init() {
         await cargarEstados();
         await cargarTiposGasto();
+
+        // Por defecto: viajes activos del mes actual
+        const rango = rangoMesActual();
+        if (els.filtroInicio) els.filtroInicio.value = rango.inicio;
+        if (els.filtroFin)    els.filtroFin.value    = rango.fin;
+        if (els.filtroEstado) els.filtroEstado.value = "__activos__";
+
+        // Inicializar state con activos + mes actual
+        state.filters.fechaInicio        = rango.inicio;
+        state.filters.fechaFin           = rango.fin;
+        state.filters.estado             = "";
+        state.filters.excluirCompletados = true;
+
         await cargarViajes(0);
     }
 

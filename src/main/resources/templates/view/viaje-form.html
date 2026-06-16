@@ -2,6 +2,7 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulario de Viaje</title>
     <meta name="_csrf" th:content="${_csrf.token}">
     <meta name="_csrf_header" th:content="${_csrf.headerName}">
@@ -215,6 +216,7 @@
             margin-top: 24px;
             border-top: 1px solid var(--mp-border);
             padding-top: 20px;
+            flex-wrap: wrap;
         }
 
         .estado-guardado {
@@ -227,6 +229,140 @@
 
         .estado-guardado.error {
             color: #b91c1c;
+        }
+
+        /* ═══════════════════════════════
+           RESPONSIVIDAD – FORMULARIO DE VIAJE
+        ═══════════════════════════════ */
+
+        /* Tablet (≤992px) */
+        @media (max-width: 992px) {
+            .page-header {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            .tab-header {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .tab-buttons {
+                overflow-x: auto;
+                white-space: nowrap;
+                -webkit-overflow-scrolling: touch;
+            }
+            .gastos-header {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+        }
+
+        /* Tablet pequeña (≤768px) */
+        @media (max-width: 768px) {
+            .container {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+            .page-title {
+                font-size: 1.2rem;
+            }
+            .card-clean {
+                padding: 14px;
+            }
+            .tramo-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .gasto-form-grid {
+                grid-template-columns: 1fr;
+            }
+            .gasto-form-actions {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .resumen-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .resumen-card[style*="grid-column"] {
+                grid-column: 1 / -1 !important;
+            }
+            .form-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .form-actions > div {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .form-actions .btn {
+                flex: 1;
+                min-width: 120px;
+            }
+            /* Modales Bootstrap en mobile */
+            .modal-dialog.modal-xl {
+                margin: 8px;
+                max-width: calc(100vw - 16px);
+            }
+            .modal-body {
+                padding: 12px;
+            }
+        }
+
+        /* Móvil (≤576px) */
+        @media (max-width: 576px) {
+            .page-header {
+                gap: 8px;
+            }
+            .page-title {
+                font-size: 1rem;
+            }
+            .tab-button {
+                padding: 6px 12px;
+                font-size: .88rem;
+            }
+            .iva-config {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+            .gastos-section {
+                margin-top: 16px;
+                padding-top: 12px;
+            }
+            .gastos-header > div {
+                width: 100%;
+            }
+            .gastos-header button {
+                width: 100%;
+            }
+            .resumen-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .resumen-section {
+                margin-top: 16px;
+            }
+            /* Tabla de gastos en móvil: scroll horizontal */
+            .table-responsive {
+                -webkit-overflow-scrolling: touch;
+            }
+            /* Modal full-screen en móvil */
+            .modal-dialog {
+                margin: 4px;
+                max-width: calc(100vw - 8px);
+            }
+            .modal-content.mp-modal-content {
+                border-radius: 8px;
+            }
+        }
+
+        /* Móvil muy pequeño (≤380px) */
+        @media (max-width: 380px) {
+            .resumen-grid {
+                grid-template-columns: 1fr;
+            }
+            .resumen-card[style*="grid-column"] {
+                grid-column: 1 !important;
+            }
         }
     </style>
 </head>
@@ -377,8 +513,8 @@
                     </div>
 
                     <div class="tab-buttons mb-3">
-                        <button type="button" class="tab-button active" data-tab="ida">🚛 Tramo Ida</button>
-                        <button type="button" class="tab-button" data-tab="vuelta">↩️ Tramo Vuelta</button>
+                        <button type="button" class="tab-button active" data-tab="ida">Tramo Ida</button>
+                        <button type="button" class="tab-button" data-tab="vuelta">Tramo Vuelta</button>
                     </div>
 
                     <!-- PANE TRAMO IDA -->

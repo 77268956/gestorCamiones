@@ -563,10 +563,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                     </div>
                     <div class="col-12 col-md-2">
-                        <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" data-lote-pagado="${index}" ${lote.pagado ? "checked" : ""}>
-                            <label class="form-check-label">Pagado</label>
-                        </div>
+
                     </div>
                 </div>
             `;
