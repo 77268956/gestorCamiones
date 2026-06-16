@@ -409,10 +409,60 @@ document.addEventListener("DOMContentLoaded", () => {
         return match?.tipoGasto || `Tipo #${idTipo}`;
     }
 
+    // ── Skeleton helpers ───────────────────────────────────────────
+    function skeletonVcard() {
+        return `
+        <div class="skeleton-vcard">
+            <div class="skeleton-vcard-header">
+                <span class="skeleton skeleton-block skeleton-w-30" style="height:10px"></span>
+                <span class="skeleton skeleton-block skeleton-w-70" style="height:18px"></span>
+            </div>
+            <div class="skeleton-vcard-body">
+                <div class="skeleton-row">
+                    <span class="skeleton" style="width:62px;height:26px;border-radius:999px"></span>
+                    <span class="skeleton skeleton-block skeleton-w-50" style="height:13px;margin:0"></span>
+                    <span class="skeleton skeleton-block skeleton-w-30" style="height:13px;margin:0"></span>
+                </div>
+                <div class="skeleton-row">
+                    <span class="skeleton" style="width:62px;height:26px;border-radius:999px"></span>
+                    <span class="skeleton skeleton-block skeleton-w-70" style="height:13px;margin:0"></span>
+                </div>
+                <div class="skeleton-row" style="gap:6px">
+                    <span class="skeleton" style="width:80px;height:24px;border-radius:999px"></span>
+                    <span class="skeleton" style="width:60px;height:24px;border-radius:999px"></span>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function skeletonMetricas() {
+        [els.metricGastos, els.metricActivos, els.metricLotes].forEach(el => {
+            if (el) el.innerHTML = '<span class="skeleton" style="display:block;height:24px;border-radius:6px;background:rgba(255,255,255,.25)"></span>';
+        });
+    }
+
+    function setLoadingUI(loading) {
+        // Botón aplicar filtros
+        if (els.btnAplicar) {
+            els.btnAplicar.classList.toggle("btn-loading", loading);
+            els.btnAplicar.disabled = loading;
+        }
+        // Paginación
+        [els.btnPrev, els.btnNext].forEach(btn => {
+            if (btn) btn.disabled = loading;
+        });
+        // Select de página
+        if (els.sizeSelect) els.sizeSelect.disabled = loading;
+    }
+
     async function cargarViajes(page = state.page) {
         if (!els.lista) return;
         state.page = Math.max(0, Number(page) || 0);
-        els.lista.innerHTML = '<div class="text-center py-4 text-muted">Cargando viajes...</div>';
+
+        // Mostrar skeletons en la lista y métricas
+        els.lista.innerHTML = [1,2,3].map(() => skeletonVcard()).join("");
+        skeletonMetricas();
+        setLoadingUI(true);
 
         try {
             const res = await fetch(`/api/viajes?${getQuery()}`, {credentials: "same-origin"});
@@ -428,14 +478,29 @@ document.addEventListener("DOMContentLoaded", () => {
             renderViajes();
         } catch (error) {
             console.error(error);
-            els.lista.innerHTML = '<div class="text-center py-4 text-danger">Error al cargar viajes</div>';
+            els.lista.innerHTML = `
+                <div class="text-center py-5 text-danger">
+                    <div style="font-size:2rem;margin-bottom:8px">⚠️</div>
+                    <div style="font-weight:600">No se pudieron cargar los viajes</div>
+                    <div style="font-size:.85rem;opacity:.7;margin-top:4px">${error.message}</div>
+                    <button onclick="location.reload()" class="btn btn-sm btn-outline-primary mt-3">Reintentar</button>
+                </div>`;
+            // Resetear métricas en error
+            [els.metricGastos, els.metricActivos, els.metricLotes].forEach(el => { if (el) el.textContent = "-"; });
+        } finally {
+            setLoadingUI(false);
         }
     }
 
     function renderViajes() {
         if (!els.lista) return;
         if (!state.viajes.length) {
-            els.lista.innerHTML = '<div class="text-center py-4 text-muted">No se encontraron viajes.</div>';
+            els.lista.innerHTML = `
+                <div class="text-center py-5" style="color:#9ca3af">
+                    <div style="font-size:2.5rem;margin-bottom:10px">🚛</div>
+                    <div style="font-weight:600;font-size:1rem">No se encontraron viajes</div>
+                    <div style="font-size:.85rem;margin-top:4px">Prueba cambiando los filtros o el rango de fechas</div>
+                </div>`;
             if (els.total) els.total.textContent = "Mostrando 0 viajes";
             actualizarMetricas();
             actualizarPaginacion();
@@ -597,7 +662,12 @@ document.addEventListener("DOMContentLoaded", () => {
     async function abrirModalDetalle(viajeId) {
         if (!els.viewModal || !els.viewBody) return;
         els.viewModal.classList.add("is-open");
-        els.viewBody.innerHTML = "Cargando...";
+        // Spinner mientras carga
+        els.viewBody.innerHTML = `
+            <div class="mp-modal-spinner">
+                <div class="mp-modal-spinner-ring"></div>
+                <div class="mp-modal-spinner-text">Cargando detalle del viaje…</div>
+            </div>`;
         if (els.viewTitle) els.viewTitle.textContent = "Detalle del viaje";
 
         try {
